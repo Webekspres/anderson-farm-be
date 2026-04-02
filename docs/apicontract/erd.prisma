@@ -1,0 +1,665 @@
+// =============================================================================
+// Anderson Farm — ERD / Prisma Schema
+// Tujuan    : Perancangan (design reference), bukan untuk prisma migrate.
+// Catatan   : Offline-first architecture. Setiap tabel wajib memiliki:
+//             created_at_client, updated_at_client, deleted_at.
+// Total     : 20 tabel, 6 kelompok modul.
+// Backend   : Laravel + MySQL (provider mysql untuk mendukung enum).
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum UserRole {
+  admin
+  manager
+  pic
+  abk
+  investor
+}
+
+enum SyncStatus {
+  pending
+  synced
+  conflict
+}
+
+enum CoopType {
+  open_house
+  closed_house
+}
+
+enum PeriodStatus {
+  active
+  completed
+}
+
+enum PaymentStatus {
+  draft
+  paid
+}
+
+enum ArticleStatus {
+  published
+  draft
+}
+
+// =============================================================================
+// KELOMPOK 1: Auth, Security & Logs (Modul 1 & 9)
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// users
+// Semua pengguna: Admin, Manager, PIC, ABK, Investor.
+// device_id          → One Device One Account enforcement.
+// last_validated_at  → anchor timestamp grace period 7 hari (offline auth).
+// -----------------------------------------------------------------------------
+
+model User {
+  id                String     @id @default(uuid())
+
+  // business fields
+  username          String     @unique
+  password_hash     String
+  full_name         String
+  email             String?
+  role              UserRole
+  device_id         String?
+  is_active         Boolean    @default(true)
+  last_validated_at DateTime?
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  activity_logs      ActivityLog[]
+  led_periods        ProductionPeriod[]  @relation("PicPeriods")
+  period_investors   PeriodInvestor[]
+  daily_activities   DailyActivity[]
+  harvests           Harvest[]
+  incomes            Income[]
+  salaries           EmployeeSalary[]    @relation("EmployeeSalaries")
+  expenses           Expense[]
+
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// activity_logs
+// Audit trail semua aksi user di perangkat.
+// entity_type + entity_id → polymorphic reference ke tabel manapun.
+// -----------------------------------------------------------------------------
+
+model ActivityLog {
+  id          String @id @default(uuid())
+
+  // business fields
+  user_id     String
+  action      String
+  entity_type String
+  entity_id   String
+  device_id   String?
+  status      String
+  metadata    String?   // JSON string for extra context
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([entity_type, entity_id])
+  @@map("activity_logs")
+}
+
+// =============================================================================
+// KELOMPOK 2: Master Data Kandang & Dokumen (Modul 2)
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// farms — Entitas tertinggi lokasi peternakan.
+// Hierarki: Farm → Coop → ProductionPeriod → DailyActivity.
+// -----------------------------------------------------------------------------
+
+model Farm {
+  id        String  @id @default(uuid())
+
+  // business fields
+  name      String
+  address   String
+  is_active Boolean @default(true)
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  coops Coop[]
+
+  @@map("farms")
+}
+
+// -----------------------------------------------------------------------------
+// coops — Data fisik bangunan kandang.
+// coop_type menentukan set form dinamis yang dirender di DailyActivity.
+// -----------------------------------------------------------------------------
+
+model Coop {
+  id        String   @id @default(uuid())
+
+  // business fields
+  farm_id   String
+  name      String
+  capacity  Int
+  coop_type CoopType
+  is_active Boolean  @default(true)
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  farm               Farm               @relation(fields: [farm_id], references: [id])
+  coop_documents     CoopDocument[]
+  coop_equipments    CoopEquipment[]
+  production_periods ProductionPeriod[]
+
+  @@index([farm_id])
+  @@map("coops")
+}
+
+// -----------------------------------------------------------------------------
+// coop_documents — Multiple dokumen panduan (SOP, manual) per kandang.
+// -----------------------------------------------------------------------------
+
+model CoopDocument {
+  id        String @id @default(uuid())
+
+  // business fields
+  coop_id   String
+  name      String
+  file_url  String
+  file_type String   // pdf | jpg | png
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  coop Coop @relation(fields: [coop_id], references: [id])
+
+  @@index([coop_id])
+  @@map("coop_documents")
+}
+
+// =============================================================================
+// KELOMPOK 3: Engine Dynamic Form & Aset Alat (Modul 4 & 12)
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// equipment_types — Master merk/tipe alat (Contoh: "Temptron", "Punos").
+// -----------------------------------------------------------------------------
+
+model EquipmentType {
+  id          String  @id @default(uuid())
+
+  // business fields
+  name        String
+  description String?
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  equipment_type_form_configs EquipmentTypeFormConfig[]
+  coop_equipments             CoopEquipment[]
+
+  @@map("equipment_types")
+}
+
+// -----------------------------------------------------------------------------
+// form_configs — Master struktur UI per komponen input.
+// config_value (JSON): {"type":"number","required":true,"unit":"Celcius"}
+// -----------------------------------------------------------------------------
+
+model FormConfig {
+  id           String @id @default(uuid())
+
+  // business fields
+  key_name     String @unique
+  config_value String @db.Text   // JSON
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  equipment_type_form_configs EquipmentTypeFormConfig[]
+
+  @@map("form_configs")
+}
+
+// -----------------------------------------------------------------------------
+// equipment_type_form_configs — Pivot M:N: EquipmentType ↔ FormConfig.
+// "Alat Temptron pakai input apa saja?" → lihat tabel ini.
+// -----------------------------------------------------------------------------
+
+model EquipmentTypeFormConfig {
+  id                String @id @default(uuid())
+
+  // business fields
+  equipment_type_id String
+  form_config_id    String
+  display_order     Int
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  equipment_type EquipmentType @relation(fields: [equipment_type_id], references: [id])
+  form_config    FormConfig    @relation(fields: [form_config_id],    references: [id])
+
+  @@index([equipment_type_id])
+  @@index([form_config_id])
+  @@map("equipment_type_form_configs")
+}
+
+// -----------------------------------------------------------------------------
+// coop_equipments — Alat fisik yang terpasang di kandang tertentu.
+// Menjembatani aset fisik (Coop) dengan tipe/merk alat (EquipmentType).
+// -----------------------------------------------------------------------------
+
+model CoopEquipment {
+  id                String    @id @default(uuid())
+
+  // business fields
+  coop_id           String
+  equipment_type_id String
+  unit_code         String?
+  installed_at      DateTime?
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  coop           Coop          @relation(fields: [coop_id],           references: [id])
+  equipment_type EquipmentType @relation(fields: [equipment_type_id], references: [id])
+
+  @@index([coop_id])
+  @@index([equipment_type_id])
+  @@map("coop_equipments")
+}
+
+// =============================================================================
+// KELOMPOK 4: Siklus Ternak & Aktivitas (Modul 3, 4 & 5)
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// production_periods — Siklus hidup pemeliharaan (Chick-in → Panen).
+// pic_id → user dengan role=pic, penanggung jawab kandang di periode ini.
+// -----------------------------------------------------------------------------
+
+model ProductionPeriod {
+  id            String       @id @default(uuid())
+
+  // business fields
+  coop_id       String
+  pic_id        String
+  period_code   String       @unique
+  start_date    DateTime
+  end_date      DateTime?
+  initial_stock Int
+  status        PeriodStatus @default(active)
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  coop              Coop             @relation(fields: [coop_id], references: [id])
+  pic               User             @relation("PicPeriods", fields: [pic_id], references: [id])
+  period_investors  PeriodInvestor[]
+  daily_activities  DailyActivity[]
+  harvests          Harvest[]
+  incomes           Income[]
+  employee_salaries EmployeeSalary[]
+  expenses          Expense[]
+  rhpp              Rhpp?
+
+  @@index([coop_id])
+  @@index([pic_id])
+  @@map("production_periods")
+}
+
+// -----------------------------------------------------------------------------
+// period_investors — Pivot M:N: ProductionPeriod ↔ User (role=investor).
+// Mengatur hak akses laporan dan % saham. Total profit_share ≤ 100%.
+// -----------------------------------------------------------------------------
+
+model PeriodInvestor {
+  id                      String @id @default(uuid())
+
+  // business fields
+  period_id               String
+  user_id                 String   // FK → users (role=investor)
+  profit_share_percentage Float
+  initial_investment      Float?
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  period ProductionPeriod @relation(fields: [period_id], references: [id])
+  user   User             @relation(fields: [user_id],   references: [id])
+
+  @@index([period_id])
+  @@index([user_id])
+  @@map("period_investors")
+}
+
+// -----------------------------------------------------------------------------
+// daily_activities — Catatan harian ABK (termasuk data dari form dinamis).
+// dynamic_data (JSON): hasil pengisian input dari form_configs.
+// Deplesi = mortality_count + cull_count (mati + afkir).
+// -----------------------------------------------------------------------------
+
+model DailyActivity {
+  id              String @id @default(uuid())
+
+  // business fields
+  period_id       String
+  user_id         String
+  date            DateTime
+  age_days        Int
+  mortality_count Int      @default(0)   // deplesi mati
+  cull_count      Int      @default(0)   // deplesi afkir
+  average_weight  Float?
+  dynamic_data    String?  @db.Text      // JSON dari form_configs
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  period ProductionPeriod @relation(fields: [period_id], references: [id])
+  user   User             @relation(fields: [user_id],   references: [id])
+
+  @@index([period_id])
+  @@index([user_id])
+  @@map("daily_activities")
+}
+
+// -----------------------------------------------------------------------------
+// harvests — Data panen. Prompt aktif otomatis saat umur ≥ 20 hari.
+// Saat harvest dicatat, auto-inject Income baru ke tabel incomes.
+// -----------------------------------------------------------------------------
+
+model Harvest {
+  id              String   @id @default(uuid())
+
+  // business fields
+  period_id       String
+  user_id         String
+  date            DateTime
+  age_days        Int
+  head_count      Int
+  total_weight_kg Float
+  price_per_kg    Float
+  total_value     Float
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  period  ProductionPeriod @relation(fields: [period_id], references: [id])
+  user    User             @relation(fields: [user_id],   references: [id])
+  incomes Income[]
+
+  @@index([period_id])
+  @@map("harvests")
+}
+
+// =============================================================================
+// KELOMPOK 5: Keuangan & Bagi Hasil (Modul 6, 7 & 8)
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// incomes — Arus kas masuk.
+// harvest_id nullable: diisi otomatis jika income berasal dari panen.
+// -----------------------------------------------------------------------------
+
+model Income {
+  id          String   @id @default(uuid())
+
+  // business fields
+  period_id   String
+  user_id     String
+  harvest_id  String?
+  date        DateTime
+  category    String
+  amount      Float
+  description String?
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  period  ProductionPeriod @relation(fields: [period_id],  references: [id])
+  user    User             @relation(fields: [user_id],    references: [id])
+  harvest Harvest?         @relation(fields: [harvest_id], references: [id])
+
+  @@index([period_id])
+  @@index([harvest_id])
+  @@map("incomes")
+}
+
+// -----------------------------------------------------------------------------
+// employee_salaries — Tagihan/akumulasi hak gaji ABK per periode.
+// Draft dulu → jadi paid saat Expense pembayaran gaji dibuat.
+// -----------------------------------------------------------------------------
+
+model EmployeeSalary {
+  id             String        @id @default(uuid())
+
+  // business fields
+  period_id      String
+  employee_id    String        // FK → users (role=abk)
+  salary_amount  Float
+  payment_status PaymentStatus @default(draft)
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  period   ProductionPeriod @relation(fields: [period_id],   references: [id])
+  employee User             @relation("EmployeeSalaries", fields: [employee_id], references: [id])
+  expenses Expense[]
+
+  @@index([period_id])
+  @@index([employee_id])
+  @@map("employee_salaries")
+}
+
+// -----------------------------------------------------------------------------
+// expenses — Arus kas keluar (BOP, Pakan, OVK, Gaji).
+// salary_id nullable: diisi jika pengeluaran ini adalah pembayaran gaji ABK.
+// -----------------------------------------------------------------------------
+
+model Expense {
+  id          String   @id @default(uuid())
+
+  // business fields
+  period_id   String
+  user_id     String
+  salary_id   String?
+  date        DateTime
+  category    String
+  amount      Float
+  receipt_url String?
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  period  ProductionPeriod @relation(fields: [period_id], references: [id])
+  user    User             @relation(fields: [user_id],   references: [id])
+  salary  EmployeeSalary?  @relation(fields: [salary_id], references: [id])
+
+  @@index([period_id])
+  @@index([salary_id])
+  @@map("expenses")
+}
+
+// -----------------------------------------------------------------------------
+// rhpps — Rekapitulasi Hasil Pemeliharaan Periode.
+// Di-lock/final saat periode ditutup. Tidak bisa diedit ulang.
+// Satu periode → satu RHPP (1:1).
+// -----------------------------------------------------------------------------
+
+model Rhpp {
+  id                String @id @default(uuid())
+
+  // business fields
+  period_id         String @unique
+  total_income      Float
+  total_expense     Float
+  net_profit        Float
+  final_fcr         Float
+  final_ip          Float
+  depletion_percent Float
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  // relations
+  period ProductionPeriod @relation(fields: [period_id], references: [id])
+
+  @@map("rhpps")
+}
+
+// =============================================================================
+// KELOMPOK 6: Edukasi & Utilitas (Modul 10, 11 & 12)
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// education_articles — Konten edukatif yang bisa diakses secara offline.
+// -----------------------------------------------------------------------------
+
+model EducationArticle {
+  id               String        @id @default(uuid())
+
+  // business fields
+  title            String
+  category         String
+  content_markdown String        @db.Text
+  thumbnail_url    String?
+  status           ArticleStatus @default(draft)
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  @@map("education_articles")
+}
+
+// -----------------------------------------------------------------------------
+// price_references — Referensi harga komoditi eksternal (live link).
+// -----------------------------------------------------------------------------
+
+model PriceReference {
+  id              String  @id @default(uuid())
+
+  // business fields
+  name            String
+  highlight_price Float?
+  source          String?
+  link_url        String?
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  @@map("price_references")
+}
+
+// -----------------------------------------------------------------------------
+// report_templates — Template pesan laporan via WhatsApp.
+// content_placeholder berisi teks dengan variabel (contoh: {{nama_farm}}).
+// -----------------------------------------------------------------------------
+
+model ReportTemplate {
+  id                  String @id @default(uuid())
+
+  // business fields
+  name                String
+  report_type         String
+  content_placeholder String @db.Text
+
+  // offline-first fields
+  sync_status       SyncStatus @default(pending)
+  created_at_client DateTime
+  updated_at_client DateTime
+  deleted_at        DateTime?
+
+  @@map("report_templates")
+}
