@@ -1,0 +1,77 @@
+# Metadata yang selalu dikirim oleh Mobile saat POST (Sync/Online)
+OfflineMetadataRequest:
+  type: object
+  required: [id, created_at_client, updated_at_client]
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: UUID lokal dari SQLite.
+    created_at_client:
+      type: string
+      format: date-time
+    updated_at_client:
+      type: string
+      format: date-time
+
+# Metadata yang selalu dikembalikan oleh Server saat Response
+OfflineMetadataResponse:
+  type: object
+  properties:
+    server_id:
+      type: integer
+      example: 1
+    version:
+      type: integer
+      default: 1
+    sync_status:
+      type: string
+      enum: [SYNCED, CONFLICT]
+    created_at_server:
+      type: string
+      format: date-time
+    updated_at_server:
+      type: string
+      format: date-time
+    deleted_at:
+      type:
+        - string
+        - "null"
+      format: date-time
+
+# --- RESPONSE SCHEMAS ---
+GeneralResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "Operation successful"
+    data:
+      type: object
+      description: |-
+        Field tambahan jika diperlukan di masa depan. Bisa berupa objek atau null.
+
+    # =====================
+    # ERROR RESPONSE
+    # =====================
+ValidationErrorResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: false
+    message:
+      type: string
+      example: "The given data was invalid."
+    errors:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: string
+      example:
+        username:
+          - "The username has already been taken."

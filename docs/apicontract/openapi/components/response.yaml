@@ -1,0 +1,83 @@
+ValidationError:
+  description: Validasi gagal (input tidak valid)
+  content:
+    application/json:
+      schema:
+        $ref: "./general.yaml#/ValidationErrorResponse"
+      example:
+        success: false
+        message: "Input tidak valid."
+        errors:
+          name: ["Field ini wajib diisi."]
+
+UnauthorizedError:
+  description: Unauthenticated
+  content:
+    application/json:
+      schema:
+        $ref: "./general.yaml#/ValidationErrorResponse"
+      example:
+        success: false
+        message: "Token tidak valid atau kadaluarsa."
+        errors: {}
+
+ForbiddenError:
+  description: Forbidden (tidak punya akses role)
+  content:
+    application/json:
+      schema:
+        $ref: "./general.yaml#/ValidationErrorResponse"
+      example:
+        success: false
+        message: "Anda tidak memiliki hak akses."
+        errors: {}
+
+NotFoundError:
+  description: Resource tidak ditemukan
+  content:
+    application/json:
+      schema:
+        $ref: "./general.yaml#/ValidationErrorResponse"
+      example:
+        success: false
+        message: "Data tidak ditemukan di sistem."
+        errors: {}
+
+    # --- RESPONSE SCHEMAS ---
+PaginationMetaPage:
+  type: object
+  description: Metadata untuk pagination berbasis page/limit
+  properties:
+    total:
+      type: integer
+      example: 2
+    per_page:
+      type: integer
+      example: 10
+    current_page:
+      type: integer
+      example: 1
+    last_page:
+      type: integer
+      example: 1
+
+PaginationMetaCursor:
+  type: object
+  description: Metadata untuk pagination berbasis cursor
+  properties:
+    next_cursor:
+      type:
+        - string
+        - "null"
+      example: "cursor-uuid-1234"
+    prev_cursor:
+      type:
+        - string
+        - "null"
+      example: null
+    has_next:
+      type: boolean
+      example: true
+    has_prev:
+      type: boolean
+      example: false

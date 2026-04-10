@@ -1,0 +1,175 @@
+# --- BASE SCHEMAS (Business Fields Only) ---
+ReportTemplateBase:
+  type: object
+  required: [name, report_type, content_placeholder]
+  properties:
+    name:
+      type: string
+      example: "Laporan Panen Mingguan"
+      description: Nama template laporan
+    report_type:
+      type: string
+      example: "WHATSAPP"
+      description: "Jenis laporan atau media (misal: WHATSAPP, EMAIL, dsb)"
+    content_placeholder:
+      type: string
+      example: "Halo {{nama_farm}}, hasil panen minggu ini ..."
+      description: Teks template dengan variabel placeholder
+
+# --- REQUEST SCHEMAS (Dikirim oleh App/Client) ---
+ReportTemplateRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/ReportTemplateBase"
+
+# --- RESPONSE SCHEMAS (Dibalas oleh Server) ---
+ReportTemplateResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/ReportTemplateRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+# --- BASE SCHEMAS (Business Fields Only) ---
+OvkItemBase:
+  type: object
+  required: [name, type, unit]
+  properties:
+    name:
+      type: string
+      example: "Vita Stress"
+      description: Nama obat, vaksin, atau bahan kimia
+    type:
+      type: string
+      enum: [OBAT, VAKSIN, KIMIA]
+      example: "OBAT"
+      description: Jenis item (OBAT/VAKSIN/KIMIA)
+    unit:
+      type: string
+      example: "gram"
+      description: Satuan pengukuran (gram, botol, sachet, dll)
+    description:
+      type: ["string", "null"]
+      example: "Vitamin untuk mengurangi stres ayam."
+      description: Keterangan tambahan
+    is_active:
+      type: boolean
+      default: true
+      example: true
+
+# --- REQUEST SCHEMAS (Dikirim oleh App/Client) ---
+OvkItemRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/OvkItemBase"
+
+# --- RESPONSE SCHEMAS (Dibalas oleh Server) ---
+OvkItemResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/OvkItemRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+# --- BASE SCHEMAS (Business Fields Only) ---
+TransactionCategoryBase:
+  type: object
+  required: [name, type]
+  properties:
+    name:
+      type: string
+      example: "Pemasukan Panen"
+      description: Nama kategori transaksi
+    type:
+      type: string
+      enum: [INCOME, EXPENSE]
+      example: "INCOME"
+      description: Jenis transaksi (INCOME/EXPENSE)
+    is_active:
+      type: boolean
+      default: true
+      example: true
+
+# --- REQUEST SCHEMAS (Dikirim oleh App/Client) ---
+TransactionCategoryRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/TransactionCategoryBase"
+
+# --- RESPONSE SCHEMAS (Dibalas oleh Server) ---
+TransactionCategoryResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/TransactionCategoryRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+# --- BASE SCHEMAS (Business Fields Only) ---
+FormConfigBase:
+  type: object
+  required: [category, key_name, config_value]
+  properties:
+    category:
+      $ref: "../components/enums.yaml#/FormCategoryEnum"
+    key_name:
+      type: string
+      example: "temp_sensor_1"
+      description: Kunci unik/slug untuk field ini di database.
+    config_value:
+      type: string
+      example: '{"type": "number", "unit": "Celcius", "required": true}'
+      description: Konfigurasi struktur UI dalam format JSON string.
+
+EquipmentTypeBase:
+  type: object
+  required: [name]
+  properties:
+    name:
+      type: string
+      example: "Kipas Exhaust 50 inch"
+    description:
+      type: ["string", "null"]
+      example: "Kipas angin utama untuk tipe kandang closed house."
+
+# --- REQUEST SCHEMAS (Dikirim oleh App/Client) ---
+FormConfigRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/FormConfigBase"
+
+EquipmentTypeRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/EquipmentTypeBase"
+
+# --- RESPONSE SCHEMAS (Dibalas oleh Server) ---
+FormConfigResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/FormConfigRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+
+EquipmentTypeResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/EquipmentTypeRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"

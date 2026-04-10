@@ -1,0 +1,208 @@
+login:
+  post:
+    tags: [Auth]
+    summary: Login & Device Binding.
+    description: Login dan mengunci akun ke 1 perangkat (device binding.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            # Merujuk ke file utama yang memegang definisi komponen
+            $ref: "../openapi.yaml#/components/schemas/LoginRequest"
+          example:
+            username: "budi_abk1"
+            password: "RahasiaPassword123!"
+            device_id: "android-uuid-xxx-yyy"
+    responses:
+      "200":
+        description: Login berhasil
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/LoginResponse"
+      "401":
+        description: Login gagal (username/password/device salah)
+        content:
+          application/json:
+            schema:
+              # Jika merujuk langsung ke file general
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+
+me:
+  get:
+    tags: [Auth]
+    summary: Cek sesi aktif user
+    description: Cek sesi aktif & tarik hak akses (role & coop_assignments).
+    responses:
+      "200":
+        description: Data user aktif & hak akses
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/UserResponse"
+            example:
+              id: "user-uuid-1234"
+              username: "budi_abk1"
+              name: "Budi Santoso"
+              role: "abk"
+              phone: "+628123456789"
+              email: "budi@andersonfarm.id"
+              device_id: "android-uuid-xxx-yyy"
+              coop_assignments:
+                - coop_id: "coop-uuid-1234"
+                  coop_name: "Kandang A1"
+                - coop_id: "coop-uuid-5678"
+                  coop_name: "Kandang B2"
+              is_active: true
+              created_at: "2024-01-01T12:00:00Z"
+              updated_at: "2024-01-10T12:00:00Z"
+      "401":
+        description: Tidak ada sesi aktif / token tidak valid
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Token tidak valid atau sesi sudah berakhir."
+              errors: {}
+
+logout:
+  post:
+    tags:
+      - Auth
+    summary: Logout user
+    description: Menghapus (revoke) token dari server untuk mengakhiri sesi.
+    security:
+      - sanctum: [] # Mengasumsikan penggunaan Laravel Sanctum
+    responses:
+      "200":
+        description: Logout berhasil
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        description: Unauthenticated (Token tidak valid atau sudah kadaluarsa)
+
+fcm-token:
+  post:
+    tags:
+      - Auth
+    summary: Simpan token FCM
+    description: Simpan token Firebase untuk menerima Push Notification pada perangkat yang sedang digunakan.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/FcmTokenRequest"
+    responses:
+      "200":
+        description: Token berhasil disimpan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+      "422":
+        description: Validasi gagal (misal token kosong atau format salah)
+
+forgot-password:
+  post:
+    tags: [Auth]
+    summary: Permintaan reset password (OTP/Link)
+    description: Endpoint publik untuk meminta OTP atau link reset password.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/ForgotPasswordRequest"
+          example:
+            username: "budi_abk1"
+            via: "email"
+    responses:
+      "200":
+        description: Permintaan reset password berhasil, OTP/link dikirim
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+            example:
+              success: true
+              message: "OTP telah dikirim ke email Anda."
+              data: {}
+      "404":
+        description: User tidak ditemukan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "User tidak ditemukan."
+              errors: {}
+      "422":
+        description: Validasi gagal (input tidak valid)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Input tidak valid."
+              errors:
+                username:
+                  - "Username wajib diisi."
+
+reset-password:
+  post:
+    tags: [Auth]
+    summary: Submit password baru (dengan OTP)
+    description: Endpoint publik untuk submit password baru menggunakan OTP.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/ResetPasswordRequest"
+          example:
+            username: "budi_abk1"
+            otp: "123456"
+            new_password: "PasswordBaru123!"
+    responses:
+      "200":
+        description: Password berhasil direset
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+            example:
+              success: true
+              message: "Password berhasil direset. Silakan login dengan password baru."
+              data: {}
+      "400":
+        description: OTP salah atau sudah kadaluarsa
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "OTP salah atau sudah kadaluarsa."
+              errors: {}
+      "422":
+        description: Validasi gagal (input tidak valid)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Input tidak valid."
+              errors:
+                new_password:
+                  - "Password minimal 8 karakter."

@@ -1,0 +1,76 @@
+coop-equipments:
+  post:
+    tags: [Setup - Coop Equipment]
+    summary: Registrasi alat fisik ke kandang
+    description: |
+      Menambahkan alat fisik (Heater, Sensor, dll) ke kandang tertentu. Sistem akan mengikat coop_id dengan equipment_type_id dan unit_code (serial number alat).
+      Validasi: equipment_type_id dan coop_id harus valid.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/setup.yaml#/CoopEquipmentRequest"
+    responses:
+      "201":
+        description: Alat fisik berhasil diregistrasi ke kandang
+        content:
+          application/json:
+            schema:
+              $ref: "../components/setup.yaml#/CoopEquipmentResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+  delete:
+    tags: [Setup - Coop Equipment]
+    summary: Cabut alat fisik dari kandang
+    description: |
+      Melakukan soft delete (update deleted_at) pada alat fisik yang dicabut dari kandang. Backend WAJIB menonaktifkan/menghapus data anak di coop_form_assignments yang terikat dengan alat ini.
+    security:
+      - sanctum: []
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+    responses:
+      "200":
+        $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
+coop-form-assignments:
+  post:
+    tags: [Setup - Coop Form Assignment]
+    summary: Aktifkan form dinamis ke alat fisik kandang
+    description: |
+      Mengaitkan form_config (bank soal) ke alat fisik (coop_equipment) di kandang tertentu.
+      Payload WAJIB menyertakan coop_equipment_id (alat fisik) dan form_config_id (bank soal).
+      Validasi: coop_equipment_id dan form_config_id harus valid.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/setup.yaml#/CoopFormAssignmentRequest"
+    responses:
+      "201":
+        description: Form berhasil diassign ke alat fisik
+        content:
+          application/json:
+            schema:
+              $ref: "../components/setup.yaml#/CoopFormAssignmentResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"

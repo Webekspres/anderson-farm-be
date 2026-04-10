@@ -1,0 +1,379 @@
+users:
+  get:
+    tags: [Users]
+    summary: Daftar pengguna (paginasi)
+    description: Tarik daftar pekerja (paginasi).
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/PageParam"
+      - $ref: "../openapi.yaml#/components/parameters/PerPageParam"
+      - $ref: "../openapi.yaml#/components/parameters/CursorParam"
+      - $ref: "../openapi.yaml#/components/parameters/LimitParam"
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Pencarian username/nama/email
+    responses:
+      "200":
+        description: Daftar user dengan paginasi
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/UserListResponse"
+            example:
+              success: true
+              message: "Daftar user berhasil diambil."
+              data:
+                total: 2
+                per_page: 10
+                current_page: 1
+                last_page: 1
+                users:
+                  - id: "user-uuid-1234"
+                    username: "budi_abk1"
+                    name: "Budi Santoso"
+                    role: "abk"
+                    email: "budi@andersonfarm.id"
+                    phone: "+628123456789"
+                    is_active: true
+                    created_at: "2024-01-01T12:00:00Z"
+                    updated_at: "2024-01-10T12:00:00Z"
+                  - id: "user-uuid-5678"
+                    username: "sari_manager"
+                    name: "Sari Dewi"
+                    role: "manager"
+                    email: "sari@andersonfarm.id"
+                    phone: "+628987654321"
+                    is_active: true
+                    created_at: "2024-01-02T12:00:00Z"
+                    updated_at: "2024-01-11T12:00:00Z"
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Token tidak valid."
+              errors: {}
+  post:
+    tags: [Users]
+    summary: Buat pengguna baru
+    description: |
+      Buat pekerja baru. Endpoint ini hanya dapat diakses oleh user dengan role admin.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/UserCreateRequest"
+          example:
+            username: "budi_abk1"
+            password: "RahasiaPassword123!"
+            name: "Budi Santoso"
+            email: "budi@andersonfarm.id"
+            phone: "+628123456789"
+            role: "abk"
+    responses:
+      "201":
+        description: User berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/UserResponse"
+            example:
+              id: "user-uuid-1234"
+              username: "budi_abk1"
+              name: "Budi Santoso"
+              role: "abk"
+              email: "budi@andersonfarm.id"
+              phone: "+628123456789"
+              is_active: true
+              created_at: "2024-01-01T12:00:00Z"
+              updated_at: "2024-01-10T12:00:00Z"
+      "400":
+        description: Username/email sudah terdaftar
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Username/email sudah terdaftar."
+              errors:
+                username:
+                  - "Username sudah digunakan."
+      "422":
+        description: Validasi gagal
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Input tidak valid."
+              errors:
+                password:
+                  - "Password minimal 8 karakter."
+
+userSingle:
+  put:
+    tags: [Users]
+    summary: Edit profil pekerja (full)
+    description: |
+      Edit seluruh data profil pekerja. Hanya dapat diakses oleh admin dan manager.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/UserCreateRequest"
+          example:
+            username: "budi_abk1"
+            password: "RahasiaPassword123!"
+            name: "Budi Santoso"
+            email: "budi@andersonfarm.id"
+            phone: "+628123456789"
+            role: "abk"
+    responses:
+      "200":
+        description: Profil pekerja berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/UserResponse"
+            example:
+              id: "user-uuid-1234"
+              username: "budi_abk1"
+              name: "Budi Santoso"
+              role: "abk"
+              email: "budi@andersonfarm.id"
+              phone: "+628123456789"
+              is_active: true
+              created_at: "2024-01-01T12:00:00Z"
+              updated_at: "2024-01-10T12:00:00Z"
+      "400":
+        description: Username/email sudah terdaftar
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+      "403":
+        description: Forbidden (tidak punya akses)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+      "422":
+        description: Validasi gagal
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+
+  patch:
+    tags: [Users]
+    summary: Edit parsial profil pekerja
+    description: |
+      Edit sebagian data profil pekerja, misal reset/unbind device_id pekerja jika HP hilang. Hanya dapat diakses oleh admin dan manager.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Nama lengkap user
+                example: "Budi Santoso"
+              email:
+                type: string
+                format: email
+                description: Email user (opsional)
+                example: "budi@andersonfarm.id"
+              phone:
+                type: string
+                description: Nomor HP user (opsional)
+                example: "+628123456789"
+              device_id:
+                type: string
+                description: UUID perangkat (opsional, untuk reset/unbind)
+                example: null
+          example:
+            name: "Budi Santoso"
+            device_id: null
+    responses:
+      "200":
+        description: Profil pekerja berhasil diupdate (parsial)
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/UserResponse"
+            example:
+              id: "user-uuid-1234"
+              username: "budi_abk1"
+              name: "Budi Santoso"
+              role: "abk"
+              email: "budi@andersonfarm.id"
+              phone: "+628123456789"
+              is_active: true
+              created_at: "2024-01-01T12:00:00Z"
+              updated_at: "2024-01-10T12:00:00Z"
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+      "403":
+        description: Forbidden (tidak punya akses)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+      "422":
+        description: Validasi gagal
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+
+  delete:
+    tags: [Users]
+    summary: Hapus akun pekerja (soft-delete)
+    description: |
+      Hapus akun pekerja (soft-delete). Hanya dapat diakses oleh admin.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        description: Akun pekerja berhasil dihapus (soft-delete)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+            example:
+              success: true
+              message: "Akun pekerja berhasil dihapus."
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+      "403":
+        description: Forbidden (tidak punya akses)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+
+change-password:
+  post:
+    tags: [Users]
+    summary: Ubah password mandiri
+    description: Ubah password mandiri bagi user yang sedang login.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - old_password
+              - new_password
+            properties:
+              old_password:
+                type: string
+                format: password
+                minLength: 8
+                description: Password lama user
+                example: "RahasiaPassword123!"
+              new_password:
+                type: string
+                format: password
+                minLength: 8
+                description: Password baru user
+                example: "PasswordBaru456!"
+          example:
+            old_password: "RahasiaPassword123!"
+            new_password: "PasswordBaru456!"
+    responses:
+      "200":
+        description: Password berhasil diubah
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+            example:
+              success: true
+              message: "Password berhasil diubah. Silakan login ulang jika diperlukan."
+              data: {}
+      "400":
+        description: Password lama salah
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Password lama salah."
+              errors:
+                old_password:
+                  - "Password lama tidak sesuai."
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Token tidak valid."
+              errors: {}
+      "422":
+        description: Validasi gagal (input tidak valid)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Input tidak valid."
+              errors:
+                new_password:
+                  - "Password minimal 8 karakter."

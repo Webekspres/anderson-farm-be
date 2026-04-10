@@ -1,0 +1,39 @@
+# --- BASE SCHEMAS (Business Fields Only) ---
+CoopDocumentBase:
+  type: object
+  required: [name, file_type]
+  properties:
+    name:
+      type: string
+      example: "SOP Biosecurity"
+      description: Nama dokumen
+    file_path_local:
+      type: ["string", "null"]
+      example: "/files/sop-biosecurity.pdf"
+      description: Path file di server (jika ada)
+    file_url:
+      type: ["string", "null"]
+      example: "https://andersonfarm.id/files/sop-biosecurity.pdf"
+      description: URL file (jika ada)
+    file_type:
+      type: string
+      example: "pdf"
+      description: Jenis file (pdf, jpg, png, dll)
+
+# --- REQUEST SCHEMAS (Dikirim oleh App/Client) ---
+CoopDocumentRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/CoopDocumentBase"
+
+# --- RESPONSE SCHEMAS (Dibalas oleh Server) ---
+CoopDocumentResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/CoopDocumentRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"

@@ -1,0 +1,361 @@
+report-templates:
+  post:
+    tags: [Master - Report Template]
+    summary: Tambah Template Laporan
+    description: Mendaftarkan template auto-teks laporan WhatsApp baru.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/ReportTemplateRequest"
+    responses:
+      "201":
+        description: Template laporan berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/ReportTemplateResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+single-report-templates:
+  parameters:
+    - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+  put:
+    tags: [Master - Report Template]
+    summary: Edit Template Laporan
+    description: Mengubah data template auto-teks laporan WhatsApp.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/ReportTemplateRequest"
+    responses:
+      "200":
+        description: Template laporan berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/ReportTemplateResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+  delete:
+    tags: [Master - Report Template]
+    summary: Hapus Template Laporan
+    description: Menghapus (soft-delete) template auto-teks laporan WhatsApp.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+ovk-items:
+  post:
+    tags: [Master - OVK Item]
+    summary: Tambah OVK Item
+    description: Mendaftarkan obat, vaksin, atau bahan kimia baru.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/OvkItemRequest"
+    responses:
+      "201":
+        description: OVK Item berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/OvkItemResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+single-ovk-items:
+  parameters:
+    - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+  put:
+    tags: [Master - OVK Item]
+    summary: Edit OVK Item
+    description: Mengubah data obat, vaksin, atau bahan kimia.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/OvkItemRequest"
+    responses:
+      "200":
+        description: OVK Item berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/OvkItemResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+  delete:
+    tags: [Master - OVK Item]
+    summary: Hapus OVK Item
+    description: Menghapus (soft-delete) obat, vaksin, atau bahan kimia.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+transaction-categories:
+  post:
+    tags: [Master - Transaction Category]
+    summary: Tambah Kategori Transaksi
+    description: "Mendaftarkan kategori arus kas baru (misal: Pemasukan Panen, Biaya Pakan)."
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/TransactionCategoryRequest"
+    responses:
+      "201":
+        description: Kategori berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/TransactionCategoryResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+single-transaction-categories:
+  parameters:
+    - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+  put:
+    tags: [Master - Transaction Category]
+    summary: Edit Kategori Transaksi
+    description: Mengubah data kategori arus kas.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/TransactionCategoryRequest"
+    responses:
+      "200":
+        description: Kategori berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/TransactionCategoryResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+  delete:
+    tags: [Master - Transaction Category]
+    summary: Hapus Kategori Transaksi
+    description: Menghapus (soft-delete) kategori arus kas.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+form-configs:
+  post:
+    tags: [Master - Form Config]
+    summary: Tambah Form Config
+    description: Membuat struktur UI/pertanyaan baru untuk Master HBE atau Alat.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/FormConfigRequest"
+    responses:
+      "201":
+        description: Form Config berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/FormConfigResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+single-form-configs:
+  parameters:
+    - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+  put:
+    tags: [Master - Form Config]
+    summary: Edit Form Config
+    description: Mengubah struktur JSON pertanyaan/konfigurasi UI.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/FormConfigRequest"
+    responses:
+      "200":
+        description: Form Config berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/FormConfigResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+  delete:
+    tags: [Master - Form Config]
+    summary: Hapus Form Config
+    description: Menghapus (soft-delete) bank soal form dinamis.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
+equipment-types:
+  post:
+    tags: [Master - Equipment]
+    summary: Tambah Tipe Alat
+    description: Mendaftarkan jenis atau merk alat fisik baru (misal Temptron).
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/EquipmentTypeRequest"
+    responses:
+      "201":
+        description: Equipment Type berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/EquipmentTypeResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+single-equipment-types:
+  parameters:
+    - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+  put:
+    tags: [Master - Equipment]
+    summary: Edit Tipe Alat
+    description: Mengubah data referensi merk alat kandang.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/master-setup.yaml#/EquipmentTypeRequest"
+    responses:
+      "200":
+        description: Equipment Type berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/EquipmentTypeResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+  delete:
+    tags: [Master - Equipment]
+    summary: Hapus Tipe Alat
+    description: Menghapus (soft-delete) referensi merk alat.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"

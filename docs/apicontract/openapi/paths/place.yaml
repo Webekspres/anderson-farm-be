@@ -1,0 +1,527 @@
+coops:
+  post:
+    tags: [Master]
+    summary: Tambah kandang
+    description: Tambah bangunan fisik kandang.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/CoopRequest"
+          example:
+            id: "coop-uuid-1234"
+            farm_id: "farm-uuid-5678"
+            name: "Kandang A1"
+            capacity: 10000
+            floor: 1
+            coop_type: "open_house"
+            note: "Kandang utama untuk starter"
+            is_active: true
+            created_at_client: "2024-01-01T12:00:00Z"
+            updated_at_client: "2024-01-10T12:00:00Z"
+    responses:
+      "201":
+        description: Kandang berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/CoopResponse"
+            example:
+              success: true
+              data:
+                id: "coop-uuid-1234"
+                farm_id: "farm-uuid-5678"
+                name: "Kandang A1"
+                capacity: 10000
+                floor: 1
+                coop_type: "open_house"
+                note: "Kandang utama untuk starter"
+                is_active: true
+                created_at_client: "2024-01-01T12:00:00Z"
+                updated_at_client: "2024-01-10T12:00:00Z"
+                server_id: 1
+                version: 1
+                sync_status: "SYNCED"
+                created_at_server: "2024-01-01T12:00:00Z"
+                updated_at_server: "2024-01-10T12:00:00Z"
+                deleted_at: null
+      "400":
+        description: Validasi gagal (input tidak valid)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Input tidak valid."
+              errors:
+                name:
+                  - "Nama kandang wajib diisi."
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Token tidak valid."
+              errors: {}
+      "403":
+        description: Forbidden (tidak punya akses)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Anda tidak punya akses."
+              errors: {}
+
+coopSingle:
+  put:
+    tags: [Master]
+    summary: Edit kandang
+    description: Edit bangunan fisik kandang.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/CoopRequest"
+          example:
+            id: "coop-uuid-1234"
+            farm_id: "farm-uuid-5678"
+            name: "Kandang A1"
+            capacity: 10000
+            floor: 1
+            coop_type: "open_house"
+            note: "Kandang utama untuk starter"
+            is_active: true
+            created_at_client: "2024-01-01T12:00:00Z"
+            updated_at_client: "2024-01-10T12:00:00Z"
+    responses:
+      "200":
+        description: Kandang berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/CoopResponse"
+            example:
+              success: true
+              data:
+                id: "coop-uuid-1234"
+                farm_id: "farm-uuid-5678"
+                name: "Kandang A1"
+                capacity: 10000
+                floor: 1
+                coop_type: "open_house"
+                note: "Kandang utama untuk starter"
+                is_active: true
+                created_at_client: "2024-01-01T12:00:00Z"
+                updated_at_client: "2024-01-10T12:00:00Z"
+                server_id: 1
+                version: 2
+                sync_status: "SYNCED"
+                created_at_server: "2024-01-01T12:00:00Z"
+                updated_at_server: "2024-01-10T12:00:00Z"
+                deleted_at: null
+      "400":
+        description: Validasi gagal (input tidak valid)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Input tidak valid."
+              errors:
+                name:
+                  - "Nama kandang wajib diisi."
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Token tidak valid."
+              errors: {}
+      "403":
+        description: Forbidden (tidak punya akses)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Anda tidak punya akses."
+              errors: {}
+      "404":
+        description: Kandang tidak ditemukan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Kandang tidak ditemukan."
+              errors: {}
+
+  delete:
+    tags: [Master]
+    summary: Hapus kandang
+    description: Hapus kandang (soft-delete). Hanya dapat diakses oleh admin.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: id
+        required: true
+        schema:
+          type: string
+        description: ID kandang yang akan dihapus
+    responses:
+      "200":
+        description: Kandang berhasil dihapus (soft-delete)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+            example:
+              success: true
+              message: "Kandang berhasil dihapus."
+              data: {}
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Token tidak valid."
+              errors: {}
+      "403":
+        description: Forbidden (tidak punya akses)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Anda tidak punya akses."
+              errors: {}
+      "404":
+        description: Kandang tidak ditemukan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Kandang tidak ditemukan."
+              errors: {}
+farms:
+  post:
+    tags: [Master]
+    summary: Tambah farm
+    description: Tambah farm di bawah area.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/FarmRequest"
+          example:
+            id: "farm-uuid-1234"
+            area_id: "area-uuid-5678"
+            name: "Farm Bandung Selatan"
+            address: "Jl. Raya Soreang No. 1, Bandung"
+            is_active: true
+            created_at_client: "2024-01-01T12:00:00Z"
+            updated_at_client: "2024-01-10T12:00:00Z"
+    responses:
+      "201":
+        description: Farm berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/FarmResponse"
+            example:
+              success: true
+              data:
+                id: "farm-uuid-1234"
+                area_id: "area-uuid-5678"
+                name: "Farm Bandung Selatan"
+                address: "Jl. Raya Soreang No. 1, Bandung"
+                is_active: true
+                created_at_client: "2024-01-01T12:00:00Z"
+                updated_at_client: "2024-01-10T12:00:00Z"
+                server_id: 1
+                version: 1
+                sync_status: "SYNCED"
+                created_at_server: "2024-01-01T12:00:00Z"
+                updated_at_server: "2024-01-10T12:00:00Z"
+                deleted_at: null
+      "400":
+        description: Validasi gagal (input tidak valid)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Input tidak valid."
+              errors:
+                name:
+                  - "Nama farm wajib diisi."
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Token tidak valid."
+              errors: {}
+      "403":
+        description: Forbidden (tidak punya akses)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Anda tidak punya akses."
+              errors: {}
+
+farmSingle:
+  patch:
+    tags: [Master]
+    summary: Edit farm
+    description: Edit farm di bawah area.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/FarmRequest"
+          example:
+            id: "farm-uuid-1234"
+            area_id: "area-uuid-5678"
+            name: "Farm Bandung Selatan"
+            address: "Jl. Raya Soreang No. 1, Bandung"
+            is_active: true
+            created_at_client: "2024-01-01T12:00:00Z"
+            updated_at_client: "2024-01-10T12:00:00Z"
+    responses:
+      "200":
+        description: Farm berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/FarmResponse"
+            example:
+              success: true
+              data:
+                id: "farm-uuid-1234"
+                area_id: "area-uuid-5678"
+                name: "Farm Bandung Selatan"
+                address: "Jl. Raya Soreang No. 1, Bandung"
+                is_active: true
+                created_at_client: "2024-01-01T12:00:00Z"
+                updated_at_client: "2024-01-10T12:00:00Z"
+                server_id: 1
+                version: 2
+                sync_status: "SYNCED"
+                created_at_server: "2024-01-01T12:00:00Z"
+                updated_at_server: "2024-01-10T12:00:00Z"
+                deleted_at: null
+      "400":
+        description: Validasi gagal (input tidak valid)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Input tidak valid."
+              errors:
+                name:
+                  - "Nama farm wajib diisi."
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Token tidak valid."
+              errors: {}
+      "403":
+        description: Forbidden (tidak punya akses)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Anda tidak punya akses."
+              errors: {}
+      "404":
+        description: Farm tidak ditemukan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Farm tidak ditemukan."
+              errors: {}
+
+  delete:
+    tags: [Master]
+    summary: Hapus farm
+    description: Hapus farm (soft-delete). Hanya dapat diakses oleh admin.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: id
+        required: true
+        schema:
+          type: string
+        description: ID farm yang akan dihapus
+    responses:
+      "200":
+        description: Farm berhasil dihapus (soft-delete)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+            example:
+              success: true
+              message: "Farm berhasil dihapus."
+              data: {}
+      "401":
+        description: Unauthenticated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Token tidak valid."
+              errors: {}
+      "403":
+        description: Forbidden (tidak punya akses)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Anda tidak punya akses."
+              errors: {}
+      "404":
+        description: Farm tidak ditemukan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
+            example:
+              success: false
+              message: "Farm tidak ditemukan."
+              errors: {}
+areas:
+  post:
+    tags: [Master]
+    summary: Tambah area
+    description: Tambah wilayah operasional (Regional/Wilayah).
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/AreaRequest"
+    responses:
+      "201":
+        description: Area berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/AreaResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+areaSingle:
+  # Parameter ini berlaku untuk semua method (PUT, DELETE) di path ini
+  parameters:
+    - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+
+  put:
+    tags: [Master]
+    summary: Edit area
+    description: Edit data wilayah operasional secara keseluruhan.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../openapi.yaml#/components/schemas/AreaRequest" # ID tidak perlu ada di schema request lagi karena sudah di URL
+    responses:
+      "200":
+        description: Area berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../openapi.yaml#/components/schemas/AreaResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
+  delete:
+    tags: [Master]
+    summary: Hapus area
+    description: Hapus area (soft-delete).
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        description: Area berhasil dihapus (soft-delete)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"

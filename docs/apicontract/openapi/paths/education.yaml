@@ -1,0 +1,145 @@
+education-articles:
+  post:
+    tags: [Master - Education Article]
+    summary: Tambah Artikel Edukasi
+    description: Mendaftarkan artikel panduan/edukasi baru.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/education.yaml#/EducationArticleRequest"
+    responses:
+      "201":
+        description: Artikel edukasi berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/education.yaml#/EducationArticleResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+single-education-articles:
+  parameters:
+    - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+  put:
+    tags: [Master - Education Article]
+    summary: Edit Artikel Edukasi
+    description: Mengubah data artikel panduan/edukasi.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/education.yaml#/EducationArticleRequest"
+    responses:
+      "200":
+        description: Artikel edukasi berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../components/education.yaml#/EducationArticleResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+  delete:
+    tags: [Master - Education Article]
+    summary: Hapus Artikel Edukasi
+    description: Menghapus (soft-delete) artikel panduan/edukasi.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
+price-references:
+  post:
+    tags: [Master - Price Reference]
+    summary: Tambah Referensi Harga
+    description: Mendaftarkan referensi harga komoditas baru.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/education.yaml#/PriceReferenceRequest"
+    responses:
+      "201":
+        description: Referensi harga berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/education.yaml#/PriceReferenceResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+single-price-references:
+  parameters:
+    - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+  put:
+    tags: [Master - Price Reference]
+    summary: Edit Referensi Harga
+    description: Mengubah data referensi harga komoditas.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/education.yaml#/PriceReferenceRequest"
+    responses:
+      "200":
+        description: Referensi harga berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../components/education.yaml#/PriceReferenceResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+  delete:
+    tags: [Master - Price Reference]
+    summary: Hapus Referensi Harga
+    description: Menghapus (soft-delete) referensi harga komoditas.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"

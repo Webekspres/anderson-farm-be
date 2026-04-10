@@ -1,0 +1,28 @@
+coop-documents:
+  post:
+    tags: [Setup - Coop Document]
+    summary: Simpan dokumen SOP kandang
+    description: Menyimpan dokumen SOP/Panduan fisik kandang (upload atau URL).
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/documents.yaml#/CoopDocumentRequest"
+    responses:
+      "201":
+        description: Dokumen berhasil disimpan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/documents.yaml#/CoopDocumentResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"

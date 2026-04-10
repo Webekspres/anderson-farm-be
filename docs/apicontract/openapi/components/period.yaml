@@ -1,0 +1,306 @@
+# --- BASE SCHEMAS (Business Fields Only) ---
+
+PeriodBase:
+  type: object
+  required: [coop_id, pic_id, period_code, start_date, initial_stock]
+  properties:
+    coop_id:
+      type: string
+      format: uuid
+      example: "coop-uuid"
+      description: "ID kandang (harus valid, tidak boleh punya periode aktif lain)"
+    pic_id:
+      type: string
+      format: uuid
+      example: "user-uuid"
+      description: ID PIC (user dengan role PIC)
+    period_code:
+      type: string
+      example: "PER-2026-001"
+      description: Kode unik periode
+    start_date:
+      type: string
+      format: date-time
+      example: "2026-04-10T10:00:00Z"
+      description: Tanggal mulai periode
+    end_date:
+      type: ["string", "null"]
+      format: date-time
+      example: null
+      description: Tanggal selesai periode (opsional)
+    initial_stock:
+      type: integer
+      example: 10000
+      description: Populasi awal DOC
+    closing_reason:
+      type: ["string", "null"]
+      example: null
+      description: Alasan penutupan periode (opsional)
+    status:
+      type: string
+      enum: [active, closed]
+      example: active
+      description: Status periode
+
+# --- REQUEST SCHEMAS ---
+
+PeriodRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/PeriodBase"
+
+PeriodEditRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - type: object
+      required: [period_code]
+      properties:
+        period_code:
+          type: string
+          example: "PER-2026-001"
+        start_date:
+          type: string
+          format: date-time
+          example: "2026-04-10T10:00:00Z"
+        end_date:
+          type: ["string", "null"]
+          format: date-time
+          example: null
+        initial_stock:
+          type: integer
+          example: 10000
+        closing_reason:
+          type: ["string", "null"]
+          example: null
+
+# --- RESPONSE SCHEMAS ---
+
+PeriodResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/PeriodRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+
+# --- PERIOD INVESTOR ASSIGNMENT SCHEMAS ---
+PeriodInvestorAssignItem:
+  type: object
+  required: [user_id, profit_share_percentage]
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      example: "user-uuid-investor"
+      description: ID user investor (role harus investor)
+    profit_share_percentage:
+      type: number
+      format: float
+      example: 20.5
+      description: Persentase bagi hasil investor (0-100, total semua investor ≤ 100)
+    initial_investment:
+      type: number
+      format: float
+      example: 10000000
+      description: Modal awal yang disetor (opsional)
+
+PeriodInvestorAssignRequest:
+  - type: array
+    items:
+      $ref: "#/PeriodInvestorAssignItem"
+
+PeriodInvestorAssignResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/PeriodInvestorAssignItem"
+
+# --- PERIOD CHECKLIST TASK ASSIGNMENT SCHEMAS ---
+ChecklistTaskAssignItem:
+  type: object
+  required: [task_name, task_type]
+  properties:
+    task_name:
+      type: string
+      example: "Periksa klorin air minum"
+      description: Nama tugas (unik per periode)
+    task_type:
+      $ref: "../components/enums.yaml#/TaskType"
+      description: Jenis tugas (BOOLEAN = centang, TEXT = isian)
+    description:
+      type: string
+      example: "Cek kadar klorin pada air minum ayam setiap pagi."
+      description: Deskripsi tugas (opsional)
+    is_active:
+      type: boolean
+      default: true
+      description: |
+        Status aktif tugas (default: true)
+
+ChecklistTaskAssignRequest:
+  type: array
+  items:
+    $ref: "#/ChecklistTaskAssignItem"
+
+ChecklistTaskAssignResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/ChecklistTaskAssignItem"
+
+# --- PERIOD FORM ASSIGNMENT SCHEMAS ---
+PeriodFormAssignItem:
+  type: object
+  required: [form_config_id, display_order]
+  properties:
+    form_config_id:
+      type: string
+      format: uuid
+      example: "form-config-uuid"
+      description: ID form_config (pertanyaan HBE dari master)
+    display_order:
+      type: integer
+      example: 1
+      description: Urutan tampilan pertanyaan di aplikasi
+    is_active:
+      type: boolean
+      default: true
+      description: |
+        Status aktif assignment (default: true)
+
+PeriodFormAssignRequest:
+  type: array
+  items:
+    $ref: "#/PeriodFormAssignItem"
+
+PeriodFormAssignResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/PeriodFormAssignItem"
+
+# --- PERIOD CONTRACT SCHEMAS ---
+PeriodContractRequest:
+  type: object
+  required: [title, file_url, uploaded_by]
+  properties:
+    title:
+      type: string
+      example: "Kontrak Bagi Hasil Periode April 2026"
+      description: Judul kontrak (wajib diisi)
+    file_url:
+      type: string
+      format: uri
+      example: "https://andersonfarm.id/contracts/2026-04-01.pdf"
+      description: URL file PDF kontrak (wajib diisi)
+    file_path_local:
+      type: string
+      example: "/storage/contracts/2026-04-01.pdf"
+      description: Path file lokal (opsional, untuk tracking server)
+    uploaded_by:
+      type: string
+      format: uuid
+      example: "user-uuid-manager"
+      description: ID user Manager yang mengunggah kontrak
+
+PeriodContractResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/PeriodContractRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+
+# --- PERIOD DOCUMENT SCHEMAS ---
+PeriodDocumentRequest:
+  type: object
+  required: [title, document_type, file_url, uploaded_by]
+  properties:
+    title:
+      type: string
+      example: "Jadwal OVK Minggu 1"
+      description: Judul dokumen (wajib diisi)
+    document_type:
+      type: string
+      example: "OVK"
+      description: Jenis dokumen (OVK, ARV, OTHER)
+    file_url:
+      type: string
+      format: uri
+      example: "https://andersonfarm.id/docs/ovk-2026-04.pdf"
+      description: URL file dokumen (wajib diisi)
+    file_path_local:
+      type: string
+      example: "/storage/docs/ovk-2026-04.pdf"
+      description: Path file lokal (opsional)
+    uploaded_by:
+      type: string
+      format: uuid
+      example: "user-uuid"
+      description: ID user yang mengunggah dokumen
+
+PeriodDocumentResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/PeriodDocumentRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+
+# --- RHPP DOCUMENT SCHEMAS ---
+RhppDocumentRequest:
+  type: object
+  required: [file_url, file_type]
+  properties:
+    name:
+      type: string
+      example: "RHPP Final April 2026"
+      description: Nama file RHPP (opsional)
+    file_url:
+      type: string
+      format: uri
+      example: "https://andersonfarm.id/rhpp/2026-04-final.pdf"
+      description: URL file RHPP (wajib diisi)
+    file_path_local:
+      type: string
+      example: "/storage/rhpp/2026-04-final.pdf"
+      description: Path file lokal (opsional)
+    file_type:
+      type: string
+      example: "pdf"
+      description: Tipe file (pdf, jpg, png)
+
+RhppDocumentResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/RhppDocumentRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"

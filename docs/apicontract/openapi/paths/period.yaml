@@ -1,0 +1,274 @@
+periods:
+  post:
+    tags: [Setup - Period]
+    summary: Inisiasi periode ternak
+    description: |
+      Membuat kerangka Periode Ternak baru (production_periods).
+      Validasi:
+        - coop_id harus valid dan belum memiliki periode aktif lain.
+        - pic_id harus user dengan role PIC.
+      Satu kandang (coop_id) tidak boleh memiliki lebih dari satu periode dengan status active.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/period.yaml#/PeriodRequest"
+    responses:
+      "201":
+        description: Periode ternak berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/PeriodResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+  put:
+    tags: [Setup - Period]
+    summary: Edit periode ternak
+    description: |
+      Mengedit metadata periode ternak (misal: initial_stock, start_date).
+      Endpoint ini harus dikunci jika umur ayam sudah melebihi hari tertentu (tidak bisa diedit jika sudah berjalan lama).
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/period.yaml#/PeriodEditRequest"
+    responses:
+      "200":
+        description: Periode ternak berhasil diupdate
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/PeriodResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+periods-investors:
+  post:
+    tags: [Setup - Period Investor]
+    summary: Assign investor ke periode
+    description: |
+      Menentukan siapa saja yang menanam modal dan berapa jatah kue (laba) mereka.
+      Menerima array atau satu per satu ID investor beserta profit_share_percentage.
+      Validasi:
+        - user_id harus user dengan role investor.
+        - Total profit_share_percentage untuk periode ini tidak boleh melebihi 100%.
+    security:
+      - sanctum: []
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/period.yaml#/PeriodInvestorAssignRequest"
+    responses:
+      "201":
+        description: Investor berhasil diassign ke periode
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/PeriodInvestorAssignResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+periods-checklist-tasks:
+  post:
+    tags: [Setup - Checklist Task]
+    summary: Generate checklist tugas periode
+    description: |
+      Membuat daftar tugas harian (SOP/To-Do List) untuk periode tertentu.
+      Payload berupa array of objects (nama tugas, tipe, deskripsi opsional).
+      Validasi:
+        - period_id harus valid (ada di production_periods)
+        - task_name wajib diisi, unik per periode
+        - task_type wajib BOOLEAN atau TEXT
+      Data akan disimpan ke tabel checklist_tasks dan diikat ke ID periode.
+    security:
+      - sanctum: []
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/period.yaml#/ChecklistTaskAssignRequest"
+    responses:
+      "201":
+        description: Checklist tugas berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/ChecklistTaskAssignResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+periods-form-assignments:
+  post:
+    tags: [Setup - Form Assignment]
+    summary: Assign form HBE ke periode
+    description: |
+      Menugaskan pertanyaan teknis HBE (dari master form_configs) ke periode tertentu.
+      Payload berupa array of objects (form_config_id, display_order, is_active).
+      Validasi:
+        - period_id harus valid (ada di production_periods)
+        - form_config_id harus valid (ada di form_configs)
+        - display_order wajib unik per periode
+      Data akan disimpan ke tabel period_form_assignments.
+    security:
+      - sanctum: []
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/period.yaml#/PeriodFormAssignRequest"
+    responses:
+      "201":
+        description: Form assignment berhasil dibuat
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/PeriodFormAssignResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+periods-contracts:
+  post:
+    tags: [Setup - Contract]
+    summary: Simpan kontrak bagi hasil periode
+    description: |
+      Menyimpan dokumen kontrak (PDF/URL) bagi hasil untuk periode ternak tertentu.
+      Validasi:
+        - period_id harus valid (ada di production_periods)
+        - uploaded_by harus user Manager yang valid
+        - title wajib diisi
+        - file_url wajib diisi (URL file PDF kontrak)
+      Data akan disimpan ke tabel contract_abks.
+      Kontrak ini wajib ada sebelum ABK bisa melakukan persetujuan digital.
+    security:
+      - sanctum: []
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/period.yaml#/PeriodContractRequest"
+    responses:
+      "201":
+        description: Kontrak berhasil disimpan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/PeriodContractResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+periods-documents:
+  post:
+    tags: [Setup - Period Document]
+    summary: Simpan dokumen periode
+    description: |
+      Menyimpan dokumen operasional (jadwal, OVK, ARV, dll) untuk periode ternak tertentu.
+      Validasi:
+        - period_id harus valid (ada di production_periods)
+        - uploaded_by harus user yang valid
+        - title wajib diisi
+        - document_type wajib diisi (OVK, ARV, OTHER)
+        - file_url wajib diisi (URL file dokumen)
+      Data akan disimpan ke tabel period_documents.
+    security:
+      - sanctum: []
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/period.yaml#/PeriodDocumentRequest"
+    responses:
+      "201":
+        description: Dokumen periode berhasil disimpan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/PeriodDocumentResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+periods-rhpp-documents:
+  post:
+    tags: [Setup - RHPP Document]
+    summary: Simpan dokumen RHPP final
+    description: |
+      Menyimpan dokumen RHPP (rekap final) untuk periode ternak tertentu.
+      Validasi:
+        - period_id harus valid (ada di production_periods)
+        - Backend akan mencari/membuat baris rhpps (1:1 dengan periode)
+        - file_url wajib diisi (URL file PDF RHPP)
+        - file_type wajib diisi (pdf, jpg, png)
+      Data akan disimpan ke tabel rhpp_documents (relasi via rhpp_id).
+    security:
+      - sanctum: []
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/period.yaml#/RhppDocumentRequest"
+    responses:
+      "201":
+        description: Dokumen RHPP berhasil disimpan
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/RhppDocumentResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"

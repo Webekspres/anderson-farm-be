@@ -1,0 +1,87 @@
+# --- BASE SCHEMAS (Business Fields Only) ---
+EducationArticleBase:
+  type: object
+  required: [name]
+  properties:
+    name:
+      type: string
+      example: "Panduan Vaksinasi Ayam"
+      description: Judul artikel edukasi
+    highlight_price:
+      type: number
+      format: float
+      example: 12000
+      description: Harga highlight (jika ada)
+      nullable: true
+    link_url:
+      type: string
+      example: "https://andersonfarm.id/artikel/123"
+      description: Link ke sumber artikel (jika ada)
+      nullable: true
+    image_url:
+      type: string
+      example: "https://andersonfarm.id/images/artikel-123.jpg"
+      description: Link gambar artikel (jika ada)
+      nullable: true
+
+# --- REQUEST SCHEMAS (Dikirim oleh App/Client) ---
+EducationArticleRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/EducationArticleBase"
+
+# --- RESPONSE SCHEMAS (Dibalas oleh Server) ---
+EducationArticleResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/EducationArticleRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+
+# --- BASE SCHEMAS (Business Fields Only) ---
+PriceReferenceBase:
+  type: object
+  required: [name]
+  properties:
+    name:
+      type: string
+      example: "Harga Ayam Broiler"
+      description: Nama referensi harga
+    highlight_price:
+      type: number
+      format: float
+      example: 18000
+      description: Harga highlight (jika ada)
+      nullable: true
+    link_url:
+      type: string
+      example: "https://andersonfarm.id/harga/ayam"
+      description: Link ke sumber harga (jika ada)
+      nullable: true
+    image_url:
+      type: string
+      example: "https://andersonfarm.id/images/harga-ayam.jpg"
+      description: Link gambar harga (jika ada)
+      nullable: true
+
+# --- REQUEST SCHEMAS (Dikirim oleh App/Client) ---
+PriceReferenceRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/PriceReferenceBase"
+
+# --- RESPONSE SCHEMAS (Dibalas oleh Server) ---
+PriceReferenceResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/PriceReferenceRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"

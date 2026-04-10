@@ -1,0 +1,37 @@
+FormCategory:
+  type: string
+  enum: [EQUIPMENT, HBE]
+TaskType:
+  type: string
+  enum: [BOOLEAN, TEXT]
+TransactionType:
+  type: string
+  enum: [INCOME, EXPENSE]
+RhppStatus:
+  type: string
+  enum: [DRAFT, PUBLISHED]
+UserRole:
+  type: string
+  enum: [admin, finance, manager, pic, abk, investor]
+BusinessStatus:
+  type: string
+  enum: [DRAFT, SUBMITTED, APPROVED, REJECTED, NEEDS_REVIEW]
+SyncStatus:
+  type: string
+  enum: [LOCAL_SAVED, PENDING_SYNC, SYNCED, SYNC_FAILED, CONFLICT]
+CoopType:
+  type: string
+  enum: [open_house, closed_house]
+PeriodStatus:
+  type: string
+  enum: [active, completed]
+PaymentStatus:
+  type: string
+  enum: [draft, paid]
+ArticleStatus:
+  type: string
+  enum: [published, draft]
+FormCategoryEnum:
+  type: string
+  enum: [EQUIPMENT, HBE]
+  description: Kategori penggunaan form.

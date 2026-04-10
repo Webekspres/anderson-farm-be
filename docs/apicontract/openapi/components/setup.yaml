@@ -1,0 +1,69 @@
+# --- BASE SCHEMAS (Business Fields Only) ---
+CoopEquipmentBase:
+  type: object
+  required: [equipment_type_id]
+  properties:
+    equipment_type_id:
+      type: string
+      format: uuid
+      example: "equipment-type-uuid"
+      description: ID tipe/merk alat (harus valid di master equipment_types)
+    unit_code:
+      type: ["string", "null"]
+      example: "SN-123456"
+      description: Serial number/unit code alat (opsional)
+    installed_at:
+      type: ["string", "null"]
+      format: date-time
+      example: "2026-04-10T10:00:00Z"
+      description: Tanggal alat dipasang (opsional)
+
+# --- REQUEST SCHEMAS (Dikirim oleh App/Client) ---
+CoopEquipmentRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/CoopEquipmentBase"
+
+# --- RESPONSE SCHEMAS (Dibalas oleh Server) ---
+CoopEquipmentResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/CoopEquipmentRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+
+# --- COOP FORM ASSIGNMENT SCHEMAS ---
+CoopFormAssignmentBase:
+  type: object
+  required: [coop_equipment_id, form_config_id]
+  properties:
+    coop_equipment_id:
+      type: string
+      format: uuid
+      example: "coop-equipment-uuid"
+      description: ID alat fisik kandang (harus valid di coop_equipments)
+    form_config_id:
+      type: string
+      format: uuid
+      example: "form-config-uuid"
+      description: ID form config (bank soal, harus valid di form_configs)
+
+CoopFormAssignmentRequest:
+  allOf:
+    - $ref: "../components/general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/CoopFormAssignmentBase"
+
+CoopFormAssignmentResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - $ref: "#/CoopFormAssignmentRequest"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
