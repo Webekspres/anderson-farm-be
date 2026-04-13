@@ -1,0 +1,87 @@
+uploads:
+  post:
+    tags: [Files]
+    summary: Upload file fisik
+    description: |
+      Unggah file fisik (PDF/JPG/PNG) secara multipart.
+      Mengembalikan URL dan Path Lokal yang nantinya akan disisipkan sebagai JSON ke endpoint setup/master data (seperti contracts, documents, atau photos).
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: "../components/upload.yaml#/UploadRequest"
+    responses:
+      "201":
+        description: File berhasil diunggah
+        content:
+          application/json:
+            schema:
+              $ref: "../components/upload.yaml#/UploadResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "413":
+        $ref: "../components/response.yaml#/PayloadTooLargeError"
+
+  delete:
+    tags: [Files]
+    summary: Hapus file fisik
+    description: |
+      Menghapus file fisik dari storage server (S3/Local).
+      Digunakan untuk menghapus file orphaned jika user sudah berhasil upload namun batal menekan tombol simpan/submit di form utama.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: file_path_local
+        required: true
+        schema:
+          type: string
+          example: contracts/doc-123.pdf
+        description: Path file di server yang ingin dihapus (didapat dari response saat upload).
+    responses:
+      "200":
+        $ref: "../components/general.yaml#/GeneralResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
+import-salary:
+  post:
+    tags: [Files]
+    summary: Import data gaji ABK
+    description: |
+      Unggah data tagihan upah ABK secara massal menggunakan file Excel (.xlsx / .csv).
+      Sistem akan melakukan validasi:
+      - Apakah period_id valid dan aktif.
+      - Apakah employee_id (user_id) di dalam Excel benar-benar memiliki role ABK.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: "../components/upload.yaml#/ImportSalaryRequest"
+    responses:
+      "201":
+        description: Data gaji berhasil diimpor ke sistem.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/upload.yaml#/ImportSalaryResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "422":
+        description: Gagal validasi isi file Excel (misal format angka salah atau user tidak ditemukan).

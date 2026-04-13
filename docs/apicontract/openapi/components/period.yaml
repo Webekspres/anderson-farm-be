@@ -304,3 +304,41 @@ RhppDocumentResponse:
       allOf:
         - $ref: "#/RhppDocumentRequest"
         - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+
+# --- PERIOD CLOSE SCHEMAS ---
+PeriodCloseRequest:
+  type: object
+  required: [closing_reason, closed_at]
+  properties:
+    closing_reason:
+      type: string
+      example: "Panen selesai sesuai target populasi."
+      description: Alasan atau catatan penutupan periode.
+    closed_at:
+      type: string
+      format: date-time
+      example: "2026-05-15T15:00:00Z"
+      description: Tanggal dan waktu resmi penutupan.
+
+# --- RHPP PUBLISH SCHEMAS ---
+# Karena Publish RHPP biasanya tidak memerlukan body (hanya trigger),
+# kita cukup menyiapkan skema respon jika ingin mengembalikan data RHPP terbaru.
+RhppPublishResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "RHPP telah berhasil dipublikasikan dan dikunci."
+    data:
+      type: object
+      properties:
+        period_id:
+          type: string
+          format: uuid
+        publish_status:
+          type: string
+          enum: [PUBLISHED]
+          example: "PUBLISHED"

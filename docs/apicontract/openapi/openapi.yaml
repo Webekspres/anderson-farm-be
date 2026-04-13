@@ -132,57 +132,29 @@ paths:
 
   # === EKSPOR, IMPOR & UPLOAD FILE ===
   /api/v1/uploads:
-    post:
-      tags: [Files]
-      summary: Upload file fisik
-      description: Unggah file fisik (PDF/JPG) secara multipart.
-    delete:
-      tags: [Files]
-      summary: Hapus file fisik
-      description: Menghapus file orphaned jika user batal simpan.
-
-  /api/v1/export/rhpp:
-    get:
-      tags: [Files]
-      summary: Export Excel/PDF RHPP
-      description: Generate Excel/PDF perhitungan detail periode sebelum difinalisasi.
+    $ref: "./paths/upload.yaml#/uploads"
 
   /api/v1/export/harvests:
-    get:
-      tags: [Files]
-      summary: Export Excel rekap panen
-      description: Generate Excel rekap panen bertahap (HarvestEntry).
+    $ref: "./paths/export.yaml#/harvests"
 
   /api/v1/export/evaluations:
-    get:
-      tags: [Files]
-      summary: Export Excel evaluasi teknis
-      description: Generate Excel evaluasi teknis harian.
+    $ref: "./paths/export.yaml#/evaluations"
 
   /api/v1/export/template-salary:
-    get:
-      tags: [Files]
-      summary: Download template import gaji
-      description: Download format Excel kosong untuk persiapan import gaji.
+    $ref: "./paths/export.yaml#/template-salary"
 
   /api/v1/import/salary:
-    post:
-      tags: [Files]
-      summary: Import data gaji ABK
-      description: Unggah data tagihan upah ABK massal via Excel.
+    $ref: "./paths/upload.yaml#/import-salary"
+
+  /api/v1/export/rhpp:
+    $ref: "./paths/export.yaml#/rhpp"
 
   # === LOGIKA BISNIS & PORTAL EKSTERNAL ===
   /api/v1/periods/{id}/close:
-    post:
-      tags: [Bisnis]
-      summary: Tutup periode ternak
-      description: Tutup Periode, validasi backend otomatis sebelum siklus dikunci.
+    $ref: "./paths/period.yaml#/periods-close"
 
   /api/v1/rhpps/{period_id}/publish:
-    post:
-      tags: [Bisnis]
-      summary: Publish RHPP
-      description: Ketok Palu RHPP, publish_status jadi PUBLISHED dan mengunci laporan.
+    $ref: "./paths/period.yaml#/rhpps-publish"
 
   /api/v1/investor/dashboard:
     get:
@@ -211,6 +183,7 @@ paths:
         Tandai notifikasi telah dibaca.
 
         # === SYNC (OFFLINE-FIRST AGGREGATE) ===
+
   /api/v1/sync/master-data:
     get:
       tags: [Sync]

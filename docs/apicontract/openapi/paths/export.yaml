@@ -1,0 +1,153 @@
+evaluations:
+  get:
+    tags: [Files]
+    summary: Export Excel evaluasi teknis
+    description: |
+      Menghasilkan file Excel (.xlsx) yang berisi rekap evaluasi teknis harian berdasarkan periode tertentu.
+      Data mencakup tanggal, parameter evaluasi, nilai, dan catatan evaluasi.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: period_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID periode ternak yang datanya ingin diekspor.
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Filter tanggal awal (opsional).
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: Filter tanggal akhir (opsional).
+    responses:
+      "200":
+        description: File Excel evaluasi teknis berhasil dibuat dan dikirim sebagai stream.
+        content:
+          application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+            schema:
+              type: string
+              format: binary
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        description: Data evaluasi teknis untuk periode tersebut tidak ditemukan.
+        $ref: "../components/response.yaml#/NotFoundError"
+
+template-salary:
+  get:
+    tags: [Files]
+    summary: Download template import gaji
+    description: |
+      Mengunduh file template Excel (.xlsx) kosong untuk persiapan import data gaji ABK.
+      File ini berisi header kolom yang harus diisi sebelum proses import gaji massal.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        description: File template Excel berhasil dikirim sebagai stream.
+        content:
+          application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+            schema:
+              type: string
+              format: binary
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+harvests:
+  get:
+    tags: [Files]
+    summary: Export Excel rekap panen
+    description: |
+      Menghasilkan file Excel (.xlsx) yang berisi rekapitulasi seluruh data panen (HarvestEntry)
+      berdasarkan periode tertentu.
+      Data mencakup Rit, Pembeli, Jumlah Ekor, Berat Total, Harga, dan Total Pendapatan.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: period_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID periode ternak yang datanya ingin diekspor.
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Filter tanggal awal (opsional).
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: Filter tanggal akhir (opsional).
+    responses:
+      "200":
+        description: File Excel berhasil dibuat dan dikirim sebagai stream.
+        content:
+          application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+            schema:
+              type: string
+              format: binary
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        description: Data panen untuk periode tersebut tidak ditemukan.
+        $ref: "../components/response.yaml#/NotFoundError"
+
+rhpp:
+  get:
+    tags: [Files]
+    summary: Export Excel/PDF RHPP
+    description: |
+      Menghasilkan file Excel (.xlsx) atau PDF (.pdf) yang berisi perhitungan detail RHPP untuk periode ternak tertentu sebelum difinalisasi.
+      Data mencakup rekapitulasi biaya, pendapatan, dan perhitungan RHPP berdasarkan data produksi dan keuangan yang ada di periode tersebut.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: period_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID periode ternak yang datanya ingin diekspor.
+      - in: query
+        name: file_type
+        required: true
+        schema:
+          type: string
+          enum: [xlsx, pdf]
+        description: Jenis file yang ingin dihasilkan (Excel atau PDF).
+    responses:
+      "200":
+        description: File RHPP berhasil dibuat dan dikirim sebagai stream.
+        content:
+          application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+            schema:
+              type: string
+              format: binary
+          application/pdf:
+            schema:
+              type: string
+              format: binary
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        description: Data untuk periode tersebut tidak ditemukan atau perhitungan RHPP belum tersedia.
+        $ref: "../components/response.yaml#/NotFoundError"

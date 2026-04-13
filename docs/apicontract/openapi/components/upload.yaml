@@ -1,0 +1,77 @@
+# --- REQUEST SCHEMA ---
+UploadRequest:
+  type: object
+  required: [file, folder]
+  properties:
+    file:
+      type: string
+      format: binary
+      description: File fisik yang akan diunggah (Max 5MB).
+    folder:
+      type: string
+      enum: [contracts, documents, rhpp, photos, sop]
+      description: Kategori direktori penyimpanan agar file server rapi.
+      example: "contracts"
+
+# --- RESPONSE SCHEMA ---
+UploadResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "File berhasil diunggah."
+    data:
+      type: object
+      properties:
+        file_url:
+          type: string
+          format: uri
+          description: URL publik/signed untuk mengakses file (Bisa disimpan di database mobile).
+          example: "https://api.andersonfarm.com/storage/contracts/doc-123.pdf"
+        file_path_local:
+          type: string
+          description: Path internal server untuk keperluan delete atau pemindahan file.
+          example: "contracts/doc-123.pdf"
+        file_type:
+          type: string
+          description: Ekstensi file yang terdeteksi.
+          example: "pdf"
+
+# --- REQUEST SCHEMAS ---
+ImportSalaryRequest:
+  type: object
+  required: [period_id, file]
+  properties:
+    period_id:
+      type: string
+      format: uuid
+      description: ID periode ternak tujuan import gaji.
+      example: "period-uuid-123"
+    file:
+      type: string
+      format: binary
+      description: File Excel (.xlsx) berisi kolom employee_id dan salary_amount.
+
+# --- RESPONSE SCHEMAS ---
+ImportSalaryResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "Berhasil mengimpor 10 data gaji ABK."
+    data:
+      type: object
+      properties:
+        total_imported:
+          type: integer
+          example: 10
+        period_id:
+          type: string
+          format: uuid
+          example: "period-uuid-123"

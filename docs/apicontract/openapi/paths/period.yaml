@@ -272,3 +272,68 @@ periods-rhpp-documents:
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
         $ref: "../components/response.yaml#/ForbiddenError"
+
+periods-close:
+  post:
+    tags: [Bisnis]
+    summary: Tutup periode ternak
+    description: |
+      Mengubah status periode menjadi 'closed'.
+      Backend akan melakukan validasi otomatis:
+      - Memastikan tidak ada DailyActivity yang masih berstatus DRAFT.
+      - Memastikan semua transaksi keuangan sudah disetujui (APPROVED).
+    security:
+      - sanctum: []
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/period.yaml#/PeriodCloseRequest"
+    responses:
+      "200":
+        description: Periode berhasil ditutup.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/PeriodResponse"
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+
+rhpps-publish:
+  post:
+    tags: [Bisnis]
+    summary: Publish RHPP
+    description: |
+      Finalisasi laporan keuangan (Ketok Palu).
+      Status RHPP akan berubah menjadi PUBLISHED.
+      Setelah dipublish, data keuangan periode tersebut tidak dapat diubah lagi.
+    security:
+      - sanctum: []
+    parameters:
+      - name: period_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID periode yang terkait dengan RHPP tersebut.
+    responses:
+      "200":
+        description: RHPP berhasil dipublish.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/period.yaml#/RhppPublishResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"

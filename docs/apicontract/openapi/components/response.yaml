@@ -81,3 +81,15 @@ PaginationMetaCursor:
     has_prev:
       type: boolean
       example: false
+
+PayloadTooLargeError:
+  description: Ukuran file melebihi batas maksimum
+  content:
+    application/json:
+      schema:
+        $ref: "./general.yaml#/ValidationErrorResponse"
+      example:
+        success: false
+        message: "Ukuran file terlalu besar. Maksimum 5MB."
+        errors:
+          file: ["File size exceeds the 5MB limit."]
