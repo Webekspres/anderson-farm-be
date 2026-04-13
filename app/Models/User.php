@@ -19,13 +19,12 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, HasUuids;
 
-    // Beri tahu Laravel tipe primary key kita
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
         'username',
-        'password_hash',
+        'password',
         'full_name',
         'email',
         'phone_number',
@@ -40,6 +39,11 @@ class User extends Authenticatable
         'password_hash', // Sembunyikan dari response JSON
     ];
 
+    // OVERRIDE: Beri tahu fitur Auth Laravel untuk mengecek kolom 'password_hash'
+    public function getAuthPasswordName()
+    {
+        return 'password_hash';
+    }
     /**
      * Get the attributes that should be cast.
      *

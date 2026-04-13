@@ -105,7 +105,7 @@ model User {
   // business fields
   username          String    @unique
   password_hash     String
-  full_name         String
+  name              String
   email             String?
   phone_number      String?
   role              UserRole
@@ -135,8 +135,10 @@ model User {
   transaction_creations  Transaction[]         @relation("TransactionCreator")
   transaction_approvals  Transaction[]         @relation("TransactionApprover")
 
-  coop_assignments CoopUserAssignment[]
-  managed_area     Area?                @relation("AreaManager") // Relasi Manager dari diskusi sebelumnya
+  coop_assignments     CoopUserAssignment[]
+  managed_area         Area?                 @relation("AreaManager") // Relasi Manager dari diskusi sebelumnya
+  dailyActivityHeaders DailyActivityHeader[]
+  dailyActivityHeaders DailyActivityHeader[]
 
   @@map("users")
 }
@@ -424,9 +426,10 @@ model FormConfig {
   deleted_at        DateTime?
 
   // relations
-  period_assignments PeriodFormAssignment[]
-  coop_assignments   CoopFormAssignment[]
-  daily_logs         DailyDynamicLog[]
+  period_assignments       PeriodFormAssignment[]
+  coop_assignments         CoopFormAssignment[]
+  daily_logs               DailyDynamicLog[]
+  equipmentTypeFormConfigs EquipmentTypeFormConfig[]
 
   @@map("form_configs")
 }
@@ -540,8 +543,9 @@ model CoopEquipment {
   deleted_at        DateTime?
 
   // relations
-  coop           Coop          @relation(fields: [coop_id], references: [id])
-  equipment_type EquipmentType @relation(fields: [equipment_type_id], references: [id])
+  coop                Coop                 @relation(fields: [coop_id], references: [id])
+  equipment_type      EquipmentType        @relation(fields: [equipment_type_id], references: [id])
+  coopFormAssignments CoopFormAssignment[]
 
   @@index([coop_id])
   @@index([equipment_type_id])
@@ -583,8 +587,8 @@ model ProductionPeriod {
   sync_metadata     String?    @db.Text
 
   // relations
-  coop                   Coop                  @relation(fields: [coop_id], references: [id])
-  pic                    User                  @relation("PicPeriods", fields: [pic_id], references: [id])
+  coop                   Coop                   @relation(fields: [coop_id], references: [id])
+  pic                    User                   @relation("PicPeriods", fields: [pic_id], references: [id])
   period_investors       PeriodInvestor[]
   daily_activity_headers DailyActivityHeader[]
   employee_salaries      EmployeeSalary[]
@@ -592,6 +596,8 @@ model ProductionPeriod {
   contracts              ContractAbk[]
   period_documents       PeriodDocument[]
   checklist_tasks        ChecklistTask[]
+  periodFormAssignments  PeriodFormAssignment[]
+  transactions           Transaction[]
 
   @@index([coop_id])
   @@index([pic_id])
@@ -779,10 +785,13 @@ model DailyActivityHeader {
   approver User? @relation("ActivityApprover", fields: [approved_by], references: [id])
 
   // Child Relations (Relasi ke tabel detail)
-  dynamic_logs DailyDynamicLog[] // Relasi baru menampung jawaban Alat & HBE
-  harvests     HarvestEntry[]
-  ovk_usages   OvkUsage[]
-  photos       PhotoEvidence[]
+  dynamic_logs       DailyDynamicLog[] // Relasi baru menampung jawaban Alat & HBE
+  harvests           HarvestEntry[]
+  ovk_usages         OvkUsage[]
+  photos             PhotoEvidence[]
+  user               User?               @relation(fields: [userId], references: [id])
+  userId             String?
+  dailyChecklistLogs DailyChecklistLog[]
 
   @@unique([period_id, date]) // Wajib agar database menolak duplikasi hari
   @@index([period_id])
@@ -845,7 +854,8 @@ model HarvestEntry {
   updated_at_server DateTime?
   deleted_at        DateTime?
 
-  header DailyActivityHeader @relation(fields: [header_id], references: [id])
+  header       DailyActivityHeader @relation(fields: [header_id], references: [id])
+  transactions Transaction[]
 
   @@index([header_id])
   @@map("harvest_entries")
