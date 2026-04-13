@@ -164,31 +164,20 @@ paths:
 
   # === SISTEM & NOTIFIKASI ===
   /api/v1/system/check-version:
-    get:
-      tags: [System]
-      summary: Cek versi aplikasi
-      description: Splash screen, paksa update jika outdated.
+    $ref: "./paths/system.yaml#/check-version"
 
+  # Notifikasi & Pesan Masuk
   /api/v1/notifications:
-    get:
-      tags: [System]
-      summary: Daftar notifikasi user
-      description: Tarik riwayat pesan masuk (Inbox aplikasi).
+    $ref: "./paths/system.yaml#/notifications"
 
   /api/v1/notifications/{id}/read:
-    patch:
-      tags: [System]
-      summary: Tandai notifikasi dibaca
-      description:
-        Tandai notifikasi telah dibaca.
+    $ref: "./paths/system.yaml#/notification-read"
 
-        # === SYNC (OFFLINE-FIRST AGGREGATE) ===
-
+  # =========================================================================
+  # SYNC: OFFLINE-FIRST SYNCHRONIZATION
+  # =========================================================================
   /api/v1/sync/master-data:
-    get:
-      tags: [Sync]
-      summary: Sync master data offline
-      description: Mengunduh cache referensi dasar (termasuk ovk_items dan coop_documents).
+    $ref: "./paths/sync.yaml#/sync-master-data"
 
   /api/v1/sync/periods:
     get:

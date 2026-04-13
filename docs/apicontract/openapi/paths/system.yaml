@@ -1,0 +1,75 @@
+check-version:
+  get:
+    tags: [System]
+    summary: Cek versi aplikasi
+    description: |
+      Endpoint yang dipanggil saat Splash Screen aplikasi mobile.
+      Digunakan untuk mengecek apakah aplikasi perlu diperbarui (Soft Update) atau wajib diperbarui (Force Update).
+      Tidak memerlukan autentikasi (token) karena dipanggil sebelum user login.
+    security: [] # Kosongkan karena Splash Screen belum tentu punya token
+    parameters:
+      - in: query
+        name: app_version
+        required: true
+        schema:
+          type: string
+        description: Versi aplikasi mobile yang sedang berjalan saat ini (misal "1.0.5").
+      - in: query
+        name: platform
+        required: true
+        schema:
+          type: string
+          enum: [android, ios]
+        description: Sistem operasi perangkat agar server bisa memberikan download_url yang tepat.
+    responses:
+      "200":
+        description: Berhasil mendapatkan info versi.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/system.yaml#/CheckVersionResponse"
+      "400":
+        # Jika mobile lupa mengirim app_version atau platform
+        $ref: "../components/response.yaml#/ValidationError"
+
+notifications:
+  get:
+    tags: [System - Notifications]
+    summary: Daftar notifikasi user
+    description: |
+      Menarik riwayat pesan masuk (Inbox) milik user yang sedang login.
+      Mendukung paginasi untuk efisiensi sinkronisasi.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        description: Berhasil mengambil daftar notifikasi.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/system.yaml#/NotificationListResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+
+notification-read:
+  patch:
+    tags: [System - Notifications]
+    summary: Tandai notifikasi dibaca
+    description: |
+      Mengubah status 'read_at' pada notifikasi spesifik.
+      Menggunakan PATCH karena hanya melakukan update parsial pada satu kolom.
+    security:
+      - sanctum: []
+    parameters:
+      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+    responses:
+      "200":
+        description: Notifikasi berhasil ditandai sebagai dibaca.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/system.yaml#/NotificationResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"

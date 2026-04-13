@@ -1,0 +1,49 @@
+# --- RESPONSE SCHEMAS ---
+SyncMasterDataResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: object
+      description: Objek berisi kumpulan array data referensi.
+      properties:
+        areas:
+          type: array
+          items: { $ref: "../openapi.yaml#/components/schemas/AreaResponse" }
+        farms:
+          type: array
+          items: { $ref: "../openapi.yaml#/components/schemas/FarmResponse" }
+        coops:
+          type: array
+          items: { $ref: "../openapi.yaml#/components/schemas/CoopResponse" }
+        coop_documents:
+          type: array
+          items: { $ref: "../components/documents.yaml#/CoopDocumentResponse" }
+        ovk_items:
+          type: array
+          items: { $ref: "../components/master-setup.yaml#/OvkItemResponse" }
+        equipment_types:
+          type: array
+          items:
+            {
+              $ref: "../openapi.yaml#/components/schemas/EquipmentTypeResponse",
+            }
+        form_configs:
+          type: array
+          items: { $ref: "../components/master-setup.yaml#/FormConfigResponse" }
+        transaction_categories:
+          type: array
+          items:
+            {
+              $ref: "../components/master-setup.yaml#/TransactionCategoryResponse",
+            }
+        report_templates:
+          type: array
+          items:
+            { $ref: "../components/master-setup.yaml#/ReportTemplateResponse" }
+    server_time:
+      type: string
+      format: date-time
+      description: Waktu server saat ini (digunakan mobile sebagai 'last_sync_at' berikutnya).

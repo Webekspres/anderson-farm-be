@@ -1,0 +1,25 @@
+sync-master-data:
+  get:
+    tags: [Sync]
+    summary: Sync master data offline
+    description: |
+      Mengunduh seluruh cache referensi dasar (Master Data) untuk operasional offline.
+      Data yang dikirimkan mencakup hierarchy kandang, konfigurasi form, dan master item.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: last_sync_at
+        schema:
+          type: string
+          format: date-time
+        description: Timestamp sinkronisasi terakhir. Jika diisi, server hanya mengirim data yang diperbarui (updated_at_server > last_sync_at).
+    responses:
+      "200":
+        description: Berhasil menarik data sinkronisasi master.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/sync.yaml#/SyncMasterDataResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"

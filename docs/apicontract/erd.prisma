@@ -21,69 +21,114 @@
 // -----------------------------------------------------------------------------
 
 enum FormCategory {
-  EQUIPMENT
-  HBE
+    EQUIPMENT
+    HBE
 }
 
 enum TaskType {
-  BOOLEAN // Input berupa centang (Checklist)
-  TEXT // Input berupa isian teks (Laporan singkat)
+    BOOLEAN // Input berupa centang (Checklist)
+    TEXT // Input berupa isian teks (Laporan singkat)
 }
 
 enum TransactionType {
-  INCOME
-  EXPENSE
+    INCOME
+    EXPENSE
 }
 
 enum RhppStatus {
-  DRAFT
-  PUBLISHED
+    DRAFT
+    PUBLISHED
 }
 
 enum UserRole {
-  admin
-  finance
-  manager
-  pic
-  abk
-  investor
+    admin
+    finance
+    manager
+    pic
+    abk
+    investor
 }
 
 // Enum untuk workflow persetujuan Manager
 enum BusinessStatus {
-  DRAFT
-  SUBMITTED
-  APPROVED
-  REJECTED
-  NEEDS_REVIEW
+    DRAFT
+    SUBMITTED
+    APPROVED
+    REJECTED
+    NEEDS_REVIEW
 }
 
 enum SyncStatus {
-  LOCAL_SAVED
-  PENDING_SYNC
-  SYNCED
-  SYNC_FAILED
-  CONFLICT
+    LOCAL_SAVED
+    PENDING_SYNC
+    SYNCED
+    SYNC_FAILED
+    CONFLICT
 }
 
 enum CoopType {
-  open_house
-  closed_house
+    open_house
+    closed_house
 }
 
 enum PeriodStatus {
-  active
-  completed
+    active
+    completed
 }
 
 enum PaymentStatus {
-  draft
-  paid
+    draft
+    paid
 }
 
 enum ArticleStatus {
-  published
-  draft
+    published
+    draft
+}
+
+// Tambahkan Enum baru ini di bagian atas
+enum NotificationType {
+    INFO
+    WARNING
+    ANNOUNCEMENT
+    SYSTEM
+}
+
+// -----------------------------------------------------------------------------
+// notifications — Riwayat pesan masuk (Inbox) untuk tiap user
+// -----------------------------------------------------------------------------
+model Notification {
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
+
+    // Business fields
+    user_id String // Penerima notifikasi
+    title   String
+    message String           @db.Text
+    type    NotificationType @default(INFO)
+
+    // Fitur Advanced: Polymorphic Reference (Opsional tapi Sangat Berguna)
+    // Memungkinkan klik notifikasi langsung membuka halaman spesifik
+    reference_id   String? // misal: ID dari tabel production_periods
+    reference_type String? // misal: "production_periods" atau "checklist_tasks"
+
+    read_at DateTime? // Null berarti belum dibaca (Unread)
+
+    // Offline-first fields (Untuk standar sinkronisasi)
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+
+    // Relations
+    user User @relation(fields: [user_id], references: [id])
+
+    @@index([user_id])
+    @@index([read_at]) // Index ini mempercepat query "Badge Angka Merah" di ikon lonceng app
+    @@map("notifications")
 }
 
 // =============================================================================
@@ -98,49 +143,50 @@ enum ArticleStatus {
 // -----------------------------------------------------------------------------
 
 model User {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  username          String    @unique
-  password          String
-  name              String
-  email             String?
-  phone_number      String?
-  role              UserRole
-  device_id         String?
-  device_bound_at   DateTime?
-  is_active         Boolean   @default(true)
-  last_validated_at DateTime?
+    // business fields
+    username          String    @unique
+    password          String
+    name              String
+    email             String?
+    phone_number      String?
+    role              UserRole
+    device_id         String?
+    device_bound_at   DateTime?
+    is_active         Boolean   @default(true)
+    last_validated_at DateTime?
+    fcm_token         String?   @db.Text // [BARU] Token unik Firebase untuk kirim push notif
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
-  sync_metadata     String?    @db.Text
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
 
-  // relations
-  activity_logs          ActivityLog[]
-  led_periods            ProductionPeriod[]    @relation("PicPeriods")
-  period_investors       PeriodInvestor[]
-  daily_activity_headers DailyActivityHeader[]
-  salaries               EmployeeSalary[]      @relation("EmployeeSalaries")
-  contract_uploads       ContractAbk[]         @relation("ContractUploader")
-  contract_accepts       ContractAcceptance[]  @relation("UserAcceptance")
-  period_doc_uploads     PeriodDocument[]      @relation("PeriodDocUploader")
-  transaction_creations  Transaction[]         @relation("TransactionCreator")
-  transaction_approvals  Transaction[]         @relation("TransactionApprover")
+    // relations
+    activity_logs         ActivityLog[]
+    led_periods           ProductionPeriod[]   @relation("PicPeriods")
+    period_investors      PeriodInvestor[]
+    salaries              EmployeeSalary[]     @relation("EmployeeSalaries")
+    contract_uploads      ContractAbk[]        @relation("ContractUploader")
+    contract_accepts      ContractAcceptance[] @relation("UserAcceptance")
+    period_doc_uploads    PeriodDocument[]     @relation("PeriodDocUploader")
+    transaction_creations Transaction[]        @relation("TransactionCreator")
+    transaction_approvals Transaction[]        @relation("TransactionApprover")
 
-  coop_assignments     CoopUserAssignment[]
-  managed_area         Area?                 @relation("AreaManager") // Relasi Manager dari diskusi sebelumnya
-  dailyActivityHeaders DailyActivityHeader[]
-  dailyActivityHeaders DailyActivityHeader[]
+    coop_assignments   CoopUserAssignment[]
+    managed_area       Area?                 @relation("AreaManager") // Relasi Manager dari diskusi sebelumnya
+    activity_approvals DailyActivityHeader[] @relation("ActivityApprover") // Relasi baru untuk approval Manager
+    activity_creations DailyActivityHeader[] @relation("ActivityCreator")
+    notifications      Notification[]
 
-  @@map("users")
+    @@map("users")
 }
 
 // -----------------------------------------------------------------------------
@@ -150,34 +196,34 @@ model User {
 // -----------------------------------------------------------------------------
 
 model ActivityLog {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  user_id     String
-  action      String
-  entity_type String
-  entity_id   String
-  device_id   String?
-  status      String
-  metadata    String? // JSON string for extra context
+    // business fields
+    user_id     String
+    action      String
+    entity_type String
+    entity_id   String
+    device_id   String?
+    status      String
+    metadata    String? // JSON string for extra context
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
-  sync_metadata     String?    @db.Text
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
 
-  // relations
-  user User @relation(fields: [user_id], references: [id])
+    // relations
+    user User @relation(fields: [user_id], references: [id])
 
-  @@index([user_id])
-  @@index([entity_type, entity_id])
-  @@map("activity_logs")
+    @@index([user_id])
+    @@index([entity_type, entity_id])
+    @@map("activity_logs")
 }
 
 // =============================================================================
@@ -188,27 +234,27 @@ model ActivityLog {
 // areas — Tingkatan tertinggi hierarki (Regional/Wilayah)
 // -----------------------------------------------------------------------------
 model Area {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  name       String // misal: "Area Jawa Barat", "Area Sumatera"
-  manager_id String @unique // Sesuai requirement: 1 Area = 1 Manager
+    // business fields
+    name       String // misal: "Area Jawa Barat", "Area Sumatera"
+    manager_id String @unique // Sesuai requirement: 1 Area = 1 Manager
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  manager User   @relation("AreaManager", fields: [manager_id], references: [id])
-  farms   Farm[]
+    // relations
+    manager User   @relation("AreaManager", fields: [manager_id], references: [id])
+    farms   Farm[]
 
-  @@map("areas")
+    @@map("areas")
 }
 
 // -----------------------------------------------------------------------------
@@ -217,31 +263,31 @@ model Area {
 // -----------------------------------------------------------------------------
 
 model Farm {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  area_id   String // Relasi baru ke Area
-  name      String
-  address   String
-  is_active Boolean @default(true)
+    // business fields
+    area_id   String // Relasi baru ke Area
+    name      String
+    address   String
+    is_active Boolean @default(true)
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
-  sync_metadata     String?    @db.Text
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
 
-  // relations
-  area  Area   @relation(fields: [area_id], references: [id])
-  coops Coop[]
+    // relations
+    area  Area   @relation(fields: [area_id], references: [id])
+    coops Coop[]
 
-  @@index([area_id])
-  @@map("farms")
+    @@index([area_id])
+    @@map("farms")
 }
 
 // -----------------------------------------------------------------------------
@@ -250,70 +296,70 @@ model Farm {
 // -----------------------------------------------------------------------------
 
 model Coop {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  farm_id   String
-  name      String
-  capacity  Int
-  floor     Int
-  coop_type CoopType
-  note      String?  @db.Text
-  is_active Boolean  @default(true)
+    // business fields
+    farm_id   String
+    name      String
+    capacity  Int
+    floor     Int
+    coop_type CoopType
+    note      String?  @db.Text
+    is_active Boolean  @default(true)
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
-  sync_metadata     String?    @db.Text
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
 
-  // relations
-  farm               Farm                 @relation(fields: [farm_id], references: [id])
-  coop_documents     CoopDocument[]
-  coop_equipments    CoopEquipment[]
-  production_periods ProductionPeriod[]
-  coop_assignments   CoopUserAssignment[]
-  maintenance_logs   MaintenanceLog[]
+    // relations
+    farm               Farm                 @relation(fields: [farm_id], references: [id])
+    coop_documents     CoopDocument[]
+    coop_equipments    CoopEquipment[]
+    production_periods ProductionPeriod[]
+    coop_assignments   CoopUserAssignment[]
+    maintenance_logs   MaintenanceLog[]
 
-  @@index([farm_id])
-  @@map("coops")
+    @@index([farm_id])
+    @@map("coops")
 }
 
 // -----------------------------------------------------------------------------
 // coop_user_assignments — Pivot table for many-to-many User <-> Coop assignment
 // -----------------------------------------------------------------------------
 model CoopUserAssignment {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  user_id      String
-  coop_id      String
-  assigned_at  DateTime
-  role_in_coop UserRole? // Optional: role spesifik di kandang
+    // business fields
+    user_id      String
+    coop_id      String
+    assigned_at  DateTime
+    role_in_coop UserRole? // Optional: role spesifik di kandang
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  user User @relation(fields: [user_id], references: [id])
-  coop Coop @relation(fields: [coop_id], references: [id])
+    // relations
+    user User @relation(fields: [user_id], references: [id])
+    coop Coop @relation(fields: [coop_id], references: [id])
 
-  @@unique([user_id, coop_id])
-  @@index([coop_id])
-  @@index([user_id])
-  @@map("coop_user_assignments")
+    @@unique([user_id, coop_id])
+    @@index([coop_id])
+    @@index([user_id])
+    @@map("coop_user_assignments")
 }
 
 // -----------------------------------------------------------------------------
@@ -321,53 +367,53 @@ model CoopUserAssignment {
 // -----------------------------------------------------------------------------
 
 model CoopDocument {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  coop_id         String
-  name            String
-  file_path_local String?
-  file_url        String?
-  file_type       String // pdf | jpg | png
+    // business fields
+    coop_id         String
+    name            String
+    file_path_local String?
+    file_url        String?
+    file_type       String // pdf | jpg | png
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  coop Coop @relation(fields: [coop_id], references: [id])
+    // relations
+    coop Coop @relation(fields: [coop_id], references: [id])
 
-  @@index([coop_id])
-  @@map("coop_documents")
+    @@index([coop_id])
+    @@map("coop_documents")
 }
 
 model MaintenanceLog {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  coop_id     String
-  reported_by String // PIC / Manager
-  date        DateTime
-  description String   @db.Text
-  status      String // misal: 'dilaporkan', 'diperbaiki'
+    coop_id     String
+    reported_by String // PIC / Manager
+    date        DateTime
+    description String   @db.Text
+    status      String // misal: 'dilaporkan', 'diperbaiki'
 
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  coop Coop @relation(fields: [coop_id], references: [id])
+    coop Coop @relation(fields: [coop_id], references: [id])
 
-  @@map("maintenance_logs")
+    @@map("maintenance_logs")
 }
 
 // =============================================================================
@@ -379,27 +425,27 @@ model MaintenanceLog {
 // -----------------------------------------------------------------------------
 
 model EquipmentType {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  name        String
-  description String?
+    // business fields
+    name        String
+    description String?
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  equipment_type_form_configs EquipmentTypeFormConfig[]
-  coop_equipments             CoopEquipment[]
+    // relations
+    equipment_type_form_configs EquipmentTypeFormConfig[]
+    coop_equipments             CoopEquipment[]
 
-  @@map("equipment_types")
+    @@map("equipment_types")
 }
 
 // -----------------------------------------------------------------------------
@@ -408,54 +454,54 @@ model EquipmentType {
 // -----------------------------------------------------------------------------
 
 model FormConfig {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  category     FormCategory @default(EQUIPMENT) // Pembeda: ini form alat atau form HBE?
-  key_name     String       @unique // misal: "hbe_panting", "temp_sensor_1"
-  config_value String       @db.Text // JSON: {"type": "scale", "min": 1, "max": 5, "label": "Tingkat Panting"}
+    // business fields
+    category     FormCategory @default(EQUIPMENT) // Pembeda: ini form alat atau form HBE?
+    key_name     String       @unique // misal: "hbe_panting", "temp_sensor_1"
+    config_value String       @db.Text // JSON: {"type": "scale", "min": 1, "max": 5, "label": "Tingkat Panting"}
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  period_assignments       PeriodFormAssignment[]
-  coop_assignments         CoopFormAssignment[]
-  daily_logs               DailyDynamicLog[]
-  equipmentTypeFormConfigs EquipmentTypeFormConfig[]
+    // relations
+    period_assignments       PeriodFormAssignment[]
+    coop_assignments         CoopFormAssignment[]
+    daily_logs               DailyDynamicLog[]
+    equipmentTypeFormConfigs EquipmentTypeFormConfig[]
 
-  @@map("form_configs")
+    @@map("form_configs")
 }
 
 model PeriodFormAssignment {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
 
-  period_id      String
-  form_config_id String // Mengambil bank soal HBE
-  display_order  Int
-  is_active      Boolean @default(true) // Bisa dimatikan khusus untuk periode ini
+    period_id      String
+    form_config_id String // Mengambil bank soal HBE
+    display_order  Int
+    is_active      Boolean @default(true) // Bisa dimatikan khusus untuk periode ini
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  period      ProductionPeriod @relation(fields: [period_id], references: [id])
-  form_config FormConfig       @relation(fields: [form_config_id], references: [id])
+    period      ProductionPeriod @relation(fields: [period_id], references: [id])
+    form_config FormConfig       @relation(fields: [form_config_id], references: [id])
 
-  @@unique([period_id, form_config_id])
-  @@map("period_form_assignments")
+    @@unique([period_id, form_config_id])
+    @@map("period_form_assignments")
 }
 
 // -----------------------------------------------------------------------------
@@ -463,27 +509,27 @@ model PeriodFormAssignment {
 // -----------------------------------------------------------------------------
 // Menggantikan "EquipmentTypeFormConfig" yang kaku.
 model CoopFormAssignment {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
 
-  coop_equipment_id String // Relasi ke alat FISIK yang terpasang di kandang itu
-  form_config_id    String // Mengambil bank soal Equipment
-  display_order     Int
-  is_active         Boolean @default(true) // Misal sensor rusak, bisa di-false di kandang ini saja
+    coop_equipment_id String // Relasi ke alat FISIK yang terpasang di kandang itu
+    form_config_id    String // Mengambil bank soal Equipment
+    display_order     Int
+    is_active         Boolean @default(true) // Misal sensor rusak, bisa di-false di kandang ini saja
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  coop_equipment CoopEquipment @relation(fields: [coop_equipment_id], references: [id])
-  form_config    FormConfig    @relation(fields: [form_config_id], references: [id])
+    coop_equipment CoopEquipment @relation(fields: [coop_equipment_id], references: [id])
+    form_config    FormConfig    @relation(fields: [form_config_id], references: [id])
 
-  @@unique([coop_equipment_id, form_config_id])
-  @@map("coop_form_assignments")
+    @@unique([coop_equipment_id, form_config_id])
+    @@map("coop_form_assignments")
 }
 
 // -----------------------------------------------------------------------------
@@ -492,30 +538,30 @@ model CoopFormAssignment {
 // -----------------------------------------------------------------------------
 
 model EquipmentTypeFormConfig {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  equipment_type_id String
-  form_config_id    String
-  display_order     Int
+    // business fields
+    equipment_type_id String
+    form_config_id    String
+    display_order     Int
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  equipment_type EquipmentType @relation(fields: [equipment_type_id], references: [id])
-  form_config    FormConfig    @relation(fields: [form_config_id], references: [id])
+    // relations
+    equipment_type EquipmentType @relation(fields: [equipment_type_id], references: [id])
+    form_config    FormConfig    @relation(fields: [form_config_id], references: [id])
 
-  @@index([equipment_type_id])
-  @@index([form_config_id])
-  @@map("equipment_type_form_configs")
+    @@index([equipment_type_id])
+    @@index([form_config_id])
+    @@map("equipment_type_form_configs")
 }
 
 // -----------------------------------------------------------------------------
@@ -524,32 +570,32 @@ model EquipmentTypeFormConfig {
 // -----------------------------------------------------------------------------
 
 model CoopEquipment {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  coop_id           String
-  equipment_type_id String
-  unit_code         String?
-  installed_at      DateTime?
+    // business fields
+    coop_id           String
+    equipment_type_id String
+    unit_code         String?
+    installed_at      DateTime?
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  coop                Coop                 @relation(fields: [coop_id], references: [id])
-  equipment_type      EquipmentType        @relation(fields: [equipment_type_id], references: [id])
-  coopFormAssignments CoopFormAssignment[]
+    // relations
+    coop                Coop                 @relation(fields: [coop_id], references: [id])
+    equipment_type      EquipmentType        @relation(fields: [equipment_type_id], references: [id])
+    coopFormAssignments CoopFormAssignment[]
 
-  @@index([coop_id])
-  @@index([equipment_type_id])
-  @@map("coop_equipments")
+    @@index([coop_id])
+    @@index([equipment_type_id])
+    @@map("coop_equipments")
 }
 
 // =============================================================================
@@ -562,109 +608,109 @@ model CoopEquipment {
 // -----------------------------------------------------------------------------
 
 model ProductionPeriod {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  coop_id        String
-  pic_id         String
-  period_code    String       @unique
-  start_date     DateTime
-  end_date       DateTime?
-  initial_stock  Int
-  closing_reason String?      @db.Text
-  status         PeriodStatus @default(active)
-  closed_at      DateTime?
+    // business fields
+    coop_id        String
+    pic_id         String
+    period_code    String       @unique
+    start_date     DateTime
+    end_date       DateTime?
+    initial_stock  Int
+    closing_reason String?      @db.Text
+    status         PeriodStatus @default(active)
+    closed_at      DateTime?
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
-  sync_metadata     String?    @db.Text
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
 
-  // relations
-  coop                   Coop                   @relation(fields: [coop_id], references: [id])
-  pic                    User                   @relation("PicPeriods", fields: [pic_id], references: [id])
-  period_investors       PeriodInvestor[]
-  daily_activity_headers DailyActivityHeader[]
-  employee_salaries      EmployeeSalary[]
-  rhpp                   Rhpp?
-  contracts              ContractAbk[]
-  period_documents       PeriodDocument[]
-  checklist_tasks        ChecklistTask[]
-  periodFormAssignments  PeriodFormAssignment[]
-  transactions           Transaction[]
+    // relations
+    coop                   Coop                   @relation(fields: [coop_id], references: [id])
+    pic                    User                   @relation("PicPeriods", fields: [pic_id], references: [id])
+    period_investors       PeriodInvestor[]
+    daily_activity_headers DailyActivityHeader[]
+    employee_salaries      EmployeeSalary[]
+    rhpp                   Rhpp?
+    contracts              ContractAbk[]
+    period_documents       PeriodDocument[]
+    checklist_tasks        ChecklistTask[]
+    periodFormAssignments  PeriodFormAssignment[]
+    transactions           Transaction[]
 
-  @@index([coop_id])
-  @@index([pic_id])
-  @@map("production_periods")
+    @@index([coop_id])
+    @@index([pic_id])
+    @@map("production_periods")
 }
 
 // -----------------------------------------------------------------------------
 // period_documents — Dokumen spesifik per periode (misal: File Jadwal OVK, ARV)
 // -----------------------------------------------------------------------------
 model PeriodDocument {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  period_id       String
-  title           String
-  document_type   String // ENUM/String: 'OVK', 'ARV', 'OTHER'
-  file_path_local String?
-  file_url        String?
-  uploaded_by     String
+    // business fields
+    period_id       String
+    title           String
+    document_type   String // ENUM/String: 'OVK', 'ARV', 'OTHER'
+    file_path_local String?
+    file_url        String?
+    uploaded_by     String
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  period   ProductionPeriod @relation(fields: [period_id], references: [id])
-  uploader User             @relation("PeriodDocUploader", fields: [uploaded_by], references: [id])
+    // relations
+    period   ProductionPeriod @relation(fields: [period_id], references: [id])
+    uploader User             @relation("PeriodDocUploader", fields: [uploaded_by], references: [id])
 
-  @@index([period_id])
-  @@map("period_documents")
+    @@index([period_id])
+    @@map("period_documents")
 }
 
 // -----------------------------------------------------------------------------
 // checklist_tasks — Master data daftar tugas SOP dari pusat
 // -----------------------------------------------------------------------------
 model ChecklistTask {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  period_id   String // Relasi ke ProductionPeriod
-  task_name   String // Nama tugas
-  task_type   TaskType @default(BOOLEAN) // BOOLEAN atau TEXT
-  description String?  @db.Text
-  is_active   Boolean  @default(true)
+    // business fields
+    period_id   String // Relasi ke ProductionPeriod
+    task_name   String // Nama tugas
+    task_type   TaskType @default(BOOLEAN) // BOOLEAN atau TEXT
+    description String?  @db.Text
+    is_active   Boolean  @default(true)
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  period     ProductionPeriod    @relation(fields: [period_id], references: [id])
-  daily_logs DailyChecklistLog[]
+    // relations
+    period     ProductionPeriod    @relation(fields: [period_id], references: [id])
+    daily_logs DailyChecklistLog[]
 
-  @@index([period_id])
-  @@map("checklist_tasks")
+    @@index([period_id])
+    @@map("checklist_tasks")
 }
 
 // -----------------------------------------------------------------------------
@@ -672,32 +718,32 @@ model ChecklistTask {
 // Child dari DailyActivityHeader
 // -----------------------------------------------------------------------------
 model DailyChecklistLog {
-  id String @id @default(uuid())
+    id String @id @default(uuid())
 
-  // business fields
-  header_id String // Relasi ke DailyActivityHeader
-  task_id   String // Relasi ke master ChecklistTask
+    // business fields
+    header_id String // Relasi ke DailyActivityHeader
+    task_id   String // Relasi ke master ChecklistTask
 
-  // Data Result Fields
-  boolean_value Boolean? // Diisi jika task_type = BOOLEAN
-  text_value    String?  @db.Text // Diisi jika task_type = TEXT
+    // Data Result Fields
+    boolean_value Boolean? // Diisi jika task_type = BOOLEAN
+    text_value    String?  @db.Text // Diisi jika task_type = TEXT
 
-  notes String? @db.Text // Catatan tambahan (opsional)
+    notes String? @db.Text // Catatan tambahan (opsional)
 
-  // offline-first fields
-  sync_status       SyncStatus @default(LOCAL_SAVED)
-  created_at_client DateTime
-  updated_at_client DateTime
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(LOCAL_SAVED)
+    created_at_client DateTime
+    updated_at_client DateTime
+    deleted_at        DateTime?
 
-  // relations
-  header DailyActivityHeader @relation(fields: [header_id], references: [id])
-  task   ChecklistTask       @relation(fields: [task_id], references: [id])
+    // relations
+    header DailyActivityHeader @relation(fields: [header_id], references: [id])
+    task   ChecklistTask       @relation(fields: [task_id], references: [id])
 
-  @@unique([header_id, task_id])
-  @@index([header_id])
-  @@index([task_id])
-  @@map("daily_checklist_logs")
+    @@unique([header_id, task_id])
+    @@index([header_id])
+    @@index([task_id])
+    @@map("daily_checklist_logs")
 }
 
 // -----------------------------------------------------------------------------
@@ -706,38 +752,38 @@ model DailyChecklistLog {
 // -----------------------------------------------------------------------------
 
 model PeriodInvestor {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  period_id               String
-  user_id                 String // FK → users (role=investor)
-  profit_share_percentage Float // Misal: 20.5 (artinya 20.5%)
-  initial_investment      Float? // Modal awal yang disetor (jika ada)
+    // business fields
+    period_id               String
+    user_id                 String // FK → users (role=investor)
+    profit_share_percentage Float // Misal: 20.5 (artinya 20.5%)
+    initial_investment      Float? // Modal awal yang disetor (jika ada)
 
-  // ---------------------------------------------------
-  // [BARU] Finalisasi Finansial (Diisi saat RHPP PUBLISHED)
-  // ---------------------------------------------------
-  final_dividend_amount Float? // Nominal (Rp) bersih yang didapat investor
-  is_paid               Boolean @default(false) // Status transfer ke investor
+    // ---------------------------------------------------
+    // [BARU] Finalisasi Finansial (Diisi saat RHPP PUBLISHED)
+    // ---------------------------------------------------
+    final_dividend_amount Float? // Nominal (Rp) bersih yang didapat investor
+    is_paid               Boolean @default(false) // Status transfer ke investor
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC) // Bug fixed
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
-  sync_metadata     String?    @db.Text
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC) // Bug fixed
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
 
-  // relations
-  period ProductionPeriod @relation(fields: [period_id], references: [id])
-  user   User             @relation(fields: [user_id], references: [id])
+    // relations
+    period ProductionPeriod @relation(fields: [period_id], references: [id])
+    user   User             @relation(fields: [user_id], references: [id])
 
-  @@index([period_id])
-  @@index([user_id])
-  @@map("period_investors")
+    @@index([period_id])
+    @@index([user_id])
+    @@map("period_investors")
 }
 
 // -----------------------------------------------------------------------------
@@ -747,267 +793,264 @@ model PeriodInvestor {
 // -----------------------------------------------------------------------------
 
 model DailyActivityHeader {
-  id                  String  @id @default(uuid()) // Menjadi primary key lokal
-  server_id           BigInt? @unique @default(autoincrement()) // Diisi oleh Laravel saat sukses tersinkron
-  version             Int     @default(1) // Untuk Optimistic Locking
-  form_schema_version Int     @default(1) // Versi master form saat data ini diisi
+    id                  String  @id @default(uuid()) // Menjadi primary key lokal
+    server_id           BigInt? @unique @default(autoincrement()) // Diisi oleh Laravel saat sukses tersinkron
+    version             Int     @default(1) // Untuk Optimistic Locking
+    form_schema_version Int     @default(1) // Versi master form saat data ini diisi
 
-  // Business fields (Data Umum Harian)
-  period_id       String
-  user_id         String
-  date            DateTime
-  age_days        Int
-  mortality_count Int      @default(0) // Deplesi mati total hari itu
-  cull_count      Int      @default(0) // Deplesi afkir total hari itu
-  average_weight  Float?
+    // Business fields (Data Umum Harian)
+    period_id       String
+    user_id         String
+    date            DateTime
+    age_days        Int
+    mortality_count Int      @default(0) // Deplesi mati total hari itu
+    cull_count      Int      @default(0) // Deplesi afkir total hari itu
+    average_weight  Float?
 
-  // ---------------------------------------------------
-  // [BARU] Layer Workflow & Approval
-  // ---------------------------------------------------
-  business_status  BusinessStatus @default(DRAFT)
-  approved_by      String? // ID Manager yang melakukan approval
-  rejection_reason String?        @db.Text
+    // ---------------------------------------------------
+    // [BARU] Layer Workflow & Approval
+    // ---------------------------------------------------
+    business_status  BusinessStatus @default(DRAFT)
+    approved_by      String? // ID Manager yang melakukan approval
+    rejection_reason String?        @db.Text
 
-  // Offline-first fields (Penamaan disesuaikan dengan dokumen)
-  sync_status       SyncStatus @default(LOCAL_SAVED)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
-  sync_metadata     String?    @db.Text
+    // Offline-first fields (Penamaan disesuaikan dengan dokumen)
+    sync_status       SyncStatus @default(LOCAL_SAVED)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
 
-  // Relations
-  period ProductionPeriod @relation(fields: [period_id], references: [id])
+    // Relations
+    period   ProductionPeriod @relation(fields: [period_id], references: [id])
+    // Karena ada 2 relasi ke tabel User, kita wajib memberi nama relasi ("ActivityCreator" & "ActivityApprover")
+    user     User             @relation("ActivityCreator", fields: [user_id], references: [id])
+    approver User?            @relation("ActivityApprover", fields: [approved_by], references: [id])
 
-  // Karena ada 2 relasi ke tabel User, kita wajib memberi nama relasi ("ActivityCreator" & "ActivityApprover")
-  user     User  @relation("ActivityCreator", fields: [user_id], references: [id])
-  approver User? @relation("ActivityApprover", fields: [approved_by], references: [id])
+    // Child Relations (Relasi ke tabel detail)
+    dynamic_logs       DailyDynamicLog[] // Relasi baru menampung jawaban Alat & HBE
+    harvests           HarvestEntry[]
+    ovk_usages         OvkUsage[]
+    photos             PhotoEvidence[]
+    dailyChecklistLogs DailyChecklistLog[]
 
-  // Child Relations (Relasi ke tabel detail)
-  dynamic_logs       DailyDynamicLog[] // Relasi baru menampung jawaban Alat & HBE
-  harvests           HarvestEntry[]
-  ovk_usages         OvkUsage[]
-  photos             PhotoEvidence[]
-  user               User?               @relation(fields: [userId], references: [id])
-  userId             String?
-  dailyChecklistLogs DailyChecklistLog[]
-
-  @@unique([period_id, date]) // Wajib agar database menolak duplikasi hari
-  @@index([period_id])
-  @@index([user_id])
-  @@map("daily_activity_headers")
+    @@unique([period_id, date]) // Wajib agar database menolak duplikasi hari
+    @@index([period_id])
+    @@index([user_id])
+    @@map("daily_activity_headers")
 }
 
 // -----------------------------------------------------------------------------
 // daily_dynamic_logs — Menampung jawaban/inputan dari form_configs (Alat & HBE)
 // -----------------------------------------------------------------------------
 model DailyDynamicLog {
-  id String @id @default(uuid())
+    id String @id @default(uuid())
 
-  // business fields
-  header_id      String // Relasi ke DailyActivityHeader (Tanggal & Kandang)
-  form_config_id String // Relasi ke Master FormConfig (Pertanyaannya apa?)
+    // business fields
+    header_id      String // Relasi ke DailyActivityHeader (Tanggal & Kandang)
+    form_config_id String // Relasi ke Master FormConfig (Pertanyaannya apa?)
 
-  // Karena isian bisa berupa teks, angka, atau pilihan, kita simpan dalam bentuk string.
-  // Di sisi Mobile/Frontend, string ini di-parse kembali sesuai "type" dari JSON config-nya.
-  value String
+    // Karena isian bisa berupa teks, angka, atau pilihan, kita simpan dalam bentuk string.
+    // Di sisi Mobile/Frontend, string ini di-parse kembali sesuai "type" dari JSON config-nya.
+    value String
 
-  // offline-first fields
-  sync_status       SyncStatus @default(LOCAL_SAVED)
-  created_at_client DateTime
-  updated_at_client DateTime
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(LOCAL_SAVED)
+    created_at_client DateTime
+    updated_at_client DateTime
+    deleted_at        DateTime?
 
-  // relations
-  header      DailyActivityHeader @relation(fields: [header_id], references: [id])
-  form_config FormConfig          @relation(fields: [form_config_id], references: [id])
+    // relations
+    header      DailyActivityHeader @relation(fields: [header_id], references: [id])
+    form_config FormConfig          @relation(fields: [form_config_id], references: [id])
 
-  @@unique([header_id, form_config_id]) // Mencegah 1 pertanyaan dijawab 2 kali di hari yang sama
-  @@index([header_id])
-  @@index([form_config_id])
-  @@map("daily_dynamic_logs")
+    @@unique([header_id, form_config_id]) // Mencegah 1 pertanyaan dijawab 2 kali di hari yang sama
+    @@index([header_id])
+    @@index([form_config_id])
+    @@map("daily_dynamic_logs")
 }
 
 // -----------------------------------------------------------------------------
 // CHILD 1: harvest_entries (Detail Panen Bertahap)
 // -----------------------------------------------------------------------------
 model HarvestEntry {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  header_id String
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    header_id String
 
-  // Business Fields
-  rit_number        Int // Contoh: Rit 1, Rit 2
-  buyer_name        String? // Nama Bakul / Pembeli
-  total_birds       Int // Jumlah ekor panen
-  total_weight      Float // Total berat kg
-  price_per_kg      Float // Harga per kg
-  total_revenue     Float // total_weight * price_per_kg
-  delivery_order_no String? // Nomor Surat Jalan (DO)
+    // Business Fields
+    rit_number        Int // Contoh: Rit 1, Rit 2
+    buyer_name        String? // Nama Bakul / Pembeli
+    total_birds       Int // Jumlah ekor panen
+    total_weight      Float // Total berat kg
+    price_per_kg      Float // Harga per kg
+    total_revenue     Float // total_weight * price_per_kg
+    delivery_order_no String? // Nomor Surat Jalan (DO)
 
-  // offline-first fields
-  sync_status       SyncStatus @default(LOCAL_SAVED)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(LOCAL_SAVED)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  header       DailyActivityHeader @relation(fields: [header_id], references: [id])
-  transactions Transaction[]
+    header       DailyActivityHeader @relation(fields: [header_id], references: [id])
+    transactions Transaction[]
 
-  @@index([header_id])
-  @@map("harvest_entries")
+    @@index([header_id])
+    @@map("harvest_entries")
 }
 
 // -----------------------------------------------------------------------------
 // CHILD 2: ovk_usages (Pemakaian Obat, Vaksin, Kimia)
 // -----------------------------------------------------------------------------
 model OvkUsage {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  header_id String
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    header_id String
 
-  // Business Fields (REVISI: Hapus item_name dan unit, ganti dengan relasi)
-  ovk_item_id String
-  quantity    Float
-  notes       String? @db.Text
+    // Business Fields (REVISI: Hapus item_name dan unit, ganti dengan relasi)
+    ovk_item_id String
+    quantity    Float
+    notes       String? @db.Text
 
-  // offline-first fields
-  sync_status       SyncStatus @default(LOCAL_SAVED)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(LOCAL_SAVED)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  header   DailyActivityHeader @relation(fields: [header_id], references: [id])
-  ovk_item OvkItem             @relation(fields: [ovk_item_id], references: [id]) // Relasi baru
+    // relations
+    header   DailyActivityHeader @relation(fields: [header_id], references: [id])
+    ovk_item OvkItem             @relation(fields: [ovk_item_id], references: [id]) // Relasi baru
 
-  @@index([header_id])
-  @@index([ovk_item_id]) // Index baru
-  @@map("ovk_usages")
+    @@index([header_id])
+    @@index([ovk_item_id]) // Index baru
+    @@map("ovk_usages")
 }
 
 // -----------------------------------------------------------------------------
 // ovk_items — Master data Obat, Vaksin, dan Bahan Kimia
 // -----------------------------------------------------------------------------
 model OvkItem {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  name        String // misal: "Vita Stress"
-  type        String // ENUM/String: 'OBAT', 'VAKSIN', 'KIMIA'
-  unit        String // misal: "gram", "botol", "sachet"
-  description String? @db.Text
-  is_active   Boolean @default(true)
+    // business fields
+    name        String // misal: "Vita Stress"
+    type        String // ENUM/String: 'OBAT', 'VAKSIN', 'KIMIA'
+    unit        String // misal: "gram", "botol", "sachet"
+    description String? @db.Text
+    is_active   Boolean @default(true)
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  usages OvkUsage[]
+    // relations
+    usages OvkUsage[]
 
-  @@map("ovk_items")
+    @@map("ovk_items")
 }
 
 // -----------------------------------------------------------------------------
 // CHILD 3: photo_evidences (Bukti Foto Kondisi/Kematian)
 // -----------------------------------------------------------------------------
 model PhotoEvidence {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  header_id String
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    header_id String
 
-  // Business Fields
-  photo_path_local String // Path file di lokal/server?
-  photo_url        String // Path file di lokal/server
-  photo_type       String // misal: 'mortality', 'feed_empty', 'general'
-  description      String? @db.Text
+    // Business Fields
+    photo_path_local String // Path file di lokal/server?
+    photo_url        String // Path file di lokal/server
+    photo_type       String // misal: 'mortality', 'feed_empty', 'general'
+    description      String? @db.Text
 
-  sync_status       SyncStatus @default(LOCAL_SAVED)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    sync_status       SyncStatus @default(LOCAL_SAVED)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  header DailyActivityHeader @relation(fields: [header_id], references: [id])
+    header DailyActivityHeader @relation(fields: [header_id], references: [id])
 
-  @@index([header_id])
-  @@map("photo_evidences")
+    @@index([header_id])
+    @@map("photo_evidences")
 }
 
 // -----------------------------------------------------------------------------
 // contract_abks — File kontrak yang diunggah Manager untuk suatu periode
 // -----------------------------------------------------------------------------
 model ContractAbk {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  period_id       String
-  title           String
-  file_path_local String?
-  file_url        String?
-  uploaded_by     String // ID Manager yang mengunggah
+    // business fields
+    period_id       String
+    title           String
+    file_path_local String?
+    file_url        String?
+    uploaded_by     String // ID Manager yang mengunggah
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  period      ProductionPeriod     @relation(fields: [period_id], references: [id])
-  uploader    User                 @relation("ContractUploader", fields: [uploaded_by], references: [id])
-  acceptances ContractAcceptance[]
+    // relations
+    period      ProductionPeriod     @relation(fields: [period_id], references: [id])
+    uploader    User                 @relation("ContractUploader", fields: [uploaded_by], references: [id])
+    acceptances ContractAcceptance[]
 
-  @@index([period_id])
-  @@map("contract_abks")
+    @@index([period_id])
+    @@map("contract_abks")
 }
 
 // -----------------------------------------------------------------------------
 // contract_acceptances — Bukti digital ABK/PIC menyetujui kontrak
 // -----------------------------------------------------------------------------
 model ContractAcceptance {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  contract_id String
-  user_id     String // ABK atau PIC yang menyetujui
-  accepted_at DateTime
-  device_id   String? // Bukti device yang digunakan saat accept
+    // business fields
+    contract_id String
+    user_id     String // ABK atau PIC yang menyetujui
+    accepted_at DateTime
+    device_id   String? // Bukti device yang digunakan saat accept
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  contract ContractAbk @relation(fields: [contract_id], references: [id])
-  user     User        @relation("UserAcceptance", fields: [user_id], references: [id])
+    // relations
+    contract ContractAbk @relation(fields: [contract_id], references: [id])
+    user     User        @relation("UserAcceptance", fields: [user_id], references: [id])
 
-  @@index([contract_id])
-  @@index([user_id])
-  @@map("contract_acceptances")
+    @@index([contract_id])
+    @@index([user_id])
+    @@map("contract_acceptances")
 }
 
 // =============================================================================
@@ -1018,27 +1061,27 @@ model ContractAcceptance {
 // transaction_categories — Master data kategori arus kas (Pakan, Panen, BOP, dll)
 // -----------------------------------------------------------------------------
 model TransactionCategory {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  name      String // misal: "Pemasukan Panen", "Biaya Pakan"
-  type      TransactionType // INCOME atau EXPENSE
-  is_active Boolean         @default(true)
+    // business fields
+    name      String // misal: "Pemasukan Panen", "Biaya Pakan"
+    type      TransactionType // INCOME atau EXPENSE
+    is_active Boolean         @default(true)
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  transactions Transaction[]
+    // relations
+    transactions Transaction[]
 
-  @@map("transaction_categories")
+    @@map("transaction_categories")
 }
 
 // -----------------------------------------------------------------------------
@@ -1047,55 +1090,55 @@ model TransactionCategory {
 // Jika type = EXPENSE, receipt_url atau salary_id bisa terisi.
 // -----------------------------------------------------------------------------
 model Transaction {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  period_id          String
-  user_id            String
-  category_id        String // Relasi ke master kategori
-  harvest_id         String? // Terisi jika transaksi ini berasal dari Panen
-  salary_id          String? // Terisi jika transaksi ini adalah bayar gaji
-  date               DateTime
-  amount             Float
-  description        String?  @db.Text
-  reference_no       String? // Nomor referensi (misal: nomor DO untuk panen, nomor invoice untuk pengeluaran)
-  receipt_url        String? // Bukti nota (biasanya untuk pengeluaran)
-  receipt_path_local String? // Path file bukti nota (biasanya untuk pengeluaran)
+    // business fields
+    period_id          String
+    user_id            String
+    category_id        String // Relasi ke master kategori
+    harvest_id         String? // Terisi jika transaksi ini berasal dari Panen
+    salary_id          String? // Terisi jika transaksi ini adalah bayar gaji
+    date               DateTime
+    amount             Float
+    description        String?  @db.Text
+    reference_no       String? // Nomor referensi (misal: nomor DO untuk panen, nomor invoice untuk pengeluaran)
+    receipt_url        String? // Bukti nota (biasanya untuk pengeluaran)
+    receipt_path_local String? // Path file bukti nota (biasanya untuk pengeluaran)
 
-  // ---------------------------------------------------
-  // Layer Workflow & Approval Keuangan
-  // ---------------------------------------------------
-  business_status       BusinessStatus @default(DRAFT)
-  approved_by           String? // ID Manager/Finance yang approve
-  rejection_reason      String?        @db.Text
-  linked_transaction_id String?
+    // ---------------------------------------------------
+    // Layer Workflow & Approval Keuangan
+    // ---------------------------------------------------
+    business_status       BusinessStatus @default(DRAFT)
+    approved_by           String? // ID Manager/Finance yang approve
+    rejection_reason      String?        @db.Text
+    linked_transaction_id String?
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
-  sync_metadata     String?    @db.Text
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
 
-  // relations
-  linked_transaction Transaction?        @relation("TransactionCorrection", fields: [linked_transaction_id], references: [id])
-  corrections        Transaction[]       @relation("TransactionCorrection")
-  period             ProductionPeriod    @relation(fields: [period_id], references: [id])
-  user               User                @relation("TransactionCreator", fields: [user_id], references: [id])
-  category           TransactionCategory @relation(fields: [category_id], references: [id])
-  harvest            HarvestEntry?       @relation(fields: [harvest_id], references: [id])
-  salary             EmployeeSalary?     @relation("SalaryTransactions", fields: [salary_id], references: [id])
-  approver           User?               @relation("TransactionApprover", fields: [approved_by], references: [id])
+    // relations
+    linked_transaction Transaction?        @relation("TransactionCorrection", fields: [linked_transaction_id], references: [id])
+    corrections        Transaction[]       @relation("TransactionCorrection")
+    period             ProductionPeriod    @relation(fields: [period_id], references: [id])
+    user               User                @relation("TransactionCreator", fields: [user_id], references: [id])
+    category           TransactionCategory @relation(fields: [category_id], references: [id])
+    harvest            HarvestEntry?       @relation(fields: [harvest_id], references: [id])
+    salary             EmployeeSalary?     @relation("SalaryTransactions", fields: [salary_id], references: [id])
+    approver           User?               @relation("TransactionApprover", fields: [approved_by], references: [id])
 
-  @@index([period_id])
-  @@index([category_id])
-  @@index([harvest_id])
-  @@index([salary_id])
-  @@map("transactions")
+    @@index([period_id])
+    @@index([category_id])
+    @@index([harvest_id])
+    @@index([salary_id])
+    @@map("transactions")
 }
 
 // -----------------------------------------------------------------------------
@@ -1104,33 +1147,33 @@ model Transaction {
 // -----------------------------------------------------------------------------
 
 model EmployeeSalary {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  period_id      String
-  employee_id    String // FK → users (role=abk)
-  salary_amount  Float
-  payment_status PaymentStatus @default(draft)
+    // business fields
+    period_id      String
+    employee_id    String // FK → users (role=abk)
+    salary_amount  Float
+    payment_status PaymentStatus @default(draft)
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
-  sync_metadata     String?    @db.Text
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
 
-  // relations
-  period       ProductionPeriod @relation(fields: [period_id], references: [id])
-  employee     User             @relation("EmployeeSalaries", fields: [employee_id], references: [id])
-  transactions Transaction[]    @relation("SalaryTransactions")
+    // relations
+    period       ProductionPeriod @relation(fields: [period_id], references: [id])
+    employee     User             @relation("EmployeeSalaries", fields: [employee_id], references: [id])
+    transactions Transaction[]    @relation("SalaryTransactions")
 
-  @@index([period_id])
-  @@index([employee_id])
-  @@map("employee_salaries")
+    @@index([period_id])
+    @@index([employee_id])
+    @@map("employee_salaries")
 }
 
 // -----------------------------------------------------------------------------
@@ -1140,53 +1183,53 @@ model EmployeeSalary {
 // -----------------------------------------------------------------------------
 
 model Rhpp {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  period_id      String     @unique
-  total_income   Float
-  total_expense  Float
-  net_profit     Float
-  publish_status RhppStatus @default(DRAFT)
+    // business fields
+    period_id      String     @unique
+    total_income   Float
+    total_expense  Float
+    net_profit     Float
+    publish_status RhppStatus @default(DRAFT)
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relations
-  period       ProductionPeriod @relation(fields: [period_id], references: [id])
-  RhppDocument RhppDocument[]
+    // relations
+    period       ProductionPeriod @relation(fields: [period_id], references: [id])
+    RhppDocument RhppDocument[]
 
-  @@map("rhpps")
+    @@map("rhpps")
 }
 
 model RhppDocument {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  Rhpp_id         String
-  name            String
-  file_path_local String?
-  file_url        String?
-  file_type       String // pdf | jpg | png
+    Rhpp_id         String
+    name            String
+    file_path_local String?
+    file_url        String?
+    file_type       String // pdf | jpg | png
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  // relasi
-  rhpp Rhpp @relation(fields: [Rhpp_id], references: [id])
+    // relasi
+    rhpp Rhpp @relation(fields: [Rhpp_id], references: [id])
 }
 
 // =============================================================================
@@ -1198,22 +1241,22 @@ model RhppDocument {
 // -----------------------------------------------------------------------------
 
 model EducationArticle {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  name            String
-  highlight_price Float?
-  link_url        String?
-  image_url       String?
+    // business fields
+    name            String
+    highlight_price Float?
+    link_url        String?
+    image_url       String?
 
-  // offline-first fields
-  created_at DateTime?
-  updated_at DateTime?
-  deleted_at DateTime?
+    // offline-first fields
+    created_at DateTime?
+    updated_at DateTime?
+    deleted_at DateTime?
 
-  @@map("education_articles")
+    @@map("education_articles")
 }
 
 // -----------------------------------------------------------------------------
@@ -1221,22 +1264,22 @@ model EducationArticle {
 // -----------------------------------------------------------------------------
 
 model PriceReference {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  name            String
-  highlight_price Float?
-  link_url        String?
-  image_url       String?
+    // business fields
+    name            String
+    highlight_price Float?
+    link_url        String?
+    image_url       String?
 
-  // offline-first fields
-  created_at DateTime?
-  updated_at DateTime?
-  deleted_at DateTime?
+    // offline-first fields
+    created_at DateTime?
+    updated_at DateTime?
+    deleted_at DateTime?
 
-  @@map("price_references")
+    @@map("price_references")
 }
 
 // -----------------------------------------------------------------------------
@@ -1245,28 +1288,28 @@ model PriceReference {
 // -----------------------------------------------------------------------------
 
 model ReportTemplate {
-  id        String @id @default(uuid())
-  server_id Int?   @unique @default(autoincrement())
-  version   Int    @default(1)
+    id        String @id @default(uuid())
+    server_id Int?   @unique @default(autoincrement())
+    version   Int    @default(1)
 
-  // business fields
-  name                String
-  report_type         String
-  content_placeholder String @db.Text
+    // business fields
+    name                String
+    report_type         String
+    content_placeholder String @db.Text
 
-  // offline-first fields
-  sync_status       SyncStatus @default(PENDING_SYNC)
-  created_at_client DateTime
-  created_at_server DateTime?
-  updated_at_client DateTime
-  updated_at_server DateTime?
-  deleted_at        DateTime?
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
 
-  @@map("report_templates")
+    @@map("report_templates")
 }
 
 model sync_trackers {
-  table_name     String   @id
-  last_server_id Int
-  last_sync_at   DateTime
+    table_name     String   @id
+    last_server_id Int
+    last_sync_at   DateTime
 }

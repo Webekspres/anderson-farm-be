@@ -1,0 +1,87 @@
+# --- RESPONSE SCHEMAS ---
+CheckVersionResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: object
+      properties:
+        latest_version:
+          type: string
+          example: "1.2.0"
+          description: Versi terbaru aplikasi di server.
+        is_update_required:
+          type: boolean
+          example: true
+          description: True jika versi app_version user lebih rendah dari latest_version.
+        is_force_update:
+          type: boolean
+          example: true
+          description: True jika user WAJIB update (tidak bisa skip/tutup modal). Biasanya karena ada perubahan skema database lokal (offline-first).
+        download_url:
+          type: string
+          format: uri
+          example: "https://play.google.com/store/apps/details?id=com.andersonfarm.app"
+          description: Link menuju Play Store / App Store atau link file APK langsung.
+        release_notes:
+          type: string
+          example: "Perbaikan fitur sinkronisasi RHPP dan penambahan modul absensi."
+          description: Catatan pembaruan untuk ditampilkan di layar Splash.
+
+# --- NOTIFICATION SCHEMAS ---
+NotificationBase:
+  type: object
+  properties:
+    title:
+      type: string
+      example: "Tugas Terlewat!"
+      description: Judul notifikasi.
+    message:
+      type: string
+      example: "Anda belum mengisi laporan harian untuk Kandang Arwana 1."
+      description: Isi pesan notifikasi.
+    type:
+      type: string
+      enum: [INFO, WARNING, ANNOUNCEMENT, SYSTEM]
+      example: "WARNING"
+      description: Kategori notifikasi untuk menentukan icon di aplikasi mobile.
+    read_at:
+      type: ["string", "null"]
+      format: date-time
+      example: null
+      description: Timestamp kapan notifikasi dibaca (null jika belum dibaca).
+
+NotificationResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+        - $ref: "#/NotificationBase"
+        - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+
+NotificationListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/NotificationResponse"
+    meta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 1
