@@ -14,13 +14,12 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             // Primary Key & Unique Integer
             $table->uuid('id')->primary();
-            // server_id: integer unik, bukan auto increment
             $table->bigInteger('server_id')->unsigned()->unique();
             $table->integer('version')->default(1);
 
             // Business Fields
             $table->string('username')->unique();
-            $table->string('password_hash'); // Password hash untuk autentikasi
+            $table->string('password_hash');
             $table->string('name');
             $table->string('email')->nullable()->unique();
             $table->string('phone_number')->nullable();
@@ -40,6 +39,7 @@ return new class extends Migration
             $table->text('sync_metadata')->nullable();
 
             // Opsional: Bawaan Laravel untuk reset password
+            $table->timestamps();
             $table->rememberToken();
         });
 

@@ -15,7 +15,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username'  => ['required', 'string'],
+            'username'  => ['required', 'string'], // Bisa username atau email
             'password'  => ['required', 'string'],
             'device_id' => ['required', 'string'], // Wajib dikirim oleh HP Android
         ];

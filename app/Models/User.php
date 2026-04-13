@@ -12,8 +12,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -24,19 +22,30 @@ class User extends Authenticatable
 
     protected $fillable = [
         'username',
-        'password',
-        'full_name',
+        'password_hash',
+        'name',
         'email',
         'phone_number',
         'role',
         'device_id',
         'device_bound_at',
         'is_active',
-        // tambahkan field offline-first jika perlu
+        'version',
+        'server_id',
+        'last_validated_at',
+        'sync_status',
+        'created_at_client',
+        'created_at_server',
+        'updated_at_client',
+        'updated_at_server',
+        'deleted_at',
+        'sync_metadata',
+        'remember_token',
     ];
 
     protected $hidden = [
-        'password_hash', // Sembunyikan dari response JSON
+        'password_hash',
+        'remember_token',
     ];
 
     // OVERRIDE: Beri tahu fitur Auth Laravel untuk mengecek kolom 'password_hash'
@@ -53,7 +62,13 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'device_bound_at' => 'datetime',
+            'last_validated_at' => 'datetime',
+            'created_at_client' => 'datetime',
+            'created_at_server' => 'datetime',
+            'updated_at_client' => 'datetime',
+            'updated_at_server' => 'datetime',
+            'is_active' => 'boolean',
         ];
     }
 }

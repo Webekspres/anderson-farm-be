@@ -104,7 +104,7 @@ model User {
 
   // business fields
   username          String    @unique
-  password_hash     String
+  password          String
   name              String
   email             String?
   phone_number      String?

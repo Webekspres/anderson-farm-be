@@ -14,14 +14,17 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
 
-        // 1. Cari user berdasarkan username
-        $user = User::where('username', $validated['username'])->first();
+        // 1. Cari user berdasarkan username atau email
+        $user = User::where(function ($query) use ($validated) {
+            $query->where('username', $validated['username'])
+                ->orWhere('email', $validated['username']);
+        })->first();
 
         // 2. Verifikasi keberadaan user dan kecocokan password_hash
         if (!$user || !Hash::check($validated['password'], $user->password_hash)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Username atau password salah.',
+                'message' => 'Username/email atau password salah.',
                 'errors'  => (object)[] // Object kosong sesuai kontrak OpenAPI
             ], 401);
         }
