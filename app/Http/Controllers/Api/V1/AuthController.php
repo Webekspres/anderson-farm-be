@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
+use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -72,6 +73,42 @@ class AuthController extends Controller
                 'role'      => $user->role,
                 'device_id' => $user->device_id,
             ]
+        ], 200);
+    }
+
+    /**
+     * Ambil data user yang sedang login (cek sesi aktif)
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        // Jika ingin menambah relasi/hak akses lain, eager load di sini
+        return (new UserResource($user))->additional([
+            'success' => true,
+            'message' => 'Sesi aktif. Data user berhasil diambil.'
+        ]);
+    }
+
+    /**
+     * Logout user yang sedang login (revoke token)
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        if ($user) {
+            // Hapus semua token milik user (revoke all tokens)
+            $user->tokens()->delete();
+        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil logout.',
+            'errors'  => []
         ], 200);
     }
 }

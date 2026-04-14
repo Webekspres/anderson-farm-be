@@ -71,4 +71,15 @@ class User extends Authenticatable
             'is_active' => 'boolean',
         ];
     }
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            // Jika aplikasi berjalan di SQLite dan server_id kosong
+            if (empty($user->server_id)) {
+                // Beri angka acak agar SQLite tidak marah karena NULL
+                $user->server_id = random_int(1, 9999999);
+            }
+        });
+    }
 }

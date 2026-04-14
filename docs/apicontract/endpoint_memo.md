@@ -17,9 +17,9 @@ Seluruh aksi di bawah ini wajib dilakukan saat perangkat memiliki koneksi intern
 | `/api/v1/auth/login`           | `POST` | Login & _Device Binding_ (mengunci akun ke 1 HP)[cite: 7, 11].  |
 | `/api/v1/auth/me`              | `GET`  | Cek sesi aktif & tarik hak akses (_role_ & _coop_assignments_). |
 | `/api/v1/auth/logout`          | `POST` | Menghapus (_revoke_) token dari server.                         |
-| `/api/v1/auth/fcm-token`       | `POST` | Simpan token Firebase untuk menerima _Push Notification_.       |
 | `/api/v1/auth/forgot-password` | `POST` | Publik. Minta OTP/Link _reset password_.                        |
 | `/api/v1/auth/reset-password`  | `POST` | Publik. Submit _password_ baru dengan OTP.                      |
+| `/api/v1/auth/fcm-token`       | `POST` | Simpan token Firebase untuk menerima _Push Notification_.       |
 
 ### 2. Manajemen Pengguna & Profil (Admin/Self)
 

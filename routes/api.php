@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CheckController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -21,6 +20,7 @@ Route::prefix('v1')->group(function () {
     // Rute Terlindungi (Wajib Bawa Token)
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
-        // Rute lain menyusul di sini...
+        Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::post('/auth/logout', [AuthController::class, 'logout']);
     });
 });

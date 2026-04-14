@@ -25,6 +25,8 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'id'            => fake()->uuid(),
+            'server_id'     => fake()->unique()->numberBetween(1, 999999),
             'username' => fake()->unique()->userName(),
             'password_hash' => static::$password ??= Hash::make('password'),
             'name' => fake()->name(),
