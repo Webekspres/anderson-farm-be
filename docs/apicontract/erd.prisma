@@ -7,14 +7,14 @@
 // Backend   : Laravel + MySQL (provider mysql untuk mendukung enum).
 // =============================================================================
 
-// generator client {
-//   provider = "prisma-client-js"
-// }
+generator client {
+    provider = "prisma-client-js"
+}
 
-// datasource db {
-//   provider = "mysql"
-//   url      = env("DATABASE_URL")
-// }
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
 
 // -----------------------------------------------------------------------------
 // ENUMS

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CheckController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\ProfileController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -19,8 +20,16 @@ Route::prefix('v1')->group(function () {
 
     // Rute Terlindungi (Wajib Bawa Token)
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/users', [UserController::class, 'index']);
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::patch('/users/{server_id}', [UserController::class, 'update']);
+        Route::delete('/users/{server_id}', [UserController::class, 'destroy']);
+
+        // Profile
+        Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
     });
 });

@@ -37,7 +37,6 @@ class UserFactory extends Factory
             'device_bound_at' => null,
             'is_active' => true,
             'version' => 1,
-            'server_id' => null,
             'last_validated_at' => null,
             'sync_status' => 'PENDING_SYNC',
             'created_at_client' => now(),
