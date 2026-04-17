@@ -13,10 +13,14 @@ use function Pest\Laravel\patchJson;
 use function Pest\Laravel\deleteJson;
 use function Pest\Laravel\assertSoftDeleted;
 
-beforeEach(function () {
+const ENDPOINT = '/api/v1/areas';
 uses(RefreshDatabase::class);
 
-const ENDPOINT = '/api/v1/areas';
+
+beforeEach(function () {
+    // Setup sebelum setiap test jika diperlukan
+});
+
 
 it('lists areas with default page pagination', function () {
     $user = User::factory()->create();
@@ -25,7 +29,9 @@ it('lists areas with default page pagination', function () {
     $response = getJson(ENDPOINT);
     $response->assertOk()
         ->assertJsonStructure([
-            'success', 'message', 'data' => ['items', 'total', 'per_page', 'current_page', 'last_page']
+            'success',
+            'message',
+            'data' => ['items', 'total', 'per_page', 'current_page', 'last_page']
         ]);
 });
 

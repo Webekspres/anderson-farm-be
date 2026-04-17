@@ -5,15 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Area extends Model
+class Farm extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
-    protected $table = 'areas';
+    protected $table = 'farms';
     protected $keyType = 'string';
     public $incrementing = false;
 
@@ -21,17 +19,22 @@ class Area extends Model
         'id',
         'server_id',
         'version',
+        'area_id',
         'name',
-        'manager_id',
+        'address',
+        'is_active',
         'sync_status',
         'created_at_client',
         'created_at_server',
         'updated_at_client',
         'updated_at_server',
         'deleted_at',
+        'sync_metadata',
+        'type',
     ];
 
     protected $casts = [
+        'is_active' => 'boolean',
         'created_at_client' => 'datetime',
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
@@ -39,13 +42,13 @@ class Area extends Model
         'deleted_at'        => 'datetime',
     ];
 
-    public function manager()
+    public function area()
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        return $this->belongsTo(Area::class, 'area_id');
     }
 
-    // public function farms()
-    // {
-    //     return $this->hasMany(Farm::class, 'area_id');
-    // }
+    public function coops()
+    {
+        return $this->hasMany(Coop::class, 'farm_id');
+    }
 }

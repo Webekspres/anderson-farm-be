@@ -5,15 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Area extends Model
+class FormConfig extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
-    protected $table = 'areas';
+    protected $table = 'form_configs';
     protected $keyType = 'string';
     public $incrementing = false;
 
@@ -21,8 +19,9 @@ class Area extends Model
         'id',
         'server_id',
         'version',
-        'name',
-        'manager_id',
+        'category',
+        'key_name',
+        'config_value',
         'sync_status',
         'created_at_client',
         'created_at_server',
@@ -32,20 +31,22 @@ class Area extends Model
     ];
 
     protected $casts = [
+        'config_value' => 'array',
+        'is_active' => 'boolean',
         'created_at_client' => 'datetime',
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
-        'deleted_at'        => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
-    public function manager()
+    public function periodAssignments()
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        return $this->hasMany(PeriodFormAssignment::class, 'form_config_id');
     }
 
-    // public function farms()
-    // {
-    //     return $this->hasMany(Farm::class, 'area_id');
-    // }
+    public function coopAssignments()
+    {
+        return $this->hasMany(CoopFormAssignment::class, 'form_config_id');
+    }
 }

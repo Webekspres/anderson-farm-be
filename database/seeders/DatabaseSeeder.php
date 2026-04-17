@@ -18,5 +18,11 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
         $this->call(UserSeeder::class);
         $this->call(AreaSeeder::class);
+        $this->call(FarmSeeder::class);
+        $this->call([
+            CoopSeeder::class,
+            EquipmentTypeSeeder::class,
+            TransactionCategorySeeder::class,
+        ]);
     }
 }

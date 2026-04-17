@@ -5,15 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Area extends Model
+class EquipmentType extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
-    protected $table = 'areas';
+    protected $table = 'equipment_types';
     protected $keyType = 'string';
     public $incrementing = false;
 
@@ -22,7 +20,7 @@ class Area extends Model
         'server_id',
         'version',
         'name',
-        'manager_id',
+        'description',
         'sync_status',
         'created_at_client',
         'created_at_server',
@@ -39,13 +37,13 @@ class Area extends Model
         'deleted_at'        => 'datetime',
     ];
 
-    public function manager()
+    public function coopEquipments()
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        return $this->hasMany(CoopEquipment::class, 'equipment_type_id');
     }
 
-    // public function farms()
-    // {
-    //     return $this->hasMany(Farm::class, 'area_id');
-    // }
+    public function equipmentTypeFormConfigs()
+    {
+        return $this->hasMany(EquipmentTypeFormConfig::class, 'equipment_type_id');
+    }
 }

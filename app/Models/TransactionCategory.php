@@ -2,50 +2,50 @@
 
 namespace App\Models;
 
+
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
+// If Transaction model exists, import it. Otherwise, comment out the relation.
+// use App\Models\Transaction;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
-
-class Area extends Model
+class TransactionCategory extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
-    protected $table = 'areas';
-    protected $keyType = 'string';
+    protected $table = 'transaction_categories';
     public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
         'id',
         'server_id',
         'version',
         'name',
-        'manager_id',
+        'type',
+        'is_active',
         'sync_status',
         'created_at_client',
         'created_at_server',
         'updated_at_client',
         'updated_at_server',
-        'deleted_at',
+        'deleted_at'
     ];
 
     protected $casts = [
+        'is_active' => 'boolean',
         'created_at_client' => 'datetime',
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
-        'deleted_at'        => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
-    public function manager()
-    {
-        return $this->belongsTo(User::class, 'manager_id');
-    }
-
-    // public function farms()
+    // Uncomment if Transaction model exists
+    // public function transactions()
     // {
-    //     return $this->hasMany(Farm::class, 'area_id');
+    //     return $this->hasMany(Transaction::class, 'category_id');
     // }
 }

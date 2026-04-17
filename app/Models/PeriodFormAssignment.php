@@ -5,24 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Area extends Model
+class PeriodFormAssignment extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
-    protected $table = 'areas';
+    protected $table = 'period_form_assignments';
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
         'id',
         'server_id',
-        'version',
-        'name',
-        'manager_id',
+        'period_id',
+        'form_config_id',
+        'display_order',
+        'is_active',
         'sync_status',
         'created_at_client',
         'created_at_server',
@@ -32,20 +31,16 @@ class Area extends Model
     ];
 
     protected $casts = [
+        'is_active' => 'boolean',
         'created_at_client' => 'datetime',
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
-        'deleted_at'        => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
-    public function manager()
+    public function formConfig()
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        return $this->belongsTo(FormConfig::class, 'form_config_id');
     }
-
-    // public function farms()
-    // {
-    //     return $this->hasMany(Farm::class, 'area_id');
-    // }
 }
