@@ -53,6 +53,10 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('transaction-categories', TransactionCategoryController::class);
         // OvkItem CRUD
         Route::apiResource('ovk-items', OvkItemController::class);
+        // EducationArticle CRUD
+        Route::apiResource('education-articles', App\Http\Controllers\Api\V1\EducationArticleController::class)->only(['store', 'update', 'destroy']);
+        // PriceReference CRUD
+        Route::apiResource('price-references', App\Http\Controllers\Api\V1\PriceReferenceController::class)->only(['store', 'update', 'destroy']);
         // FormConfig CRUD
         Route::apiResource('form-configs', FormConfigController::class);
     });

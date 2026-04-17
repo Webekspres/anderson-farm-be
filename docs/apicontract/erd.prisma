@@ -1246,10 +1246,11 @@ model EducationArticle {
     version   Int    @default(1)
 
     // business fields
-    name      String
-    excerpt   String?
-    link_url  String?
-    image_url String?
+    name             String
+    excerpt          String?
+    link_url         String?
+    image_url        String?
+    image_path_local String?
 
     // offline-first fields
     created_at DateTime?
@@ -1269,10 +1270,11 @@ model PriceReference {
     version   Int    @default(1)
 
     // business fields
-    name            String
-    highlight_price Float?
-    link_url        String?
-    image_url       String?
+    name             String
+    highlight_price  Float?
+    link_url         String?
+    image_url        String?
+    image_path_local String?
 
     // offline-first fields
     created_at DateTime?
