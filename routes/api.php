@@ -31,5 +31,10 @@ Route::prefix('v1')->group(function () {
 
         // Profile
         Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
+        // Area CRUD
+        Route::get('/areas', [\App\Http\Controllers\Api\V1\AreaController::class, 'index']);
+        Route::post('/areas', [\App\Http\Controllers\Api\V1\AreaController::class, 'store']);
+        Route::patch('/areas/{id}', [\App\Http\Controllers\Api\V1\AreaController::class, 'update']);
+        Route::delete('/areas/{id}', [\App\Http\Controllers\Api\V1\AreaController::class, 'destroy']);
     });
 });

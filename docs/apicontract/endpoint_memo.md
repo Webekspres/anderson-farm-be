@@ -37,16 +37,16 @@ _Operasi CRUD (Create, Read, Update, Delete) untuk tabel referensi sistem._
 
 | Path                             |      Method      | Deskripsi Singkat                                             |
 | :------------------------------- | :--------------: | :------------------------------------------------------------ |
-| `/api/v1/areas`                  | `POST, PUT, DEL` | Kelola wilayah operasional.                                   |
-| `/api/v1/farms`                  | `POST, PUT, DEL` | Kelola _farm_ di bawah suatu area.                            |
-| `/api/v1/coops`                  | `POST, PUT, DEL` | Kelola bangunan fisik kandang, kapasitas, & `coop_type`.      |
-| `/api/v1/form-configs`           | `POST, PUT, DEL` | Buat format JSON untuk UI _Dynamic Form_ (Sensor/HBE).        |
-| `/api/v1/equipment-types`        | `POST, PUT, DEL` | Daftar jenis alat/sensor fisik (Kipas, Heater).               |
-| `/api/v1/transaction-categories` | `POST, PUT, DEL` | Daftar kode akun arus kas (INCOME/EXPENSE).                   |
-| `/api/v1/ovk-items`              | `POST, PUT, DEL` | Master data jenis Obat, Vaksin, dan Kimia berserta satuannya. |
-| `/api/v1/education-articles`     | `POST, PUT, DEL` | Kelola artikel panduan/edukasi ABK.                           |
-| `/api/v1/price-references`       | `POST, PUT, DEL` | Kelola referensi harga komoditas (ayam, pakan).               |
-| `/api/v1/report-templates`       | `POST, PUT, DEL` | Kelola _template_ auto-teks laporan WhatsApp.                 |
+| `/api/v1/areas`                  | `POST, PATCH, DEL` | Kelola wilayah operasional.                                   |
+| `/api/v1/farms`                  | `POST, PATCH, DEL` | Kelola _farm_ di bawah suatu area.                            |
+| `/api/v1/coops`                  | `POST, PATCH, DEL` | Kelola bangunan fisik kandang, kapasitas, & `coop_type`.      |
+| `/api/v1/form-configs`           | `POST, PATCH, DEL` | Buat format JSON untuk UI _Dynamic Form_ (Sensor/HBE).        |
+| `/api/v1/equipment-types`        | `POST, PATCH, DEL` | Daftar jenis alat/sensor fisik (Kipas, Heater).               |
+| `/api/v1/transaction-categories` | `POST, PATCH, DEL` | Daftar kode akun arus kas (INCOME/EXPENSE).                   |
+| `/api/v1/ovk-items`              | `POST, PATCH, DEL` | Master data jenis Obat, Vaksin, dan Kimia berserta satuannya. |
+| `/api/v1/education-articles`     | `POST, PATCH, DEL` | Kelola artikel panduan/edukasi ABK.                           |
+| `/api/v1/price-references`       | `POST, PATCH, DEL` | Kelola referensi harga komoditas (ayam, pakan).               |
+| `/api/v1/report-templates`       | `POST, PATCH, DEL` | Kelola _template_ auto-teks laporan WhatsApp.                 |
 
 ### 4. Setup Kandang & Periode Ternak (Krusial)
 

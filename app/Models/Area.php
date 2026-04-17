@@ -41,8 +41,8 @@ class Area extends Model
         return $this->belongsTo(User::class, 'manager_id');
     }
 
-    public function farms()
-    {
-        return $this->hasMany(Farm::class, 'area_id');
-    }
+    // public function farms()
+    // {
+    //     return $this->hasMany(Farm::class, 'area_id');
+    // }
 }
