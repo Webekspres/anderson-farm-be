@@ -44,6 +44,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/areas', [\App\Http\Controllers\Api\V1\AreaController::class, 'store']);
         Route::patch('/areas/{id}', [\App\Http\Controllers\Api\V1\AreaController::class, 'update']);
         Route::delete('/areas/{id}', [\App\Http\Controllers\Api\V1\AreaController::class, 'destroy']);
+
+        // ReportTemplate CRUD
+        Route::apiResource('report-templates', App\Http\Controllers\Api\V1\ReportTemplateController::class);
         // Farm CRUD
         Route::get('/farms', [\App\Http\Controllers\Api\V1\FarmController::class, 'index']);
         Route::post('/farms', [\App\Http\Controllers\Api\V1\FarmController::class, 'store']);
