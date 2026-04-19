@@ -66,5 +66,12 @@ Route::prefix('v1')->group(function () {
         // Upload endpoints
         Route::post('/uploads', [\App\Http\Controllers\Api\V1\UploadController::class, 'store']);
         Route::delete('/uploads', [\App\Http\Controllers\Api\V1\UploadController::class, 'destroy']);
+        // CoopDocument nested endpoints
+        Route::get('/coops/{coop}/documents', [\App\Http\Controllers\Api\V1\CoopDocumentController::class, 'index']);
+        Route::post('/coops/{coop}/documents', [\App\Http\Controllers\Api\V1\CoopDocumentController::class, 'store']);
+        Route::delete('/coops/{coop}/documents/{document}', [\App\Http\Controllers\Api\V1\CoopDocumentController::class, 'destroy']);
+
+        // Bulk assignment pekerja ke kandang
+        Route::post('/coops/{coop_id}/user-assignments', [\App\Http\Controllers\Api\V1\CoopUserAssignmentController::class, 'sync']);
     });
 });

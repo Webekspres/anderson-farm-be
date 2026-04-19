@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             EquipmentTypeSeeder::class,
             TransactionCategorySeeder::class,
             ReportTemplateSeeder::class,
+            CoopDocumentSeeder::class,
         ]);
     }
 }

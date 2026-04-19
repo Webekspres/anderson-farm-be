@@ -35,8 +35,8 @@ Seluruh aksi di bawah ini wajib dilakukan saat perangkat memiliki koneksi intern
 
 _Operasi CRUD (Create, Read, Update, Delete) untuk tabel referensi sistem._
 
-| Path                             |      Method      | Deskripsi Singkat                                             |
-| :------------------------------- | :--------------: | :------------------------------------------------------------ |
+| Path                             |       Method       | Deskripsi Singkat                                             |
+| :------------------------------- | :----------------: | :------------------------------------------------------------ |
 | `/api/v1/areas`                  | `POST, PATCH, DEL` | Kelola wilayah operasional.                                   |
 | `/api/v1/farms`                  | `POST, PATCH, DEL` | Kelola _farm_ di bawah suatu area.                            |
 | `/api/v1/coops`                  | `POST, PATCH, DEL` | Kelola bangunan fisik kandang, kapasitas, & `coop_type`.      |
@@ -52,18 +52,19 @@ _Operasi CRUD (Create, Read, Update, Delete) untuk tabel referensi sistem._
 
 *Membangun kerangka struktural (*Setup*) wajib secara online agar aman dari konflik. Menggunakan pola Deferred Upload untuk dokumen pendukung.*
 
-| Path                                    |   Method    | Deskripsi Singkat                                                    |
-| :-------------------------------------- | :---------: | :------------------------------------------------------------------- |
-| `/api/v1/coops/{id}/documents`          |   `POST`    | Menyimpan JSON URL untuk file SOP/Panduan fisik kandang.             |
-| `/api/v1/coops/{id}/form-assignments`   |   `POST`    | Mengaktifkan master form spesifik ke kandang tertentu.               |
-| `/api/v1/coops/{id}/equipments`         | `POST, DEL` | Meregistrasi/mencabut alat fisik (`unit_code`) di kandang.           |
-| `/api/v1/periods`                       | `POST, PUT` | Inisiasi & edit kerangka Periode Ternak baru (`initial_stock`, dll). |
-| `/api/v1/periods/{id}/investors`        |   `POST`    | Menugaskan persentase bagi hasil Investor di periode.                |
-| `/api/v1/periods/{id}/checklist-tasks`  |   `POST`    | _Generate_ daftar SOP/tugas (_Boolean/Text_) khusus periode ini.     |
-| `/api/v1/periods/{id}/form-assignments` |   `POST`    | Mengaitkan pertanyaan HBE spesifik khusus periode ini.               |
-| `/api/v1/periods/{id}/contracts`        |   `POST`    | Menyimpan JSON URL kontrak bagi hasil untuk disetujui ABK.           |
-| `/api/v1/periods/{id}/documents`        |   `POST`    | Menyimpan JSON URL file jadwal/dokumen khusus periode tersebut.      |
-| `/api/v1/periods/{id}/rhpp-documents`   |   `POST`    | Menyimpan JSON URL dari file PDF RHPP Final yang dilampirkan Admin.  |
+| Path                                    |        Method        | Deskripsi Singkat                                                    |
+| :-------------------------------------- | :------------------: | :------------------------------------------------------------------- |
+| `/api/v1/coops/{id}/documents`          | `GET`, `POST`, `DEL` | Menyimpan JSON URL untuk file SOP/Panduan fisik kandang.             |
+| `/api/v1/coops/{id}/user-assignments`   |        `POST`        | Menugaskan pekerja ke kandang tertentu (Bulk).                       |
+| `/api/v1/coops/{id}/form-assignments`   |        `POST`        | Mengaktifkan master form spesifik ke kandang tertentu.               |
+| `/api/v1/coops/{id}/equipments`         |     `POST, DEL`      | Meregistrasi/mencabut alat fisik (`unit_code`) di kandang.           |
+| `/api/v1/periods`                       |     `POST, PUT`      | Inisiasi & edit kerangka Periode Ternak baru (`initial_stock`, dll). |
+| `/api/v1/periods/{id}/investors`        |        `POST`        | Menugaskan persentase bagi hasil Investor di periode.                |
+| `/api/v1/periods/{id}/checklist-tasks`  |        `POST`        | _Generate_ daftar SOP/tugas (_Boolean/Text_) khusus periode ini.     |
+| `/api/v1/periods/{id}/form-assignments` |        `POST`        | Mengaitkan pertanyaan HBE spesifik khusus periode ini.               |
+| `/api/v1/periods/{id}/contracts`        |        `POST`        | Menyimpan JSON URL kontrak bagi hasil untuk disetujui ABK.           |
+| `/api/v1/periods/{id}/documents`        |        `POST`        | Menyimpan JSON URL file jadwal/dokumen khusus periode tersebut.      |
+| `/api/v1/periods/{id}/rhpp-documents`   |        `POST`        | Menyimpan JSON URL dari file PDF RHPP Final yang dilampirkan Admin.  |
 
 ### 5. Ekspor, Impor & Upload File (Storage & Compute)
 
