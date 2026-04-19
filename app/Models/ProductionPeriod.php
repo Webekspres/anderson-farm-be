@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class ProductionPeriod extends Model
+{
+    use HasFactory, HasUuids, SoftDeletes;
+
+    protected $table = 'production_periods';
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+    protected $fillable = [
+        'id',
+        'server_id',
+        'version',
+        'coop_id',
+        'pic_id',
+        'period_code',
+        'start_date',
+        'end_date',
+        'initial_stock',
+        'closing_reason',
+        'sync_status',
+        'created_at_client',
+        'created_at_server',
+        'updated_at_client',
+        'updated_at_server',
+        'deleted_at',
+    ];
+
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'created_at_client' => 'datetime',
+        'created_at_server' => 'datetime',
+        'updated_at_client' => 'datetime',
+        'updated_at_server' => 'datetime',
+        'deleted_at' => 'datetime',
+    ];
+
+    public function coop()
+    {
+        return $this->belongsTo(Coop::class, 'coop_id');
+    }
+
+    public function pic()
+    {
+        return $this->belongsTo(User::class, 'pic_id');
+    }
+}

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\TransactionCategoryController;
 use App\Http\Controllers\Api\V1\OvkItemController;
+use App\Http\Controllers\Api\V1\CoopEquipmentController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -27,31 +28,25 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
 
-        Route::get('/users', [UserController::class, 'index']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::patch('/users/{server_id}', [UserController::class, 'update']);
-        Route::delete('/users/{server_id}', [UserController::class, 'destroy']);
+        Route::apiResource('users', UserController::class)->except(['show']);
 
         // Profile
         Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
 
         // Coop endpoints
         Route::apiResource('coops', App\Http\Controllers\Api\V1\CoopController::class);
+
         // EquipmentType endpoints
         Route::apiResource('equipment-types', App\Http\Controllers\Api\V1\EquipmentTypeController::class);
-        // Area CRUD
-        Route::get('/areas', [\App\Http\Controllers\Api\V1\AreaController::class, 'index']);
-        Route::post('/areas', [\App\Http\Controllers\Api\V1\AreaController::class, 'store']);
-        Route::patch('/areas/{id}', [\App\Http\Controllers\Api\V1\AreaController::class, 'update']);
-        Route::delete('/areas/{id}', [\App\Http\Controllers\Api\V1\AreaController::class, 'destroy']);
+        Route::post('/equipment-types/{equipment_type}/form-configs', [\App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController::class, '__invoke']);
+
+        Route::apiResource('areas', App\Http\Controllers\Api\V1\AreaController::class)->except(['show']);
 
         // ReportTemplate CRUD
         Route::apiResource('report-templates', App\Http\Controllers\Api\V1\ReportTemplateController::class);
         // Farm CRUD
-        Route::get('/farms', [\App\Http\Controllers\Api\V1\FarmController::class, 'index']);
-        Route::post('/farms', [\App\Http\Controllers\Api\V1\FarmController::class, 'store']);
-        Route::patch('/farms/{id}', [\App\Http\Controllers\Api\V1\FarmController::class, 'update']);
-        Route::delete('/farms/{id}', [\App\Http\Controllers\Api\V1\FarmController::class, 'destroy']);
+        Route::apiResource('farms', App\Http\Controllers\Api\V1\FarmController::class);
+
         // TransactionCategory CRUD
         Route::apiResource('transaction-categories', TransactionCategoryController::class);
         // OvkItem CRUD
@@ -66,12 +61,18 @@ Route::prefix('v1')->group(function () {
         // Upload endpoints
         Route::post('/uploads', [\App\Http\Controllers\Api\V1\UploadController::class, 'store']);
         Route::delete('/uploads', [\App\Http\Controllers\Api\V1\UploadController::class, 'destroy']);
+
         // CoopDocument nested endpoints
         Route::get('/coops/{coop}/documents', [\App\Http\Controllers\Api\V1\CoopDocumentController::class, 'index']);
         Route::post('/coops/{coop}/documents', [\App\Http\Controllers\Api\V1\CoopDocumentController::class, 'store']);
         Route::delete('/coops/{coop}/documents/{document}', [\App\Http\Controllers\Api\V1\CoopDocumentController::class, 'destroy']);
 
+        // CoopEquipment nested endpoints
+        Route::get('/coops/{coop}/equipments', [CoopEquipmentController::class, 'index']);
+        Route::post('/coops/{coop}/equipments', [CoopEquipmentController::class, 'store']);
+        Route::delete('/coops/{coop}/equipments/{equipment}', [CoopEquipmentController::class, 'destroy']);
+
         // Bulk assignment pekerja ke kandang
-        Route::post('/coops/{coop_id}/user-assignments', [\App\Http\Controllers\Api\V1\CoopUserAssignmentController::class, 'sync']);
+        Route::post('/coops/{coop}/user-assignments', [\App\Http\Controllers\Api\V1\CoopUserAssignmentController::class, 'sync']);
     });
 });

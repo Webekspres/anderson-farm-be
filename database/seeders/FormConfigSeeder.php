@@ -21,17 +21,23 @@ class FormConfigSeeder extends Seeder
         )->create();
 
         // 2. Dummy assignments ke period/coop
+        // Cek data period dan coop_equipment valid
+        $periodId = \App\Models\ProductionPeriod::query()->value('id');
+        $coopEquipmentId = \App\Models\CoopEquipment::query()->value('id');
+
         foreach ($formConfigs as $formConfig) {
-            // Assign ke period
-            PeriodFormAssignment::factory()->create([
-                'form_config_id' => $formConfig->id,
-                'period_id' => fake()->uuid(), // ganti dengan id period valid jika ada
-            ]);
-            // Assign ke coop
-            CoopFormAssignment::factory()->create([
-                'form_config_id' => $formConfig->id,
-                'coop_equipment_id' => fake()->uuid(), // ganti dengan id coop_equipment valid jika ada
-            ]);
+            if ($periodId) {
+                PeriodFormAssignment::factory()->create([
+                    'form_config_id' => $formConfig->id,
+                    'period_id' => $periodId,
+                ]);
+            }
+            if ($coopEquipmentId) {
+                CoopFormAssignment::factory()->create([
+                    'form_config_id' => $formConfig->id,
+                    'coop_equipment_id' => $coopEquipmentId,
+                ]);
+            }
         }
         // Tambahkan ke DatabaseSeeder.php:
         // $this->call(FormConfigSeeder::class);

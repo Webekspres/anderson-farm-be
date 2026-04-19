@@ -56,8 +56,8 @@ _Operasi CRUD (Create, Read, Update, Delete) untuk tabel referensi sistem._
 | :-------------------------------------- | :------------------: | :------------------------------------------------------------------- |
 | `/api/v1/coops/{id}/documents`          | `GET`, `POST`, `DEL` | Menyimpan JSON URL untuk file SOP/Panduan fisik kandang.             |
 | `/api/v1/coops/{id}/user-assignments`   |        `POST`        | Menugaskan pekerja ke kandang tertentu (Bulk).                       |
-| `/api/v1/coops/{id}/form-assignments`   |        `POST`        | Mengaktifkan master form spesifik ke kandang tertentu.               |
 | `/api/v1/coops/{id}/equipments`         |     `POST, DEL`      | Meregistrasi/mencabut alat fisik (`unit_code`) di kandang.           |
+| `/api/v1/coops/{id}/form-assignments`   |        `POST`        | Mengaktifkan master form spesifik ke kandang tertentu.               |
 | `/api/v1/periods`                       |     `POST, PUT`      | Inisiasi & edit kerangka Periode Ternak baru (`initial_stock`, dll). |
 | `/api/v1/periods/{id}/investors`        |        `POST`        | Menugaskan persentase bagi hasil Investor di periode.                |
 | `/api/v1/periods/{id}/checklist-tasks`  |        `POST`        | _Generate_ daftar SOP/tugas (_Boolean/Text_) khusus periode ini.     |
