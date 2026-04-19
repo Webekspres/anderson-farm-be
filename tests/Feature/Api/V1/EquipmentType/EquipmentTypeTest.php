@@ -107,26 +107,24 @@ describe('EquipmentType API', function () {
         $response->assertOk()->assertJson(['message' => 'Deleted successfully', 'data' => null]);
         $this->assertSoftDeleted('equipment_types', ['id' => $equipmentType->id]);
     });
+});
+describe('EquipmentType API unauthenticated', function () {
+    it('returns 401 if not authenticated', function () {
+        config(['auth.defaults.guard' => 'sanctum']);
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer invalidtoken',
+            'Accept' => 'application/json',
+        ])->getJson('/api/v1/equipment-types');
+        $response->assertStatus(401);
+    });
 
+    it('returns 401 on GET if not authenticated', function () {
+        $this->refreshApplication();
+        $this->getJson("/api/v1/equipment-types/")->assertUnauthorized();
+    });
 
-    describe('EquipmentType API unauthenticated', function () {
-        // it('returns 401 if not authenticated', function () {
-        //     config(['auth.defaults.guard' => 'sanctum']);
-        //     $response = $this->withHeaders([
-        //         'Authorization' => 'Bearer invalidtoken',
-        //         'Accept' => 'application/json',
-        //     ])->getJson('/api/v1/equipment-types');
-        //     $response->assertStatus(401);
-        // });
-
-        it('returns 401 on GET if not authenticated', function () {
-            $this->refreshApplication();
-            $this->getJson("/api/v1/equipment-types/")->assertUnauthorized();
-        });
-
-        it('returns 401 on POST if not authenticated', function () {
-            $this->refreshApplication();
-            $this->postJson("/api/v1/equipment-types/", [])->assertUnauthorized();
-        });
+    it('returns 401 on POST if not authenticated', function () {
+        $this->refreshApplication();
+        $this->postJson("/api/v1/equipment-types/", [])->assertUnauthorized();
     });
 });

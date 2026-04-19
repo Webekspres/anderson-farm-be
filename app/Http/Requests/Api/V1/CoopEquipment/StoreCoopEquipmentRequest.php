@@ -18,7 +18,17 @@ class StoreCoopEquipmentRequest extends FormRequest
         $coopId = $coop instanceof \App\Models\Coop ? $coop->id : $coop;
 
         return [
-            'equipment_type_id' => ['required', 'exists:equipment_types,id'],
+            'equipment_type_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $exists = \App\Models\EquipmentType::where('id', $value)
+                        ->whereNull('deleted_at')
+                        ->exists();
+                    if (!$exists) {
+                        $fail('The selected equipment type is invalid or has been deleted.');
+                    }
+                },
+            ],
             'unit_code' => [
                 'nullable',
                 'string',

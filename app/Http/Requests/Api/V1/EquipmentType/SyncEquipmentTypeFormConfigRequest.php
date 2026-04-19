@@ -14,10 +14,9 @@ class SyncEquipmentTypeFormConfigRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Accept empty array, but must be present
             'form_assignments' => ['present', 'array'],
-            'form_assignments.*.form_config_id' => ['required_with:form_assignments.*', 'string', 'exists:form_configs,id'],
-            'form_assignments.*.display_order' => ['required_with:form_assignments.*', 'integer'],
+            'form_assignments.*.form_config_id' => ['required', 'string', 'exists:form_configs,id'],
+            'form_assignments.*.display_order' => ['required', 'integer'],
         ];
     }
 }

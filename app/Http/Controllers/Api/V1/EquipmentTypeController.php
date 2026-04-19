@@ -50,7 +50,11 @@ class EquipmentTypeController extends Controller
     public function store(StoreEquipmentTypeRequest $request)
     {
         $equipmentType = EquipmentType::create($request->validated());
-        return (new EquipmentTypeResource($equipmentType))->response()->setStatusCode(Response::HTTP_CREATED);
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil membuat equipment type',
+            'data' => new EquipmentTypeResource($equipmentType),
+        ], Response::HTTP_CREATED);
     }
 
     public function show(EquipmentType $equipmentType)

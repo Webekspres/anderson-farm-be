@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CheckController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -9,10 +10,6 @@ use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\TransactionCategoryController;
 use App\Http\Controllers\Api\V1\OvkItemController;
 use App\Http\Controllers\Api\V1\CoopEquipmentController;
-
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
 
 
 // Laravel otomatis menambahkan prefix '/api' di depan route ini
@@ -38,7 +35,7 @@ Route::prefix('v1')->group(function () {
 
         // EquipmentType endpoints
         Route::apiResource('equipment-types', App\Http\Controllers\Api\V1\EquipmentTypeController::class);
-        Route::post('/equipment-types/{equipment_type}/form-configs', [\App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController::class, '__invoke']);
+        Route::post('/equipment-types/{equipment_type}/form-configs', [SyncEquipmentTypeFormConfigController::class, '__invoke']);
 
         Route::apiResource('areas', App\Http\Controllers\Api\V1\AreaController::class)->except(['show']);
 
@@ -74,5 +71,8 @@ Route::prefix('v1')->group(function () {
 
         // Bulk assignment pekerja ke kandang
         Route::post('/coops/{coop}/user-assignments', [\App\Http\Controllers\Api\V1\CoopUserAssignmentController::class, 'sync']);
+
+        // Bulk sync form assignments ke alat di kandang
+        Route::post('/coops/{coop}/form-assignments', [\App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController::class, '__invoke']);
     });
 });

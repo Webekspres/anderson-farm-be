@@ -32,7 +32,11 @@ class CoopController extends Controller
     public function store(StoreCoopRequest $request)
     {
         $coop = Coop::create($request->validated());
-        return (new CoopResource($coop))->response()->setStatusCode(Response::HTTP_CREATED);
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil membuat kandang',
+            'data' => new CoopResource($coop),
+        ], Response::HTTP_CREATED);
     }
 
     public function show(Coop $coop)

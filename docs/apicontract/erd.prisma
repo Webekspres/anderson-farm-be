@@ -507,7 +507,6 @@ model PeriodFormAssignment {
 // -----------------------------------------------------------------------------
 // 3. ASSIGNMENT ALAT KE KANDANG SPESIFIK (Bisa Beda Tiap Kandang)
 // -----------------------------------------------------------------------------
-// Menggantikan "EquipmentTypeFormConfig" yang kaku.
 model CoopFormAssignment {
     id        String @id @default(uuid())
     server_id Int?   @unique @default(autoincrement())

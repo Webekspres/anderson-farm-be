@@ -29,6 +29,16 @@ class EquipmentType extends Model
         'deleted_at',
     ];
 
+    public function formConfigs()
+    {
+        return $this->belongsToMany(
+            FormConfig::class,
+            'equipment_type_form_configs',
+            'equipment_type_id',
+            'form_config_id'
+        )->withPivot(['display_order', 'sync_status', 'created_at_client', 'created_at_server', 'updated_at_client', 'updated_at_server', 'version', 'id', 'deleted_at']);
+    }
+
     protected $casts = [
         'created_at_client' => 'datetime',
         'created_at_server' => 'datetime',
