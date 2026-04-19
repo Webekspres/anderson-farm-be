@@ -62,5 +62,9 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('price-references', App\Http\Controllers\Api\V1\PriceReferenceController::class)->only(['store', 'update', 'destroy']);
         // FormConfig CRUD
         Route::apiResource('form-configs', FormConfigController::class);
+
+        // Upload endpoints
+        Route::post('/uploads', [\App\Http\Controllers\Api\V1\UploadController::class, 'store']);
+        Route::delete('/uploads', [\App\Http\Controllers\Api\V1\UploadController::class, 'destroy']);
     });
 });
