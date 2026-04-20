@@ -24,9 +24,9 @@
 
                         // offline-first fields
                         $table->string('sync_status')->default('PENDING_SYNC');
-                        $table->timestamp('created_at_client');
+                        $table->timestamp('created_at_client')->nullable();
                         $table->timestamp('created_at_server')->nullable();
-                        $table->timestamp('updated_at_client');
+                        $table->timestamp('updated_at_client')->nullable();
                         $table->timestamp('updated_at_server')->nullable();
                         $table->timestamp('deleted_at')->nullable();
 

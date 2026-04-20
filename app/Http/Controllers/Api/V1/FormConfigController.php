@@ -32,8 +32,10 @@ class FormConfigController extends Controller
         $formConfig = FormConfig::create($validated);
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil membuat form config',
             'data' => $formConfig,
+            'meta' => [
+                'message' => 'Berhasil membuat form config',
+            ],
         ], 201);
     }
 

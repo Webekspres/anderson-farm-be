@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
+use App\Http\Controllers\Api\V1\PeriodInvestorController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CheckController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -21,6 +22,9 @@ Route::prefix('v1')->group(function () {
 
     // Rute Terlindungi (Wajib Bawa Token)
     Route::middleware('auth:sanctum')->group(function () {
+
+
+
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
@@ -74,5 +78,9 @@ Route::prefix('v1')->group(function () {
 
         // Bulk sync form assignments ke alat di kandang
         Route::post('/coops/{coop}/form-assignments', [\App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController::class, '__invoke']);
+
+        // Production Period endpoints
+        Route::post('/periods', [\App\Http\Controllers\Api\V1\PeriodController::class, 'store']);
+        Route::post('/periods/{period_id}/investors', [PeriodInvestorController::class, 'sync']);
     });
 });

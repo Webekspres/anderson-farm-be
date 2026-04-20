@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             CoopEquipmentSeeder::class,
             CoopUserAssignmentSeeder::class,
             EquipmentTypeFormConfigSeeder::class,
+            PeriodFormAssignmentSeeder::class,
         ]);
     }
 }

@@ -65,6 +65,7 @@ _Operasi CRUD (Create, Read, Update, Delete) untuk tabel referensi sistem._
 | `/api/v1/periods/{id}/contracts`        |        `POST`        | Menyimpan JSON URL kontrak bagi hasil untuk disetujui ABK.           |
 | `/api/v1/periods/{id}/documents`        |        `POST`        | Menyimpan JSON URL file jadwal/dokumen khusus periode tersebut.      |
 | `/api/v1/periods/{id}/rhpp-documents`   |        `POST`        | Menyimpan JSON URL dari file PDF RHPP Final yang dilampirkan Admin.  |
+| `/api/v1/contracts/{id}/accept`         |        `POST`        | Menyetujui contract dari manajer                                     |
 
 ### 5. Ekspor, Impor & Upload File (Storage & Compute)
 

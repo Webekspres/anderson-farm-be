@@ -11,6 +11,11 @@ class ProductionPeriod extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
+    public function period_investors()
+    {
+        return $this->hasMany(PeriodInvestor::class, 'period_id');
+    }
+
     protected $table = 'production_periods';
     protected $keyType = 'string';
     public $incrementing = false;
