@@ -1,17 +1,25 @@
 <?php
 
-use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
-use App\Http\Controllers\Api\V1\PeriodInvestorController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CheckController;
 use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\FormConfigController;
-use App\Http\Controllers\Api\V1\UserController;
-use App\Http\Controllers\Api\V1\ProfileController;
-use App\Http\Controllers\Api\V1\TransactionCategoryController;
-use App\Http\Controllers\Api\V1\OvkItemController;
+use App\Http\Controllers\Api\V1\ChecklistTaskController;
+use App\Http\Controllers\Api\V1\ContractAbkController;
+use App\Http\Controllers\Api\V1\CoopDocumentController;
 use App\Http\Controllers\Api\V1\CoopEquipmentController;
-
+use App\Http\Controllers\Api\V1\CoopUserAssignmentController;
+use App\Http\Controllers\Api\V1\FormConfigController;
+use App\Http\Controllers\Api\V1\OvkItemController;
+use App\Http\Controllers\Api\V1\PeriodController;
+use App\Http\Controllers\Api\V1\PeriodDocumentController;
+use App\Http\Controllers\Api\V1\PeriodFormAssignmentController;
+use App\Http\Controllers\Api\V1\PeriodInvestorController;
+use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController;
+use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
+use App\Http\Controllers\Api\V1\TransactionCategoryController;
+use App\Http\Controllers\Api\V1\UploadController;
+use App\Http\Controllers\Api\V1\UserController;
+use Illuminate\Support\Facades\Route;
 
 // Laravel otomatis menambahkan prefix '/api' di depan route ini
 Route::get('/check', [CheckController::class, 'index']);
@@ -60,13 +68,13 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('form-configs', FormConfigController::class);
 
         // Upload endpoints
-        Route::post('/uploads', [\App\Http\Controllers\Api\V1\UploadController::class, 'store']);
-        Route::delete('/uploads', [\App\Http\Controllers\Api\V1\UploadController::class, 'destroy']);
+        Route::post('/uploads', [UploadController::class, 'store']);
+        Route::delete('/uploads', [UploadController::class, 'destroy']);
 
         // CoopDocument nested endpoints
-        Route::get('/coops/{coop}/documents', [\App\Http\Controllers\Api\V1\CoopDocumentController::class, 'index']);
-        Route::post('/coops/{coop}/documents', [\App\Http\Controllers\Api\V1\CoopDocumentController::class, 'store']);
-        Route::delete('/coops/{coop}/documents/{document}', [\App\Http\Controllers\Api\V1\CoopDocumentController::class, 'destroy']);
+        Route::get('/coops/{coop}/documents', [CoopDocumentController::class, 'index']);
+        Route::post('/coops/{coop}/documents', [CoopDocumentController::class, 'store']);
+        Route::delete('/coops/{coop}/documents/{document}', [CoopDocumentController::class, 'destroy']);
 
         // CoopEquipment nested endpoints
         Route::get('/coops/{coop}/equipments', [CoopEquipmentController::class, 'index']);
@@ -74,13 +82,34 @@ Route::prefix('v1')->group(function () {
         Route::delete('/coops/{coop}/equipments/{equipment}', [CoopEquipmentController::class, 'destroy']);
 
         // Bulk assignment pekerja ke kandang
-        Route::post('/coops/{coop}/user-assignments', [\App\Http\Controllers\Api\V1\CoopUserAssignmentController::class, 'sync']);
+        Route::post('/coops/{coop}/user-assignments', [CoopUserAssignmentController::class, 'sync']);
+        Route::post('/coops/{coop}/form-assignments', SyncCoopFormAssignmentController::class);
 
-        // Bulk sync form assignments ke alat di kandang
-        Route::post('/coops/{coop}/form-assignments', [\App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController::class, '__invoke']);
+
+
 
         // Production Period endpoints
-        Route::post('/periods', [\App\Http\Controllers\Api\V1\PeriodController::class, 'store']);
-        Route::post('/periods/{period_id}/investors', [PeriodInvestorController::class, 'sync']);
+        Route::post('/periods', [PeriodController::class, 'store']);
+        Route::prefix('periods/{period_id}')->group(function () {
+            Route::patch('/', [PeriodController::class, 'update']);
+            Route::post('/investors', [PeriodInvestorController::class, 'sync']);
+            // Bulk sync & get form assignments ke periode
+            Route::get('/form-assignments', [PeriodFormAssignmentController::class, 'index']);
+            Route::post('/form-assignments', [PeriodFormAssignmentController::class, 'sync']);
+
+            Route::get('/checklist-tasks', [ChecklistTaskController::class, 'index']);
+            Route::post('/checklist-tasks', [ChecklistTaskController::class, 'sync']);
+
+            Route::get('/contracts', [ContractAbkController::class, 'index']);
+            Route::post('/contracts', [ContractAbkController::class, 'store']);
+
+            Route::get('/documents', [PeriodDocumentController::class, 'index']);
+            Route::post('/documents', [PeriodDocumentController::class, 'store']);
+        });
+
+
+        Route::get('/contracts/{contract}', [ContractAbkController::class, 'show']);
+        Route::post('/contracts/{contract}', [ContractAbkController::class, 'accept']); // Method POST untuk menyetujui
+        Route::delete('/contracts/{contract}', [ContractAbkController::class, 'destroy']);
     });
 });

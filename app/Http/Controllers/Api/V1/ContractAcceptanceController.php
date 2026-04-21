@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\V1;
 
-use App\Models\CoopDocument;
+use App\Http\Controllers\Controller;
+use App\Models\ContractAcceptance;
 use Illuminate\Http\Request;
 
-class CoopDocumentController extends Controller
+class ContractAcceptanceController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -34,7 +35,7 @@ class CoopDocumentController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(CoopDocument $coopDocument)
+    public function show(ContractAcceptance $contractAcceptance)
     {
         //
     }
@@ -42,7 +43,7 @@ class CoopDocumentController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(CoopDocument $coopDocument)
+    public function edit(ContractAcceptance $contractAcceptance)
     {
         //
     }
@@ -50,7 +51,7 @@ class CoopDocumentController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, CoopDocument $coopDocument)
+    public function update(Request $request, ContractAcceptance $contractAcceptance)
     {
         //
     }
@@ -58,7 +59,7 @@ class CoopDocumentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(CoopDocument $coopDocument)
+    public function destroy(ContractAcceptance $contractAcceptance)
     {
         //
     }

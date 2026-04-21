@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\SyncPeriodInvestorRequest;
+use App\Http\Requests\Api\V1\Period\SyncPeriodInvestorRequest;
 use App\Http\Resources\Api\V1\PeriodInvestorResource;
 use App\Models\PeriodInvestor;
 use App\Models\ProductionPeriod;

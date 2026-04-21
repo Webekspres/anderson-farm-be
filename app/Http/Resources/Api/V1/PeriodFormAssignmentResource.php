@@ -26,6 +26,14 @@ class PeriodFormAssignmentResource extends JsonResource
             'deleted_at' => optional($this->deleted_at)?->toIso8601String(),
             'created_at' => optional($this->created_at)?->toIso8601String(),
             'updated_at' => optional($this->updated_at)?->toIso8601String(),
+            'form_config' => $this->whenLoaded('formConfig', function () {
+                return [
+                    'id' => $this->formConfig->id,
+                    'name' => $this->formConfig->key_name,
+                    'category' => $this->formConfig->category,
+                    'config_value' => $this->formConfig->config_value,
+                ];
+            }),
         ];
     }
 }

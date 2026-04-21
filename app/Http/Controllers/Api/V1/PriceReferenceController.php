@@ -7,7 +7,6 @@ use App\Http\Requests\Api\V1\StorePriceReferenceRequest;
 use App\Http\Requests\Api\V1\UpdatePriceReferenceRequest;
 use App\Http\Resources\PriceReferenceResource;
 use App\Models\PriceReference;
-use Illuminate\Http\Request;
 
 class PriceReferenceController extends Controller
 {

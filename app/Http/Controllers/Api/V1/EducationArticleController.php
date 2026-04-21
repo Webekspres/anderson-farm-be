@@ -7,7 +7,6 @@ use App\Http\Requests\Api\V1\StoreEducationArticleRequest;
 use App\Http\Requests\Api\V1\UpdateEducationArticleRequest;
 use App\Http\Resources\EducationArticleResource;
 use App\Models\EducationArticle;
-use Illuminate\Http\Request;
 
 class EducationArticleController extends Controller
 {

@@ -60,12 +60,11 @@ _Operasi CRUD (Create, Read, Update, Delete) untuk tabel referensi sistem._
 | `/api/v1/coops/{id}/form-assignments`   |        `POST`        | Mengaktifkan master form spesifik ke kandang tertentu.               |
 | `/api/v1/periods`                       |     `POST, PUT`      | Inisiasi & edit kerangka Periode Ternak baru (`initial_stock`, dll). |
 | `/api/v1/periods/{id}/investors`        |        `POST`        | Menugaskan persentase bagi hasil Investor di periode.                |
-| `/api/v1/periods/{id}/checklist-tasks`  |        `POST`        | _Generate_ daftar SOP/tugas (_Boolean/Text_) khusus periode ini.     |
 | `/api/v1/periods/{id}/form-assignments` |        `POST`        | Mengaitkan pertanyaan HBE spesifik khusus periode ini.               |
-| `/api/v1/periods/{id}/contracts`        |        `POST`        | Menyimpan JSON URL kontrak bagi hasil untuk disetujui ABK.           |
-| `/api/v1/periods/{id}/documents`        |        `POST`        | Menyimpan JSON URL file jadwal/dokumen khusus periode tersebut.      |
-| `/api/v1/periods/{id}/rhpp-documents`   |        `POST`        | Menyimpan JSON URL dari file PDF RHPP Final yang dilampirkan Admin.  |
-| `/api/v1/contracts/{id}/accept`         |        `POST`        | Menyetujui contract dari manajer                                     |
+| `/api/v1/periods/{id}/checklist-tasks`  |        `POST`        | _Generate_ daftar SOP/tugas (_Boolean/Text_) khusus periode ini.     |
+| `/api/v1/periods/{id}/contracts`        |     `GET`,`POST`     | Menyimpan JSON URL kontrak bagi hasil untuk disetujui ABK.           |
+| `/api/v1/contracts/{id}/`               | `GET`, `POST`, `DEL` | Menyetujui contract dari manajer                                     |
+| `/api/v1/periods/{id}/documents`        |    `GET`, `POST`     | Menyimpan JSON URL file jadwal/dokumen khusus periode tersebut.      |
 
 ### 5. Ekspor, Impor & Upload File (Storage & Compute)
 
@@ -81,11 +80,12 @@ _Operasi CRUD (Create, Read, Update, Delete) untuk tabel referensi sistem._
 
 ### 6. Logika Bisnis & Portal Eksternal (RPC)
 
-| Path                                | Method | Deskripsi Singkat                                                                                             |
-| :---------------------------------- | :----: | :------------------------------------------------------------------------------------------------------------ |
-| `/api/v1/periods/{id}/close`        | `POST` | **Tutup Periode.** Validasi _backend_ otomatis untuk memastikan tak ada log _pending_ sebelum siklus dikunci. |
-| `/api/v1/rhpps/{period_id}/publish` | `POST` | **Ketok Palu RHPP.** Mengubah `publish_status` menjadi `PUBLISHED` dan mengunci laporan untuk Investor/PIC.   |
-| `/api/v1/investor/dashboard`        | `GET`  | **Portal Investor.** Rekap ROI super ringan tanpa SQLite.                                                     |
+| Path                                  | Method | Deskripsi Singkat                                                                                             |
+| :------------------------------------ | :----: | :------------------------------------------------------------------------------------------------------------ |
+| `/api/v1/periods/{id}/close`          | `POST` | **Tutup Periode.** Validasi _backend_ otomatis untuk memastikan tak ada log _pending_ sebelum siklus dikunci. |
+| `/api/v1/periods/{id}/rhpp-documents` | `POST` | Menyimpan JSON URL dari file PDF RHPP Final yang dilampirkan Admin.                                           |
+| `/api/v1/rhpps/{period_id}/publish`   | `POST` | **Ketok Palu RHPP.** Mengubah `publish_status` menjadi `PUBLISHED` dan mengunci laporan untuk Investor/PIC.   |
+| `/api/v1/investor/dashboard`          | `GET`  | **Portal Investor.** Rekap ROI super ringan tanpa SQLite.                                                     |
 
 ### 7. Sistem & Notifikasi
 

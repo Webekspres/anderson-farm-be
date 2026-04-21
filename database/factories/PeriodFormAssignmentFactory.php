@@ -1,6 +1,9 @@
 <?php
 
+
 namespace Database\Factories;
+
+use App\Models\ProductionPeriod;
 
 use App\Models\PeriodFormAssignment;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -14,8 +17,8 @@ class PeriodFormAssignmentFactory extends Factory
         return [
             'id' => $this->faker->uuid(),
             'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
-            'period_id' => $this->faker->uuid(),
-            'form_config_id' => $this->faker->uuid(),
+            'period_id' => ProductionPeriod::factory(),
+            'form_config_id' => \App\Models\FormConfig::factory(),
             'display_order' => $this->faker->numberBetween(1, 10),
             'is_active' => $this->faker->boolean(90),
             'sync_status' => 'PENDING_SYNC',
