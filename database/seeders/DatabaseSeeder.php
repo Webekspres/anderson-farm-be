@@ -35,6 +35,13 @@ class DatabaseSeeder extends Seeder
             PeriodFormAssignmentSeeder::class,
             ChecklistTaskSeeder::class,
             ContractAbkSeeder::class,
+            DailyActivityHeaderSeeder::class,
+            DailyChecklistLogSeeder::class,
+            DailyDynamicLogSeeder::class,
+            OvkUsageSeeder::class,
+            HarvestEntrySeeder::class,
+            PhotoEvidenceSeeder::class,
+            SyncTrackerSeeder::class,
         ]);
     }
 }

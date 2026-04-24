@@ -63,7 +63,7 @@ single-report-templates:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
@@ -135,7 +135,7 @@ single-ovk-items:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
@@ -207,7 +207,7 @@ single-transaction-categories:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
@@ -279,7 +279,7 @@ single-form-configs:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
@@ -352,7 +352,7 @@ single-equipment-types:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":

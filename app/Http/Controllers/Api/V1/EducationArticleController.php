@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreEducationArticleRequest;
 use App\Http\Requests\Api\V1\UpdateEducationArticleRequest;
-use App\Http\Resources\EducationArticleResource;
+use App\Http\Resources\Api\V1\EducationArticleResource;
 use App\Models\EducationArticle;
 
 class EducationArticleController extends Controller

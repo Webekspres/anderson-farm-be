@@ -82,4 +82,14 @@ class User extends Authenticatable
             }
         });
     }
+
+    public function dailyActivityHeaders()
+    {
+        return $this->hasMany(DailyActivityHeader::class, 'user_id');
+    }
+
+    public function approvedActivityHeaders()
+    {
+        return $this->hasMany(DailyActivityHeader::class, 'approved_by');
+    }
 }

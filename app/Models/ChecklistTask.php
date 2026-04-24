@@ -53,8 +53,8 @@ class ChecklistTask extends Model
     /**
      * Relasi ke tabel daily_checklist_logs
      */
-    // public function dailyLogs(): HasMany
-    // {
-    //     return $this->hasMany(DailyChecklistLog::class, 'task_id');
-    // }
+    public function dailyLogs(): HasMany
+    {
+        return $this->hasMany(DailyChecklistLog::class, 'task_id');
+    }
 }

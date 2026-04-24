@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  # Service Backend (Laravel) - Untuk Testing
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anderson_app_testing
+    ports:
+      - "8080:8000"
+    volumes:
+      - .:/var/www/html
+      - ./.env.docker:/var/www/html/.env
+    env_file:
+      - .env.docker # <--- Docker akan menggunakan env ini
+    command: >
+      bash -c "composer install &&
+               php artisan config:clear &&
+               php artisan serve --host=0.0.0.0 --port=8000 --env=docker"
+    depends_on:
+      - db
+
+  # Service Database (MySQL) - Khusus Testing
+  db:
+    image: mysql:8.0
+    container_name: anderson_db_testing
+    ports:
+      - "3307:3306"
+    env_file:
+      - .env.docker # <--- MySQL juga otomatis membaca konfigurasi DB dari sini
+    volumes:
+      - db_data_testing:/var/lib/mysql
+
+volumes:
+  db_data_testing:

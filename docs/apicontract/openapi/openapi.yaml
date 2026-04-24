@@ -161,6 +161,14 @@ paths:
       tags: [Bisnis]
       summary: Portal dashboard investor
       description: Rekap ROI super ringan tanpa SQLite.
+      responses:
+        "200":
+          description: Data dashboard investor berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
 
   # === SISTEM & NOTIFIKASI ===
   /api/v1/system/check-version:
@@ -184,58 +192,123 @@ paths:
       tags: [Sync]
       summary: Sync data periode ternak
       description: Menarik detail periode aktif.
+      responses:
+        "200":
+          description: Daftar periode berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
     post:
       tags: [Sync]
       summary: Kirim persetujuan digital periode
       description: Mengirim jejak persetujuan digital ContractAcceptance dari ABK.
+      responses:
+        "201":
+          description: Persetujuan berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
 
   /api/v1/sync/daily-activities:
-    get:
-      tags: [Sync]
-      summary: Sync data aktivitas harian
-      description: Sinkronisasi satu header beserta relasi anaknya (HBE, Foto, Panen, ovk_usages, Checklist).
-    post:
-      tags: [Sync]
-      summary: Kirim aktivitas harian
-      description: Push aktivitas harian beserta relasi anaknya.
+    $ref: "./paths/sync/daily-activity.yaml#/daily-activities"
 
   /api/v1/sync/finances:
     get:
       tags: [Sync]
       summary: Sync data keuangan
       description: Sinkronisasi arus kas dan status pembayaran gaji.
+      responses:
+        "200":
+          description: Data keuangan berhasil disinkronkan.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
     post:
       tags: [Sync]
       summary: Kirim data keuangan
       description: Push transaksi pembelian, operasional, dan pembayaran gaji.
+      responses:
+        "201":
+          description: Data keuangan berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
 
   /api/v1/sync/maintenances:
     get:
       tags: [Sync]
       summary: Sync data maintenance
       description: Sinkronisasi perbaikan fisik bangunan kandang (MaintenanceLog).
+      responses:
+        "200":
+          description: Data maintenance berhasil disinkronkan.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
     post:
       tags: [Sync]
       summary: Kirim data maintenance
       description: Push data perbaikan fisik bangunan kandang.
+      responses:
+        "201":
+          description: Data maintenance berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
 
   /api/v1/sync/rhpps:
     get:
       tags: [Sync]
       summary: Sync data RHPP
       description: Unduh rekap laba bersih akhir dan dokumen PDF-nya untuk dilihat ABK/PIC.
+      responses:
+        "200":
+          description: Data RHPP berhasil ditarik.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
 
   /api/v1/sync/education:
     get:
       tags: [Sync]
       summary: Sync data edukasi offline
       description: Unduh artikel edukasi & referensi harga secara offline.
+      responses:
+        "200":
+          description: Data edukasi berhasil ditarik.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
 
   /api/v1/sync/activity-logs:
     post:
       tags: [Sync]
       summary: Kirim audit trail aktivitas user
       description: Push rekam jejak (audit trail) tombol aplikasi yang diklik user.
+      responses:
+        "201":
+          description: Log aktivitas berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: "./components/general.yaml#/GeneralResponse"
+
 
 components:
   parameters:
@@ -638,35 +711,6 @@ components:
             - $ref: "#/components/schemas/CoopRequest"
             - $ref: "./components/general.yaml#/OfflineMetadataResponse"
 
-    # --- EQUIPMENT TYPE SPECIFIC ---
-    EquipmentTypeBase:
-      type: object
-      required: [name]
-      properties:
-        name:
-          type: string
-          example: "Temptron"
-        description:
-          oneOf:
-            - type: string
-            - type: "null"
-          example: "Sensor suhu digital"
-
-    EquipmentTypeRequest:
-      allOf:
-        - $ref: "./components/general.yaml#/OfflineMetadataRequest"
-        - $ref: "#/components/schemas/EquipmentTypeBase"
-
-    EquipmentTypeResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        data:
-          allOf:
-            - $ref: "#/components/schemas/EquipmentTypeRequest"
-            - $ref: "./components/general.yaml#/OfflineMetadataResponse"
 
   securitySchemes:
     ApiKey:

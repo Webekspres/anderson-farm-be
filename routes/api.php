@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController;
 use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
 use App\Http\Controllers\Api\V1\TransactionCategoryController;
+use App\Http\Controllers\Api\V1\DailyActivitySyncController;
 use App\Http\Controllers\Api\V1\UploadController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -107,6 +108,13 @@ Route::prefix('v1')->group(function () {
             Route::post('/documents', [PeriodDocumentController::class, 'store']);
         });
 
+
+        // Sync endpoints (Offline-First)
+        Route::prefix('sync')->group(function () {
+            Route::get('/master-data', [\App\Http\Controllers\Api\V1\MasterDataSyncController::class, 'index']);
+            Route::get('/daily-activities', [DailyActivitySyncController::class, 'index']);
+            Route::post('/daily-activities', [DailyActivitySyncController::class, 'store']);
+        });
 
         Route::get('/contracts/{contract}', [ContractAbkController::class, 'show']);
         Route::post('/contracts/{contract}', [ContractAbkController::class, 'accept']); // Method POST untuk menyetujui

@@ -49,4 +49,9 @@ class FormConfig extends Model
     {
         return $this->hasMany(CoopFormAssignment::class, 'form_config_id');
     }
+
+    public function dailyLogs()
+    {
+        return $this->hasMany(DailyDynamicLog::class, 'form_config_id');
+    }
 }

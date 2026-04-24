@@ -1,3 +1,10 @@
+GeneralResponse:
+  description: Operasi berhasil
+  content:
+    application/json:
+      schema:
+        $ref: "./general.yaml#/GeneralResponse"
+
 ValidationError:
   description: Validasi gagal (input tidak valid)
   content:

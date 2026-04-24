@@ -58,4 +58,9 @@ class ProductionPeriod extends Model
     {
         return $this->belongsTo(User::class, 'pic_id');
     }
+
+    public function dailyActivityHeaders()
+    {
+        return $this->hasMany(DailyActivityHeader::class, 'period_id');
+    }
 }

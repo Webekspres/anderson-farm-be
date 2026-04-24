@@ -1,3 +1,6 @@
+# ==========================================
+# EDUCATION ARTICLES
+# ==========================================
 education-articles:
   post:
     tags: [Master - Education Article]
@@ -22,8 +25,6 @@ education-articles:
         $ref: "../components/response.yaml#/ValidationError"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
-      "403":
-        $ref: "../components/response.yaml#/ForbiddenError"
 
 single-education-articles:
   parameters:
@@ -51,8 +52,6 @@ single-education-articles:
         $ref: "../components/response.yaml#/ValidationError"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
-      "403":
-        $ref: "../components/response.yaml#/ForbiddenError"
       "404":
         $ref: "../components/response.yaml#/NotFoundError"
   delete:
@@ -63,14 +62,15 @@ single-education-articles:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
-      "403":
-        $ref: "../components/response.yaml#/ForbiddenError"
       "404":
         $ref: "../components/response.yaml#/NotFoundError"
 
+# ==========================================
+# PRICE REFERENCES
+# ==========================================
 price-references:
   post:
     tags: [Master - Price Reference]
@@ -95,8 +95,6 @@ price-references:
         $ref: "../components/response.yaml#/ValidationError"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
-      "403":
-        $ref: "../components/response.yaml#/ForbiddenError"
 
 single-price-references:
   parameters:
@@ -124,8 +122,6 @@ single-price-references:
         $ref: "../components/response.yaml#/ValidationError"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
-      "403":
-        $ref: "../components/response.yaml#/ForbiddenError"
       "404":
         $ref: "../components/response.yaml#/NotFoundError"
   delete:
@@ -136,10 +132,8 @@ single-price-references:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
-      "403":
-        $ref: "../components/response.yaml#/ForbiddenError"
       "404":
         $ref: "../components/response.yaml#/NotFoundError"

@@ -1,0 +1,71 @@
+daily-activities:
+  get:
+    tags: [Sync - Activities]
+    summary: Delta Sync (Pull) Laporan Harian
+    description: Mengambil data aktivitas harian yang diperbarui di server sejak sinkronisasi terakhir.
+    security:
+      - sanctum: []
+    parameters:
+      - name: period_id
+        in: query
+        required: true
+        schema: { type: string, format: uuid }
+      - name: last_sync_timestamp
+        in: query
+        required: false
+        schema: { type: string, format: date-time }
+        description: Diambil dari tabel sync_trackers lokal.
+    responses:
+      "200":
+        description: Daftar aktivitas harian terbaru berhasil ditarik.
+        content:
+          application/json:
+            schema:
+              $ref: "../../components/sync/daily-activity.yaml#/SyncResponse"
+
+  post:
+    tags: [Sync - Activities]
+    summary: Bulk Sync (Push) Laporan Harian
+    description: Mengirim data aktivitas harian yang dibuat secara offline ke server.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [sync_timestamp, activities]
+            properties:
+              sync_timestamp: { type: string, format: date-time }
+              activities:
+                type: array
+                items:
+                  { $ref: "../../components/sync/daily-activity.yaml#/DailyActivitySyncRequest" }
+    responses:
+      "201":
+        description: Sinkronisasi berhasil diproses.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                server_timestamp: { type: string, format: date-time }
+                data:
+                  type: object
+                  properties:
+                    sync_results:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            {
+                              type: string,
+                              format: uuid,
+                              description: "UUID Client",
+                            }
+                          status:
+                            { type: string, enum: [SUCCESS, CONFLICT, ERROR] }
+                          server_id: { type: integer, nullable: true }

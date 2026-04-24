@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CoopUserAssignment extends Model
 {
     /** @use HasFactory<\Database\Factories\CoopUserAssignmentFactory> */
-    use HasFactory, \Illuminate\Database\Eloquent\Concerns\HasUuids;
+    use HasFactory, \Illuminate\Database\Eloquent\Concerns\HasUuids, SoftDeletes;
 
     protected $table = 'coop_user_assignments';
     protected $keyType = 'string';

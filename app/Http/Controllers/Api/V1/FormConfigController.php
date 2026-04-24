@@ -2,71 +2,74 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Requests\FormConfigStoreRequest;
-use App\Http\Requests\FormConfigUpdateRequest;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\FormConfig\StoreFormConfigRequest;
+use App\Http\Requests\Api\V1\FormConfig\UpdateFormConfigRequest;
+use App\Http\Resources\Api\V1\FormConfigResource;
 use App\Models\FormConfig;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\DB;
-
-use App\Http\Controllers\Controller;
+use Illuminate\Support\Str;
 
 class FormConfigController extends Controller
 {
     public function index(Request $request)
     {
         $query = FormConfig::query();
-        // Optional: add filtering/sorting here
         $data = $query->get();
+        
         return response()->json([
-            'data' => $data,
-            'meta' => [
-                'count' => $data->count(),
-            ],
+            'success' => true,
+            'message' => 'Berhasil mengambil daftar form config',
+            'data' => FormConfigResource::collection($data),
         ]);
     }
 
-    public function store(FormConfigStoreRequest $request)
+    public function store(StoreFormConfigRequest $request)
     {
         $validated = $request->validated();
+        
+        if (!isset($validated['id'])) {
+            $validated['id'] = (string) Str::uuid();
+        }
+        
         $formConfig = FormConfig::create($validated);
+        
         return response()->json([
             'success' => true,
-            'data' => $formConfig,
-            'meta' => [
-                'message' => 'Berhasil membuat form config',
-            ],
+            'message' => 'Berhasil membuat form config',
+            'data' => new FormConfigResource($formConfig),
         ], 201);
     }
 
-    public function show(FormConfig $formConfig)
+    public function show(FormConfig $form_config)
     {
         return response()->json([
-            'data' => $formConfig,
-            'meta' => null,
+            'success' => true,
+            'message' => 'Berhasil mengambil detail form config',
+            'data' => new FormConfigResource($form_config),
         ]);
     }
 
-    public function update(FormConfigUpdateRequest $request, FormConfig $formConfig)
+    public function update(UpdateFormConfigRequest $request, FormConfig $form_config)
     {
         $validated = $request->validated();
-        $formConfig->update($validated);
+        $form_config->update($validated);
+        
         return response()->json([
-            'data' => $formConfig,
-            'meta' => [
-                'message' => 'Updated successfully',
-            ],
+            'success' => true,
+            'message' => 'Berhasil memperbarui form config',
+            'data' => new FormConfigResource($form_config),
         ]);
     }
 
-    public function destroy(FormConfig $formConfig)
+    public function destroy(FormConfig $form_config)
     {
-        $formConfig->delete();
+        $form_config->delete();
+        
         return response()->json([
+            'success' => true,
+            'message' => 'Berhasil menghapus form config',
             'data' => null,
-            'meta' => [
-                'message' => 'Deleted successfully',
-            ],
         ]);
     }
 }

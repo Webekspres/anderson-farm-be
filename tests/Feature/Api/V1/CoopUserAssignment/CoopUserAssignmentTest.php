@@ -58,7 +58,7 @@ it('successfully clears assignments when empty array sent', function () {
             'message' => 'Pekerja berhasil ditugaskan ke kandang',
             'data' => null,
         ]);
-    assertDatabaseCount('coop_user_assignments', 0);
+    expect(CoopUserAssignment::count())->toBe(0);
 });
 
 it('returns 404 if coop not found', function () {

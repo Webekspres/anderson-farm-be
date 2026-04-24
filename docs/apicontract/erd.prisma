@@ -1154,7 +1154,7 @@ model EmployeeSalary {
     period_id      String
     employee_id    String // FK → users (role=abk)
     salary_amount  Float
-    payment_status PaymentStatus @default(draft)
+    payment_status PaymentStatus @default(DRAFT)
 
     // offline-first fields
     sync_status       SyncStatus @default(PENDING_SYNC)

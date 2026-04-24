@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StorePriceReferenceRequest;
 use App\Http\Requests\Api\V1\UpdatePriceReferenceRequest;
-use App\Http\Resources\PriceReferenceResource;
+use App\Http\Resources\Api\V1\PriceReferenceResource;
 use App\Models\PriceReference;
 
 class PriceReferenceController extends Controller

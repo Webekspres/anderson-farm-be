@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Api\V1\FormConfig;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class FormConfigStoreRequest extends FormRequest
+class StoreFormConfigRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return true;
     }
 
-    public function rules()
+    public function rules(): array
     {
         return [
             'category' => 'required|in:EQUIPMENT,HBE',

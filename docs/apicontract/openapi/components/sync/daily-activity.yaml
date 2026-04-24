@@ -1,0 +1,97 @@
+# ==========================================
+# DAILY ACTIVITIES (OFFLINE-FIRST)
+# ==========================================
+
+DailyActivityHeaderBase:
+  type: object
+  required: [period_id, user_id, date, age_days]
+  properties:
+    period_id:
+      type: string
+      format: uuid
+    user_id:
+      type: string
+      format: uuid
+    date:
+      type: string
+      format: date-time
+      example: "2026-04-24T00:00:00Z"
+    age_days:
+      type: integer
+      example: 14
+    mortality_count:
+      type: integer
+      default: 0
+    cull_count:
+      type: integer
+      default: 0
+    average_weight:
+      type: number
+      format: float
+      nullable: true
+    business_status:
+      type: string
+      enum: [DRAFT, SUBMITTED, APPROVED, REJECTED, NEEDS_REVIEW]
+      default: DRAFT
+    rejection_reason:
+      type: string
+      nullable: true
+
+# --- Nested Relations ---
+
+DailyDynamicLog:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    form_config_id: { type: string, format: uuid }
+    value: { type: string }
+    created_at_client: { type: string, format: date-time }
+
+DailyChecklistLog:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    task_id: { type: string, format: uuid }
+    boolean_value: { type: boolean, nullable: true }
+    text_value: { type: string, nullable: true }
+    notes: { type: string, nullable: true }
+    created_at_client: { type: string, format: date-time }
+
+OvkUsage:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    ovk_item_id: { type: string, format: uuid }
+    quantity: { type: number, format: float }
+    notes: { type: string, nullable: true }
+    created_at_client: { type: string, format: date-time }
+
+# --- Request & Response Wrappers ---
+
+DailyActivitySyncRequest:
+  allOf:
+    - $ref: "../general.yaml#/OfflineMetadataRequest"
+    - $ref: "#/DailyActivityHeaderBase"
+    - type: object
+      properties:
+        dynamic_logs:
+          type: array
+          items: { $ref: "#/DailyDynamicLog" }
+        dailyChecklistLogs:
+          type: array
+          items: { $ref: "#/DailyChecklistLog" }
+        ovk_usages:
+          type: array
+          items: { $ref: "#/OvkUsage" }
+
+SyncResponse:
+  type: object
+  properties:
+    success: { type: boolean, example: true }
+    current_server_timestamp: { type: string, format: date-time }
+    data:
+      type: array
+      items:
+        allOf:
+          - $ref: "#/DailyActivitySyncRequest"
+          - $ref: "../general.yaml#/OfflineMetadataResponse"

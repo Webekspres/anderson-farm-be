@@ -18,8 +18,9 @@ it('can list form configs', function () {
     $response = $this->getJson($ENDPOINT);
     $response->assertOk()
         ->assertJsonStructure([
+            'success',
+            'message',
             'data',
-            'meta' => ['count'],
         ]);
 });
 
@@ -33,8 +34,9 @@ it('can create form config', function () {
     $response = $this->postJson($ENDPOINT, $payload);
     $response->assertCreated()
         ->assertJsonStructure([
+            'success',
+            'message',
             'data',
-            'meta' => ['message'],
         ]);
 });
 
@@ -44,8 +46,9 @@ it('can show form config', function () {
     $response = $this->getJson($ENDPOINT . '/' . $formConfig->id);
     $response->assertOk()
         ->assertJsonStructure([
+            'success',
+            'message',
             'data',
-            'meta',
         ]);
 });
 
@@ -56,8 +59,9 @@ it('can update form config', function () {
     $response = $this->putJson($ENDPOINT . '/' . $formConfig->id, $payload);
     $response->assertOk()
         ->assertJsonStructure([
+            'success',
+            'message',
             'data',
-            'meta' => ['message'],
         ]);
 });
 
@@ -67,7 +71,8 @@ it('can delete form config', function () {
     $response = $this->deleteJson($ENDPOINT . '/' . $formConfig->id);
     $response->assertOk()
         ->assertJsonStructure([
+            'success',
+            'message',
             'data',
-            'meta' => ['message'],
         ]);
 });

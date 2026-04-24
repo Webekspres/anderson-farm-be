@@ -37,7 +37,7 @@ coop-equipments:
       - $ref: "../openapi.yaml#/components/parameters/ResourceId"
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
