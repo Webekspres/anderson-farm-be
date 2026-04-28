@@ -18,6 +18,18 @@ class StoreCoopEquipmentRequest extends FormRequest
         $coopId = $coop instanceof \App\Models\Coop ? $coop->id : $coop;
 
         return [
+            'floor_id' => [
+                'required',
+                'uuid',
+                function ($attribute, $value, $fail) use ($coopId) {
+                    $floorExists = \App\Models\CoopFloor::where('id', $value)
+                        ->where('coop_id', $coopId)
+                        ->exists();
+                    if (!$floorExists) {
+                        $fail('The selected floor is invalid or does not belong to this coop.');
+                    }
+                },
+            ],
             'equipment_type_id' => [
                 'required',
                 function ($attribute, $value, $fail) {
@@ -32,8 +44,8 @@ class StoreCoopEquipmentRequest extends FormRequest
             'unit_code' => [
                 'nullable',
                 'string',
-                Rule::unique('coop_equipments')->where(function ($query) use ($coopId) {
-                    return $query->where('coop_id', $coopId);
+                Rule::unique('coop_equipments')->where(function ($query) {
+                    return $query->where('floor_id', $this->input('floor_id'));
                 }),
             ],
             'installed_at' => ['nullable', 'date'],

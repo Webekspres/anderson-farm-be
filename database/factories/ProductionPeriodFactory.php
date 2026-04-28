@@ -21,7 +21,7 @@ class ProductionPeriodFactory extends Factory
             'id' => $this->faker->uuid(),
             'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
             'version' => 1,
-            'coop_id' => fn() => \App\Models\Coop::factory(),
+            'floor_id' => fn() => \App\Models\CoopFloor::factory(),
             'pic_id' => fn() => \App\Models\User::factory(),
             'period_code' => $this->faker->unique()->bothify('PERIOD-####'),
             'start_date' => $this->faker->date(),

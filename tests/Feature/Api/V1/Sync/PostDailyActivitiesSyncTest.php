@@ -262,11 +262,12 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
         // Sync kedua — ganti dengan 1 dynamic log baru (value berbeda)
         $newFormConfig = FormConfig::factory()->create();
+        $newClientTime = now()->addMinute()->toIso8601String();
         $secondPayload = [
             'headers' => [
                 buildHeaderPayload($period->id, $user->id, [
                     'id' => $headerId,
-                    'updated_at_client' => '2026-04-24T12:00:00Z',
+                    'updated_at_client' => $newClientTime,
                     'date' => '2026-04-24',
                 ], [
                     'dynamic_logs' => [
@@ -274,8 +275,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                             'id' => Str::uuid()->toString(),
                             'form_config_id' => $newFormConfig->id,
                             'value' => 'new_value',
-                            'created_at_client' => '2026-04-24T12:00:00Z',
-                            'updated_at_client' => '2026-04-24T12:00:00Z',
+                            'created_at_client' => $newClientTime,
+                            'updated_at_client' => $newClientTime,
                         ],
                     ],
                 ]),

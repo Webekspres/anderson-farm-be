@@ -25,13 +25,18 @@ class MasterDataSyncService
         $allCoopIds = CoopUserAssignment::where('user_id', $user->id)
             ->pluck('coop_id')
             ->toArray();
-            
+
         $allFarmIds = empty($allCoopIds) ? [] : Coop::whereIn('id', $allCoopIds)
             ->pluck('farm_id')
             ->toArray();
-            
+
         $allAreaIds = empty($allFarmIds) ? [] : Farm::whereIn('id', $allFarmIds)
             ->pluck('area_id')
+            ->toArray();
+
+        // Get all floors for the coops
+        $allFloorIds = empty($allCoopIds) ? [] : \App\Models\CoopFloor::whereIn('coop_id', $allCoopIds)
+            ->pluck('id')
             ->toArray();
 
         // 2. Siapkan Query Dasar
@@ -40,7 +45,7 @@ class MasterDataSyncService
             'coops'                 => Coop::whereIn('id', $allCoopIds),
             'farms'                 => Farm::whereIn('id', $allFarmIds),
             'areas'                 => Area::whereIn('id', $allAreaIds),
-            'production_periods'    => ProductionPeriod::whereIn('coop_id', $allCoopIds),
+            'production_periods'    => ProductionPeriod::whereIn('floor_id', $allFloorIds),
             'form_configs'          => FormConfig::query(),
             'ovk_items'             => OvkItem::query(),
             'education_articles'    => EducationArticle::query(),
@@ -56,7 +61,7 @@ class MasterDataSyncService
         foreach ($queries as $key => $query) {
             if ($parsedTimestamp) {
                 $query->where('updated_at_server', '>', $parsedTimestamp);
-                
+
                 // Cek apakah model menggunakan trait SoftDeletes
                 $model = $query->getModel();
                 if (in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses_recursive($model))) {

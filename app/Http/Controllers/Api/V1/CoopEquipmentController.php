@@ -19,7 +19,9 @@ class CoopEquipmentController extends Controller
 
     public function index(Coop $coop, Request $request)
     {
-        $items = CoopEquipment::where('coop_id', $coop->id)
+        // Get all floors of this coop, then get all equipment on those floors
+        $floorIds = $coop->coopFloors()->pluck('id')->toArray();
+        $items = CoopEquipment::whereIn('floor_id', $floorIds)
             ->with('equipmentType')
             ->orderBy('server_id', 'desc')
             ->get();
@@ -33,7 +35,16 @@ class CoopEquipmentController extends Controller
     public function store(StoreCoopEquipmentRequest $request, Coop $coop)
     {
         $payload = $request->validated();
-        $payload['coop_id'] = $coop->id;
+
+        // Validate that floor_id belongs to this coop
+        $floor = $coop->coopFloors()->find($payload['floor_id']);
+        if (!$floor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Floor not found in this coop',
+                'data' => null,
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         $equipment = CoopEquipment::create($payload);
 
@@ -45,7 +56,9 @@ class CoopEquipmentController extends Controller
 
     public function destroy(Coop $coop, CoopEquipment $equipment)
     {
-        if ($equipment->coop_id !== $coop->id) {
+        // Check if equipment belongs to any floor of this coop
+        $floorIds = $coop->coopFloors()->pluck('id')->toArray();
+        if (!in_array($equipment->floor_id, $floorIds)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Not Found',

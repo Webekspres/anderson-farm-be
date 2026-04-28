@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CoopDocument\StoreCoopDocumentRequest;
 use App\Http\Resources\Api\V1\CoopDocumentResource;
 use App\Models\Coop;
+use App\Models\CoopFloor;
 use App\Models\CoopDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,8 @@ class CoopDocumentController extends Controller
                 'data' => null,
             ], 404);
         }
-        $documents = CoopDocument::where('coop_id', $coop)
+        $floorIds = $coopModel->coopFloors()->pluck('id')->toArray();
+        $documents = CoopDocument::whereIn('floor_id', $floorIds)
             ->whereNull('deleted_at')
             ->get();
         return response()->json([
@@ -49,8 +51,16 @@ class CoopDocumentController extends Controller
                 'data' => null,
             ], 404);
         }
+        $floorId = $coopModel->coopFloors()->value('id');
+        if (!$floorId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lantai kandang tidak ditemukan',
+                'data' => null,
+            ], 404);
+        }
         $document = CoopDocument::create([
-            'coop_id' => $coop,
+            'floor_id' => $floorId,
             'name' => $request->input('document_name'),
             'file_type' => $request->input('document_type'),
             'file_url' => $request->input('file_url'),
@@ -80,8 +90,9 @@ class CoopDocumentController extends Controller
                 'data' => null,
             ], 404);
         }
+        $floorIds = $coopModel->coopFloors()->pluck('id')->toArray();
         $documentModel = CoopDocument::where('id', $document)
-            ->where('coop_id', $coop)
+            ->whereIn('floor_id', $floorIds)
             ->whereNull('deleted_at')
             ->first();
         if (!$documentModel) {

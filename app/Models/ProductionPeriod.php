@@ -44,7 +44,7 @@ class ProductionPeriod extends Model
         'id',
         'server_id',
         'version',
-        'coop_id',
+        'floor_id',
         'pic_id',
         'period_code',
         'start_date',
@@ -69,9 +69,9 @@ class ProductionPeriod extends Model
         'deleted_at' => 'datetime',
     ];
 
-    public function coop()
+    public function floor()
     {
-        return $this->belongsTo(Coop::class, 'coop_id');
+        return $this->belongsTo(CoopFloor::class, 'floor_id');
     }
 
     public function pic()

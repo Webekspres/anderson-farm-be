@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Coop;
+use App\Models\CoopFloor;
 use App\Models\User;
 use App\Models\ProductionPeriod;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,9 +19,10 @@ describe('POST /api/v1/periods', function () {
 
     it('successfully creates a new production period (happy path)', function () {
         $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
         $pic = User::factory()->create();
         $payload = [
-            'coop_id' => $coop->id,
+            'floor_id' => $floor->id,
             'pic_id' => $pic->id,
             'start_date' => now()->toDateString(),
             'initial_stock' => 1000,
@@ -39,7 +41,7 @@ describe('POST /api/v1/periods', function () {
                     'id',
                     'period_code',
                     'status',
-                    'coop',
+                    'floor',
                     'pic',
                     'start_date',
                     'initial_stock',
@@ -52,7 +54,7 @@ describe('POST /api/v1/periods', function () {
                 ]
             ]);
         $this->assertDatabaseHas('production_periods', [
-            'coop_id' => $coop->id,
+            'floor_id' => $floor->id,
             'pic_id' => $pic->id,
             'initial_stock' => 1000,
         ]);
@@ -60,9 +62,10 @@ describe('POST /api/v1/periods', function () {
 
     it('successfully creates a period without period_code (auto-generated)', function () {
         $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
         $pic = User::factory()->create();
         $payload = [
-            'coop_id' => $coop->id,
+            'floor_id' => $floor->id,
             'pic_id' => $pic->id,
             'start_date' => now()->toDateString(),
             'initial_stock' => 500,
@@ -76,13 +79,14 @@ describe('POST /api/v1/periods', function () {
 
     it('fails with 422 if coop already has active period', function () {
         $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
         $pic = User::factory()->create();
         ProductionPeriod::factory()->create([
-            'coop_id' => $coop->id,
+            'floor_id' => $floor->id,
             'status' => 'active',
         ]);
         $payload = [
-            'coop_id' => $coop->id,
+            'floor_id' => $floor->id,
             'pic_id' => $pic->id,
             'start_date' => now()->toDateString(),
             'initial_stock' => 100,
@@ -90,14 +94,15 @@ describe('POST /api/v1/periods', function () {
         ];
         $response = postJson('/api/v1/periods', $payload);
         $response->assertStatus(422)
-            ->assertJsonValidationErrors('coop_id');
+            ->assertJsonValidationErrors('floor_id');
     });
 
     it('fails with 422 if initial_stock < 1', function () {
         $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
         $pic = User::factory()->create();
         $payload = [
-            'coop_id' => $coop->id,
+            'floor_id' => $floor->id,
             'pic_id' => $pic->id,
             'start_date' => now()->toDateString(),
             'initial_stock' => 0,
@@ -111,9 +116,10 @@ describe('POST /api/v1/periods', function () {
 it('returns 401 if not authenticated', function () {
     // Jangan panggil Sanctum::actingAs()
     $coop = Coop::factory()->create();
+    $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
     $pic = User::factory()->create();
     $payload = [
-        'coop_id' => $coop->id,
+        'floor_id' => $floor->id,
         'pic_id' => $pic->id,
         'start_date' => now()->toDateString(),
         'initial_stock' => 100,

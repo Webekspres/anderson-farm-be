@@ -18,7 +18,7 @@ class UpdateCoopRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'capacity' => ['sometimes', 'integer', 'min:1'],
             'floor' => ['sometimes', 'integer', 'min:1'],
-            'coop_type' => ['sometimes', 'in:open_house,closed_house'],
+            'coop_type' => ['sometimes', 'in:CH_POSTAL,CH_PLASTIC_SLAT,CH_MULTI_TIER'],
             'note' => ['nullable', 'string'],
             'is_active' => ['boolean'],
             'sync_status' => ['nullable', 'in:LOCAL_SAVED,PENDING_SYNC,SYNCED,SYNC_FAILED,CONFLICT'],

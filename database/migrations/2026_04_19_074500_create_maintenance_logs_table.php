@@ -4,24 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
     public function up(): void
     {
-        Schema::create('coop_documents', function (Blueprint $table) {
+        Schema::create('maintenance_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->bigInteger('server_id')->unsigned()->unique()->nullable();
             $table->integer('version')->default(1);
 
             // business fields
             $table->uuid('floor_id');
-            $table->string('name');
-            $table->string('file_path_local')->nullable();
-            $table->string('file_url')->nullable();
-            $table->string('file_type'); // pdf | jpg | png
+            $table->string('reported_by');
+            $table->dateTime('date');
+            $table->text('description');
+            $table->string('status');
 
             // offline-first fields
             $table->string('sync_status')->default('PENDING_SYNC');
@@ -33,19 +29,14 @@ return new class extends Migration
 
             // relations
             $table->foreign('floor_id')->references('id')->on('coop_floors');
-
-            $table->index(['floor_id']);
+            $table->index('floor_id');
 
             $table->timestamps();
-            // softDeletes sudah diwakili oleh deleted_at custom
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('coop_documents');
+        Schema::dropIfExists('maintenance_logs');
     }
 };

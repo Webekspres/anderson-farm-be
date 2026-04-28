@@ -16,10 +16,10 @@ class StorePeriodRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'coop_id' => [
+            'floor_id' => [
                 'required',
                 'string',
-                'exists:coops,id',
+                'exists:coop_floors,id',
                 // Aturan Bisnis: Pastikan kandang ini tidak sedang dipakai oleh periode yang masih aktif
                 Rule::unique('production_periods')->where(function ($query) {
                     return $query->where('status', 'active');
@@ -39,13 +39,13 @@ class StorePeriodRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $coopId = $this->input('coop_id');
-            if ($coopId) {
-                $hasActive = ProductionPeriod::where('coop_id', $coopId)
+            $floorId = $this->input('floor_id');
+            if ($floorId) {
+                $hasActive = ProductionPeriod::where('floor_id', $floorId)
                     ->where('status', 'active')
                     ->exists();
                 if ($hasActive) {
-                    $validator->errors()->add('coop_id', 'Kandang ini masih memiliki periode yang aktif. Tutup periode sebelumnya terlebih dahulu.');
+                    $validator->errors()->add('floor_id', 'Kandang ini masih memiliki periode yang aktif. Tutup periode sebelumnya terlebih dahulu.');
                 }
             }
         });

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\ContractAbk;
 use App\Models\ContractAcceptance;
 use App\Models\Coop;
+use App\Models\CoopFloor;
 use App\Models\CoopUserAssignment;
 use App\Models\EmployeeSalary;
 use App\Models\Farm;
@@ -23,7 +24,8 @@ beforeEach(function () {
 
     $this->farm = Farm::factory()->create();
     $this->coop = Coop::factory()->create(['farm_id' => $this->farm->id]);
-    $this->period = ProductionPeriod::factory()->create(['coop_id' => $this->coop->id]);
+    $this->floor = CoopFloor::factory()->create(['coop_id' => $this->coop->id]);
+    $this->period = ProductionPeriod::factory()->create(['floor_id' => $this->floor->id]);
 
     CoopUserAssignment::factory()->create([
         'user_id' => $this->user->id,
@@ -66,7 +68,7 @@ it('returns period detail with only the user salary', function () {
             'success',
             'message',
             'data' => [
-                ['id', 'coop_id', 'period_code', 'salaries', 'contracts', 'documents', 'investors'],
+                ['id', 'floor_id', 'period_code', 'salaries', 'contracts', 'documents', 'investors'],
             ],
         ]);
 

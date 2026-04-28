@@ -18,7 +18,7 @@ class StoreCoopRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'capacity' => ['required', 'integer', 'min:1'],
             'floor' => ['nullable', 'integer', 'min:1'],
-            'coop_type' => ['required', 'in:open_house,closed_house'],
+            'coop_type' => ['required', 'in:CH_POSTAL,CH_PLASTIC_SLAT,CH_MULTI_TIER'],
             'note' => ['nullable', 'string'],
             'is_active' => ['boolean'],
             'sync_status' => ['nullable', 'in:LOCAL_SAVED,PENDING_SYNC,SYNCED,SYNC_FAILED,CONFLICT'],

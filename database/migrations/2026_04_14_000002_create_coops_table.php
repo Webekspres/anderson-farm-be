@@ -15,8 +15,7 @@ return new class extends Migration
             $table->uuid('farm_id');
             $table->string('name');
             $table->integer('capacity');
-            $table->integer('floor')->default(1);
-            $table->enum('coop_type', ['open_house', 'closed_house']);
+            $table->enum('coop_type', ['CH_POSTAL', 'CH_PLASTIC_SLAT', 'CH_MULTI_TIER']);
             $table->text('note')->nullable();
             $table->boolean('is_active')->default(true);
             $table->enum('sync_status', ['LOCAL_SAVED', 'PENDING_SYNC', 'SYNCED', 'SYNC_FAILED', 'CONFLICT'])->default('PENDING_SYNC');

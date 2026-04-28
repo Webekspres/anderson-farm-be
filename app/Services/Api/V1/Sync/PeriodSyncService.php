@@ -16,8 +16,11 @@ class PeriodSyncService
     {
         $basePeriod = ProductionPeriod::withTrashed()->findOrFail($periodId);
 
+        // Get coop through floor
+        $coop = $basePeriod->floor->coop;
+
         $hasAccess = CoopUserAssignment::where('user_id', $user->id)
-            ->where('coop_id', $basePeriod->coop_id)
+            ->where('coop_id', $coop->id)
             ->exists();
 
         if (!$hasAccess) {

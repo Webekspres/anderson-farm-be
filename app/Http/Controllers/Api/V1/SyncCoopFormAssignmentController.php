@@ -31,8 +31,9 @@ class SyncCoopFormAssignmentController extends Controller
 
         $assignments = $request->validated()['assignments'];
 
-        // Ambil semua id alat milik kandang ini
-        $validEquipmentIds = CoopEquipment::where('coop_id', $coop->id)->pluck('id')->toArray();
+        // Ambil semua floor milik kandang ini, lalu ambil semua id alat dari floor-floor tersebut
+        $floorIds = $coop->coopFloors()->pluck('id')->toArray();
+        $validEquipmentIds = CoopEquipment::whereIn('floor_id', $floorIds)->pluck('id')->toArray();
 
         // Cek ownership semua coop_equipment_id
         foreach ($assignments as $row) {

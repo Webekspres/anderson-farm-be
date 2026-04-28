@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Models\Farm;
+use App\Models\CoopFloor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -60,8 +61,7 @@ it('successfully completes the end-to-end coop setup journey', function () {
         'farm_id' => $farm->id,
         'name' => 'Kandang Alpha',
         'capacity' => 1000,
-        'floor' => 1,
-        'coop_type' => 'closed_house',
+        'coop_type' => 'CH_POSTAL',
         'is_active' => true,
         'note' => 'Kandang utama',
         'created_at_client' => now()->toISOString(),
@@ -71,8 +71,13 @@ it('successfully completes the end-to-end coop setup journey', function () {
     $response->assertStatus(201)->assertJson(['success' => true]);
     $coopId = $response->json('data.uuid');
 
+    $floor = CoopFloor::factory()->create([
+        'coop_id' => $coopId,
+    ]);
+
     // STEP 5: Install Equipment in Coop
     $coopEquipmentPayload = [
+        'floor_id' => $floor->id,
         'equipment_type_id' => $equipmentTypeId,
         'unit_code' => 'KIPAS-001',
         'installed_at' => now()->toISOString(),
@@ -130,7 +135,7 @@ it('successfully completes the end-to-end coop setup journey', function () {
     ]);
     $this->assertDatabaseHas('coop_equipments', [
         'id' => $coopEquipmentId,
-        'coop_id' => $coopId,
+        'floor_id' => $floor->id,
         'equipment_type_id' => $equipmentTypeId,
     ]);
     $this->assertDatabaseHas('coop_form_assignments', [

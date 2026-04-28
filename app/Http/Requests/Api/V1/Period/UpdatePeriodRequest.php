@@ -18,7 +18,7 @@ class UpdatePeriodRequest extends FormRequest
         $periodId = $this->route('period_id');
 
         return [
-            'coop_id'       => ['sometimes', 'uuid', 'exists:coops,id'],
+            'floor_id'       => ['sometimes', 'uuid', 'exists:coop_floors,id'],
             'pic_id'        => ['sometimes', 'uuid', 'exists:users,id'],
             'start_date'    => ['sometimes', 'date'],
             'end_date'      => ['nullable', 'date', 'after_or_equal:start_date'],

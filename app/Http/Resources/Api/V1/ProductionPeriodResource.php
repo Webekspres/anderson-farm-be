@@ -18,9 +18,9 @@ class ProductionPeriodResource extends JsonResource
             'id' => $this->id,
             'period_code' => $this->period_code,
             'status' => $this->status,
-            'coop' => $this->whenLoaded('coop', fn() => [
-                'id' => $this->coop->id,
-                'name' => $this->coop->name,
+            'floor' => $this->whenLoaded('floor', fn() => [
+                'id' => $this->floor->id,
+                'name' => $this->floor->name,
             ]),
             'pic' => $this->whenLoaded('pic', fn() => [
                 'id' => $this->pic->id,

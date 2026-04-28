@@ -18,7 +18,7 @@ class CoopDocument extends Model
         'id',
         'server_id',
         'version',
-        'coop_id',
+        'floor_id',
         'name',
         'file_path_local',
         'file_url',
@@ -40,8 +40,8 @@ class CoopDocument extends Model
         'version' => 'integer',
     ];
 
-    public function coop()
+    public function floor()
     {
-        return $this->belongsTo(Coop::class, 'coop_id');
+        return $this->belongsTo(CoopFloor::class, 'floor_id');
     }
 }

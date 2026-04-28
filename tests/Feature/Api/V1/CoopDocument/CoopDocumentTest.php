@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Models\Coop;
+use App\Models\CoopFloor;
 use App\Models\CoopDocument;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -14,9 +15,11 @@ describe('CoopDocument API', function () {
         $user = $authUser();
         $coopA = Coop::factory()->create();
         $coopB = Coop::factory()->create();
-        $docA1 = CoopDocument::factory()->create(['coop_id' => $coopA->id]);
-        $docA2 = CoopDocument::factory()->create(['coop_id' => $coopA->id]);
-        $docB1 = CoopDocument::factory()->create(['coop_id' => $coopB->id]);
+        $floorA = CoopFloor::factory()->create(['coop_id' => $coopA->id]);
+        $floorB = CoopFloor::factory()->create(['coop_id' => $coopB->id]);
+        $docA1 = CoopDocument::factory()->create(['floor_id' => $floorA->id]);
+        $docA2 = CoopDocument::factory()->create(['floor_id' => $floorA->id]);
+        $docB1 = CoopDocument::factory()->create(['floor_id' => $floorB->id]);
 
         $response = $this->actingAs($user)->getJson("/api/v1/coops/{$coopA->id}/documents");
         $response->assertOk();
@@ -29,6 +32,7 @@ describe('CoopDocument API', function () {
     it('POST: sukses menambah dokumen ke kandang', function () use ($authUser) {
         $user = $authUser();
         $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
         $payload = [
             'document_name' => 'SOP Kandang',
             'document_type' => 'pdf',
@@ -38,7 +42,7 @@ describe('CoopDocument API', function () {
         $response->assertCreated();
         $response->assertJsonPath('data.name', 'SOP Kandang');
         $this->assertDatabaseHas('coop_documents', [
-            'coop_id' => $coop->id,
+            'floor_id' => $floor->id,
             'name' => 'SOP Kandang',
             'file_type' => 'pdf',
             'file_url' => 'https://example.com/sop.pdf',
@@ -60,7 +64,8 @@ describe('CoopDocument API', function () {
     it('DELETE: berhasil soft delete dokumen', function () use ($authUser) {
         $user = $authUser();
         $coop = Coop::factory()->create();
-        $doc = CoopDocument::factory()->create(['coop_id' => $coop->id]);
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
+        $doc = CoopDocument::factory()->create(['floor_id' => $floor->id]);
         $response = $this->actingAs($user)->deleteJson("/api/v1/coops/{$coop->id}/documents/{$doc->id}");
         $response->assertOk();
         $this->assertSoftDeleted('coop_documents', ['id' => $doc->id]);
@@ -70,7 +75,8 @@ describe('CoopDocument API', function () {
         $user = $authUser();
         $coopA = Coop::factory()->create();
         $coopB = Coop::factory()->create();
-        $docB = CoopDocument::factory()->create(['coop_id' => $coopB->id]);
+        $floorB = CoopFloor::factory()->create(['coop_id' => $coopB->id]);
+        $docB = CoopDocument::factory()->create(['floor_id' => $floorB->id]);
         $response = $this->actingAs($user)->deleteJson("/api/v1/coops/{$coopA->id}/documents/{$docB->id}");
         $response->assertStatus(404);
     });
@@ -83,7 +89,8 @@ describe('CoopDocument API', function () {
 
     it('AUTH: 401 jika tanpa token', function () {
         $coop = Coop::factory()->create();
-        $doc = CoopDocument::factory()->create(['coop_id' => $coop->id]);
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
+        $doc = CoopDocument::factory()->create(['floor_id' => $floor->id]);
         $this->getJson("/api/v1/coops/{$coop->id}/documents")->assertUnauthorized();
         $this->postJson("/api/v1/coops/{$coop->id}/documents", [
             'document_name' => 'SOP',

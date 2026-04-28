@@ -67,8 +67,9 @@ enum SyncStatus {
 }
 
 enum CoopType {
-    open_house
-    closed_house
+    CH_POSTAL
+    CH_PLASTIC_SLAT
+    CH_MULTI_TIER
 }
 
 enum PeriodStatus {
@@ -304,7 +305,6 @@ model Coop {
     farm_id   String
     name      String
     capacity  Int
-    floor     Int
     coop_type CoopType
     note      String?  @db.Text
     is_active Boolean  @default(true)
@@ -319,15 +319,29 @@ model Coop {
     sync_metadata     String?    @db.Text
 
     // relations
-    farm               Farm                 @relation(fields: [farm_id], references: [id])
-    coop_documents     CoopDocument[]
-    coop_equipments    CoopEquipment[]
-    production_periods ProductionPeriod[]
-    coop_assignments   CoopUserAssignment[]
-    maintenance_logs   MaintenanceLog[]
+    floors           CoopFloor[]
+    farm             Farm                 @relation(fields: [farm_id], references: [id])
+    coop_assignments CoopUserAssignment[]
 
     @@index([farm_id])
     @@map("coops")
+}
+
+model CoopFloor {
+    id        String   @id @default(uuid())
+    coop_id   String
+    name      String // Contoh: "Lantai 1" atau "Lantai 2"
+    capacity  Int // Kapasitas populasi per lantai
+    coop_type CoopType // Pindah ke sini
+
+    // Relasi
+    coop               Coop               @relation(fields: [coop_id], references: [id])
+    production_periods ProductionPeriod[]
+    coop_documents     CoopDocument[]
+    coop_equipments    CoopEquipment[]
+    maintenance_logs   MaintenanceLog[]
+
+    @@map("coop_floors")
 }
 
 // -----------------------------------------------------------------------------
@@ -372,7 +386,7 @@ model CoopDocument {
     version   Int    @default(1)
 
     // business fields
-    coop_id         String
+    floor_id        String
     name            String
     file_path_local String?
     file_url        String?
@@ -387,9 +401,9 @@ model CoopDocument {
     deleted_at        DateTime?
 
     // relations
-    coop Coop @relation(fields: [coop_id], references: [id])
+    floor CoopFloor @relation(fields: [floor_id], references: [id])
 
-    @@index([coop_id])
+    @@index([floor_id])
     @@map("coop_documents")
 }
 
@@ -398,7 +412,7 @@ model MaintenanceLog {
     server_id Int?   @unique @default(autoincrement())
     version   Int    @default(1)
 
-    coop_id     String
+    floor_id    String
     reported_by String // PIC / Manager
     date        DateTime
     description String   @db.Text
@@ -411,7 +425,7 @@ model MaintenanceLog {
     updated_at_server DateTime?
     deleted_at        DateTime?
 
-    coop Coop @relation(fields: [coop_id], references: [id])
+    floor CoopFloor @relation(fields: [floor_id], references: [id])
 
     @@map("maintenance_logs")
 }
@@ -574,7 +588,7 @@ model CoopEquipment {
     version   Int    @default(1)
 
     // business fields
-    coop_id           String
+    floor_id          String
     equipment_type_id String
     unit_code         String?
     installed_at      DateTime?
@@ -588,11 +602,11 @@ model CoopEquipment {
     deleted_at        DateTime?
 
     // relations
-    coop                Coop                 @relation(fields: [coop_id], references: [id])
+    floor               CoopFloor            @relation(fields: [floor_id], references: [id])
     equipment_type      EquipmentType        @relation(fields: [equipment_type_id], references: [id])
     coopFormAssignments CoopFormAssignment[]
 
-    @@index([coop_id])
+    @@index([floor_id])
     @@index([equipment_type_id])
     @@map("coop_equipments")
 }
@@ -612,7 +626,7 @@ model ProductionPeriod {
     version   Int    @default(1)
 
     // business fields
-    coop_id        String
+    floor_id       String
     pic_id         String
     period_code    String       @unique
     start_date     DateTime
@@ -632,7 +646,7 @@ model ProductionPeriod {
     sync_metadata     String?    @db.Text
 
     // relations
-    coop                   Coop                   @relation(fields: [coop_id], references: [id])
+    floor                  CoopFloor              @relation(fields: [floor_id], references: [id])
     pic                    User                   @relation("PicPeriods", fields: [pic_id], references: [id])
     period_investors       PeriodInvestor[]
     daily_activity_headers DailyActivityHeader[]
@@ -644,7 +658,7 @@ model ProductionPeriod {
     periodFormAssignments  PeriodFormAssignment[]
     transactions           Transaction[]
 
-    @@index([coop_id])
+    @@index([floor_id])
     @@index([pic_id])
     @@map("production_periods")
 }

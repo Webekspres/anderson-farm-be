@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('version')->default(1);
 
             // business fields
-            $table->uuid('coop_id');
+            $table->uuid('floor_id');
             $table->uuid('pic_id');
             $table->string('period_code')->unique();
             $table->date('start_date');
@@ -34,9 +34,9 @@ return new class extends Migration
             $table->timestamp('updated_at_server')->nullable();
             $table->timestamp('deleted_at')->nullable();
 
-            $table->foreign('coop_id')->references('id')->on('coops');
+            $table->foreign('floor_id')->references('id')->on('coop_floors');
             $table->foreign('pic_id')->references('id')->on('users');
-            $table->index('coop_id');
+            $table->index('floor_id');
             $table->index('pic_id');
 
             $table->timestamps();

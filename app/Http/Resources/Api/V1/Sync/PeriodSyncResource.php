@@ -17,7 +17,7 @@ class PeriodSyncResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'coop_id' => $this->coop_id,
+            'floor_id' => $this->floor_id,
             'period_code' => $this->period_code,
             'start_date' => optional($this->start_date)->toDateString(),
             'end_date' => optional($this->end_date)->toDateString(),

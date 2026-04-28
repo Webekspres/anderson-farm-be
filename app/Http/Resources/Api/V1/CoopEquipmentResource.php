@@ -18,7 +18,7 @@ class CoopEquipmentResource extends JsonResource
         return [
             'id' => $this->server_id,
             'uuid' => $this->id,
-            'coop_id' => $this->coop_id,
+            'floor_id' => $this->floor_id,
             'equipment_type' => new EquipmentTypeResource($this->whenLoaded('equipmentType')),
             'unit_code' => $this->unit_code,
             'installed_at' => $this->installed_at?->toIso8601String(),

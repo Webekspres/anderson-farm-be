@@ -4,14 +4,8 @@ namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class CoopDocumentResource extends JsonResource
+class MaintenanceLogResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array<string, mixed>
-     */
     public function toArray($request)
     {
         return [
@@ -19,10 +13,10 @@ class CoopDocumentResource extends JsonResource
             'server_id' => $this->server_id,
             'version' => $this->version,
             'floor_id' => $this->floor_id,
-            'name' => $this->name,
-            'file_path_local' => $this->file_path_local,
-            'file_url' => $this->file_url,
-            'file_type' => $this->file_type,
+            'reported_by' => $this->reported_by,
+            'date' => optional($this->date)?->toIso8601String(),
+            'description' => $this->description,
+            'status' => $this->status,
             'sync_status' => $this->sync_status,
             'created_at_client' => optional($this->created_at_client)?->toIso8601String(),
             'created_at_server' => optional($this->created_at_server)?->toIso8601String(),

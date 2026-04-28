@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Models\Farm;
 use App\Models\Coop;
+use App\Models\CoopFloor;
 use App\Models\EquipmentType;
 use App\Models\CoopEquipment;
 use App\Models\FormConfig;
@@ -17,9 +18,11 @@ it('rejects cross-coop equipment id injection on form assignment', function () {
     $farm = Farm::factory()->create();
     $coopA = Coop::factory()->create(['farm_id' => $farm->id]);
     $coopB = Coop::factory()->create(['farm_id' => $farm->id]);
+    $floorA = CoopFloor::factory()->create(['coop_id' => $coopA->id]);
+    $floorB = CoopFloor::factory()->create(['coop_id' => $coopB->id]);
     $equipmentType = EquipmentType::factory()->create();
     $equipA = CoopEquipment::factory()->create([
-        'coop_id' => $coopA->id,
+        'floor_id' => $floorA->id,
         'equipment_type_id' => $equipmentType->id,
     ]);
     $formConfig = FormConfig::factory()->create();
@@ -45,12 +48,14 @@ it('rejects equipment install if equipment type is soft deleted', function () {
     $user = User::factory()->create();
     $farm = Farm::factory()->create();
     $coop = Coop::factory()->create(['farm_id' => $farm->id]);
+    $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
     $equipmentType = EquipmentType::factory()->create();
     $equipmentType->delete(); // Soft delete
 
     Sanctum::actingAs($user);
 
     $payload = [
+        'floor_id' => $floor->id,
         'equipment_type_id' => $equipmentType->id,
         'unit_code' => 'SN-002',
         'installed_at' => now()->toISOString(),
@@ -66,11 +71,13 @@ it('rejects duplicate unit_code per coop', function () {
     $user = User::factory()->create();
     $farm = Farm::factory()->create();
     $coop = Coop::factory()->create(['farm_id' => $farm->id]);
+    $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
     $equipmentType = EquipmentType::factory()->create();
 
     Sanctum::actingAs($user);
 
     $payload = [
+        'floor_id' => $floor->id,
         'equipment_type_id' => $equipmentType->id,
         'unit_code' => 'SN-001',
         'installed_at' => now()->toISOString(),
@@ -89,9 +96,10 @@ it('cascades delete coop_form_assignments when equipment is deleted', function (
     $user = User::factory()->create();
     $farm = Farm::factory()->create();
     $coop = Coop::factory()->create(['farm_id' => $farm->id]);
+    $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
     $equipmentType = EquipmentType::factory()->create();
     $equip = CoopEquipment::factory()->create([
-        'coop_id' => $coop->id,
+        'floor_id' => $floor->id,
         'equipment_type_id' => $equipmentType->id,
     ]);
     $formConfig = FormConfig::factory()->create();
@@ -128,6 +136,7 @@ it('cascades delete coop_form_assignments when equipment is deleted', function (
 it('overwrites coop user assignments in bulk sync', function () {
     $farm = Farm::factory()->create();
     $coop = Coop::factory()->create(['farm_id' => $farm->id]);
+    $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
     $userA = User::factory()->create();
     $userB = User::factory()->create();
     $userC = User::factory()->create();

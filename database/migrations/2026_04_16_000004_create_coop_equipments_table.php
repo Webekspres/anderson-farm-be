@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->bigInteger('server_id')->unsigned()->unique()->nullable();
             $table->integer('version')->default(1);
-            $table->uuid('coop_id');
+            $table->uuid('floor_id');
             $table->uuid('equipment_type_id');
             $table->string('unit_code')->nullable();
             $table->timestamp('installed_at')->nullable();
@@ -22,9 +22,9 @@ return new class extends Migration {
             $table->dateTime('updated_at_server')->nullable();
             $table->softDeletes('deleted_at');
             // $table->timestamps(); // JANGAN AKTIFKAN, sudah ada field custom created_at_client, updated_at_client, dst
-            $table->foreign('coop_id')->references('id')->on('coops');
+            $table->foreign('floor_id')->references('id')->on('coop_floors');
             $table->foreign('equipment_type_id')->references('id')->on('equipment_types');
-            $table->index('coop_id');
+            $table->index('floor_id');
             $table->index('equipment_type_id');
         });
     }

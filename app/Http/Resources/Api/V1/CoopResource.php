@@ -15,7 +15,6 @@ class CoopResource extends JsonResource
             'farm_id'             => $this->farm_id,
             'name'                => $this->name,
             'capacity'            => $this->capacity,
-            'floor'               => $this->floor,
             'coop_type'           => $this->coop_type,
             'note'                => $this->note,
             'is_active'           => $this->is_active,

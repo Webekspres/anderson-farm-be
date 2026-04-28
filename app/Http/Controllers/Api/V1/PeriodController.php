@@ -19,11 +19,11 @@ class PeriodController extends Controller
         return DB::transaction(function () use ($validated) {
             // Generate period_code jika null
             $periodCode = $validated['period_code'] ?? (
-                'PRD-' . now()->format('Ym') . '-' . strtoupper(substr($validated['coop_id'], 0, 4))
+                'PRD-' . now()->format('Ym') . '-' . strtoupper(substr($validated['floor_id'], 0, 4))
             );
 
             $period = ProductionPeriod::create([
-                'coop_id' => $validated['coop_id'],
+                'floor_id' => $validated['floor_id'],
                 'pic_id' => $validated['pic_id'],
                 'period_code' => $periodCode,
                 'start_date' => $validated['start_date'],
@@ -38,7 +38,7 @@ class PeriodController extends Controller
                 'updated_at_server' => now(),
             ]);
 
-            $period->load(['coop:id,name', 'pic:id,name']);
+            $period->load(['floor:id,name', 'pic:id,name']);
 
             return response()->json([
                 'success' => true,
@@ -53,9 +53,9 @@ class PeriodController extends Controller
         $period = ProductionPeriod::findOrFail($id);
         $validated = $request->validated();
 
-        // Logika Tambahan: Cek ketersediaan kandang jika coop_id diubah
-        if (isset($validated['coop_id']) && $validated['coop_id'] !== $period->coop_id) {
-            $isBusy = ProductionPeriod::where('coop_id', $validated['coop_id'])
+        // Logika Tambahan: Cek ketersediaan kandang jika floor_id diubah
+        if (isset($validated['floor_id']) && $validated['floor_id'] !== $period->floor_id) {
+            $isBusy = ProductionPeriod::where('floor_id', $validated['floor_id'])
                 ->where('status', 'active')
                 ->where('id', '!=', $id)
                 ->exists();
