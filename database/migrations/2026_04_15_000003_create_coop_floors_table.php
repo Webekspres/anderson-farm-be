@@ -15,6 +15,14 @@ return new class extends Migration {
             $table->enum('coop_type', ['CH_POSTAL', 'CH_PLASTIC_SLAT', 'CH_MULTI_TIER']);
             $table->foreign('coop_id')->references('id')->on('coops');
             $table->index('coop_id');
+
+            $table->enum('sync_status', ['LOCAL_SAVED', 'PENDING_SYNC', 'SYNCED', 'SYNC_FAILED', 'CONFLICT'])->default('PENDING_SYNC');
+            $table->dateTime('created_at_client');
+            $table->dateTime('created_at_server')->nullable();
+            $table->dateTime('updated_at_client');
+            $table->dateTime('updated_at_server')->nullable();
+            $table->softDeletes('deleted_at');
+            $table->text('sync_metadata')->nullable();
         });
     }
 

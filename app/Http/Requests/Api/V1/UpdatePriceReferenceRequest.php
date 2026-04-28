@@ -19,6 +19,8 @@ class UpdatePriceReferenceRequest extends FormRequest
             'link_url' => ['sometimes', 'nullable', 'url'],
             'image_url' => ['sometimes', 'nullable', 'url'],
             'image_path_local' => ['sometimes', 'nullable', 'string'],
+            'created_at_client' => ['sometimes', 'nullable', 'date'],
+            'updated_at_client' => ['sometimes', 'nullable', 'date'],
         ];
     }
 }

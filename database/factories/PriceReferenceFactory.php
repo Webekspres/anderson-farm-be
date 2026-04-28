@@ -21,8 +21,11 @@ class PriceReferenceFactory extends Factory
             'link_url' => $this->faker->optional()->url(),
             'image_url' => $this->faker->optional()->imageUrl(),
             'image_path_local' => $this->faker->optional()->filePath(),
-            'created_at' => $this->faker->optional()->dateTime(),
-            'updated_at' => $this->faker->optional()->dateTime(),
+            'sync_status' => $this->faker->randomElement(['LOCAL_SAVED', 'PENDING_SYNC', 'SYNCED', 'SYNC_FAILED', 'CONFLICT']),
+            'created_at_client' => $this->faker->dateTime(),
+            'created_at_server' => $this->faker->optional()->dateTime(),
+            'updated_at_client' => $this->faker->dateTime(),
+            'updated_at_server' => $this->faker->optional()->dateTime(),
             'deleted_at' => null,
         ];
     }

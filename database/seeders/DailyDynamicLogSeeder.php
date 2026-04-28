@@ -9,6 +9,19 @@ class DailyDynamicLogSeeder extends Seeder
 {
     public function run(): void
     {
-        DailyDynamicLog::factory()->count(5)->create();
+        $headers = \App\Models\DailyActivityHeader::inRandomOrder()->take(5)->get();
+        $formConfigs = \App\Models\FormConfig::inRandomOrder()->take(5)->get();
+
+        if ($headers->isEmpty() || $formConfigs->isEmpty()) {
+            return;
+        }
+
+        foreach ($headers as $index => $header) {
+            $config = $formConfigs->get($index % $formConfigs->count());
+            DailyDynamicLog::factory()->create([
+                'header_id' => $header->id,
+                'form_config_id' => $config->id,
+            ]);
+        }
     }
 }

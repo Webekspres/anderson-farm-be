@@ -19,6 +19,8 @@ class StorePriceReferenceRequest extends FormRequest
             'link_url' => ['nullable', 'url'],
             'image_url' => ['nullable', 'url'],
             'image_path_local' => ['nullable', 'string'],
+            'created_at_client' => ['nullable', 'date'],
+            'updated_at_client' => ['nullable', 'date'],
         ];
     }
 }

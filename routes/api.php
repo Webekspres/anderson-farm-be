@@ -115,10 +115,11 @@ Route::prefix('v1')->group(function () {
             Route::get('/periods', [\App\Http\Controllers\Api\V1\PeriodSyncController::class, 'index']);
             Route::get('/daily-activities', [DailyActivitySyncController::class, 'index']);
             Route::post('/daily-activities', [DailyActivitySyncController::class, 'store']);
+            Route::get('/education', [\App\Http\Controllers\Api\V1\EducationSyncController::class, 'index']);
         });
-
-        Route::get('/contracts/{contract}', [ContractAbkController::class, 'show']);
-        Route::post('/contracts/{contract}', [ContractAbkController::class, 'accept']); // Method POST untuk menyetujui
-        Route::delete('/contracts/{contract}', [ContractAbkController::class, 'destroy']);
     });
+
+    Route::get('/contracts/{contract}', [ContractAbkController::class, 'show']);
+    Route::post('/contracts/{contract}', [ContractAbkController::class, 'accept']); // Method POST untuk menyetujui
+    Route::delete('/contracts/{contract}', [ContractAbkController::class, 'destroy']);
 });

@@ -18,6 +18,12 @@ class CoopFloorFactory extends Factory
             'name' => 'Lantai ' . $this->faker->numberBetween(1, 3),
             'capacity' => $this->faker->numberBetween(1000, 50000),
             'coop_type' => $this->faker->randomElement(['CH_POSTAL', 'CH_PLASTIC_SLAT', 'CH_MULTI_TIER']),
+            'sync_status' => $this->faker->randomElement(['LOCAL_SAVED', 'PENDING_SYNC', 'SYNCED', 'SYNC_FAILED', 'CONFLICT']),
+            'created_at_client' => $this->faker->dateTime(),
+            'created_at_server' => $this->faker->optional()->dateTime(),
+            'updated_at_client' => $this->faker->dateTime(),
+            'updated_at_server' => $this->faker->optional()->dateTime(),
+            'deleted_at' => null,
         ];
     }
 }

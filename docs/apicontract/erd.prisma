@@ -334,6 +334,15 @@ model CoopFloor {
     capacity  Int // Kapasitas populasi per lantai
     coop_type CoopType // Pindah ke sini
 
+    // offline-first fields
+    sync_status       SyncStatus @default(PENDING_SYNC)
+    created_at_client DateTime
+    created_at_server DateTime?
+    updated_at_client DateTime
+    updated_at_server DateTime?
+    deleted_at        DateTime?
+    sync_metadata     String?    @db.Text
+
     // Relasi
     coop               Coop               @relation(fields: [coop_id], references: [id])
     production_periods ProductionPeriod[]

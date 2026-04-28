@@ -17,9 +17,14 @@ return new class extends Migration
             $table->string('link_url')->nullable();
             $table->string('image_url')->nullable();
             $table->string('image_path_local')->nullable();
-            $table->timestamp('created_at')->nullable();
-            $table->timestamp('updated_at')->nullable();
-            $table->timestamp('deleted_at')->nullable();
+
+            $table->enum('sync_status', ['LOCAL_SAVED', 'PENDING_SYNC', 'SYNCED', 'SYNC_FAILED', 'CONFLICT'])->default('PENDING_SYNC');
+            $table->dateTime('created_at_client');
+            $table->dateTime('created_at_server')->nullable();
+            $table->dateTime('updated_at_client');
+            $table->dateTime('updated_at_server')->nullable();
+            $table->softDeletes('deleted_at');
+            $table->timestamps();
         });
     }
 

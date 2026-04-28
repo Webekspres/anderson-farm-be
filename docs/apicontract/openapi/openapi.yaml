@@ -256,17 +256,7 @@ paths:
                 $ref: "./components/general.yaml#/GeneralResponse"
 
   /api/v1/sync/education:
-    get:
-      tags: [Sync]
-      summary: Sync data edukasi offline
-      description: Unduh artikel edukasi & referensi harga secara offline.
-      responses:
-        "200":
-          description: Data edukasi berhasil ditarik.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
+    $ref: "./paths/sync/education.yaml#/education"
 
   /api/v1/sync/activity-logs:
     post:

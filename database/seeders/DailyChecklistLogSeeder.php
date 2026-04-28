@@ -9,6 +9,19 @@ class DailyChecklistLogSeeder extends Seeder
 {
     public function run(): void
     {
-        DailyChecklistLog::factory()->count(5)->create();
+        $headers = \App\Models\DailyActivityHeader::inRandomOrder()->take(5)->get();
+        $tasks = \App\Models\ChecklistTask::inRandomOrder()->take(5)->get();
+
+        if ($headers->isEmpty() || $tasks->isEmpty()) {
+            return;
+        }
+
+        foreach ($headers as $index => $header) {
+            $task = $tasks->get($index % $tasks->count());
+            DailyChecklistLog::factory()->create([
+                'header_id' => $header->id,
+                'task_id' => $task->id,
+            ]);
+        }
     }
 }

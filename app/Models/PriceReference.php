@@ -14,6 +14,9 @@ class PriceReference extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
+    const CREATED_AT = 'created_at_client';
+    const UPDATED_AT = 'updated_at_client';
+
     protected $fillable = [
         'id',
         'server_id',
@@ -23,14 +26,18 @@ class PriceReference extends Model
         'link_url',
         'image_url',
         'image_path_local',
-        'created_at',
-        'updated_at',
+        'sync_status',
+        'created_at_client',
+        'created_at_server',
+        'updated_at_client',
+        'updated_at_server',
         'deleted_at',
     ];
 
-    protected $dates = [
-        'created_at',
-        'updated_at',
-        'deleted_at',
+    protected $casts = [
+        'created_at_client' => 'datetime',
+        'updated_at_client' => 'datetime',
+        'created_at_server' => 'datetime',
+        'updated_at_server' => 'datetime',
     ];
 }

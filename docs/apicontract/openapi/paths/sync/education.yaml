@@ -1,0 +1,46 @@
+# --- Sync Education & References ---
+education:
+  get:
+    tags: [Sync - Content]
+    summary: Pull Artikel Edukasi & Harga
+    description: Menarik data artikel panduan operasional (SOP/Tips) dan referensi harga pasar terkini. Mendukung Delta Sync untuk efisiensi bandwidth.
+    security:
+      - sanctum: []
+    parameters:
+      - name: last_sync_timestamp
+        in: query
+        description: Timestamp terakhir HP melakukan sync materi edukasi (ISO 8601). Jika kosong, akan menarik seluruh data.
+        required: false
+        schema:
+          type: string
+          format: date-time
+    responses:
+      "200":
+        description: Data edukasi dan referensi berhasil ditarik.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                current_server_timestamp:
+                  {
+                    type: string,
+                    format: date-time,
+                    example: "2026-04-28T15:00:00Z",
+                  }
+                data:
+                  type: object
+                  properties:
+                    education_articles:
+                      type: array
+                      items:
+                        {
+                          $ref: "../../components/sync/education.yaml#/EducationArticle",
+                        }
+                    price_references:
+                      type: array
+                      items:
+                        {
+                          $ref: "../../components/sync/education.yaml#/PriceReference",
+                        }
