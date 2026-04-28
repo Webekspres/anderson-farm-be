@@ -83,4 +83,9 @@ class ProductionPeriod extends Model
     {
         return $this->hasMany(DailyActivityHeader::class, 'period_id');
     }
+
+    public function rhpp()
+    {
+        return $this->hasOne(Rhpp::class, 'period_id');
+    }
 }

@@ -44,6 +44,11 @@ class DatabaseSeeder extends Seeder
             HarvestEntrySeeder::class,
             PhotoEvidenceSeeder::class,
             SyncTrackerSeeder::class,
+            NotificationSeeder::class,
+            ActivityLogSeeder::class,
+            TransactionSeeder::class,
+            RhppSeeder::class,
+            RhppDocumentSeeder::class,
         ]);
     }
 }
