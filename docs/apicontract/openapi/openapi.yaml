@@ -169,7 +169,6 @@ paths:
               schema:
                 $ref: "./components/general.yaml#/GeneralResponse"
 
-
   # === SISTEM & NOTIFIKASI ===
   /api/v1/system/check-version:
     $ref: "./paths/system.yaml#/check-version"
@@ -188,30 +187,7 @@ paths:
     $ref: "./paths/sync.yaml#/sync-master-data"
 
   /api/v1/sync/periods:
-    get:
-      tags: [Sync]
-      summary: Sync data periode ternak
-      description: Menarik detail periode aktif.
-      responses:
-        "200":
-          description: Daftar periode berhasil diambil.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
-
-    post:
-      tags: [Sync]
-      summary: Kirim persetujuan digital periode
-      description: Mengirim jejak persetujuan digital ContractAcceptance dari ABK.
-      responses:
-        "201":
-          description: Persetujuan berhasil dikirim.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
-
+    $ref: "./paths/sync/production-period.yaml#/periods"
 
   /api/v1/sync/daily-activities:
     $ref: "./paths/sync/daily-activity.yaml#/daily-activities"
@@ -241,7 +217,6 @@ paths:
               schema:
                 $ref: "./components/general.yaml#/GeneralResponse"
 
-
   /api/v1/sync/maintenances:
     get:
       tags: [Sync]
@@ -267,7 +242,6 @@ paths:
               schema:
                 $ref: "./components/general.yaml#/GeneralResponse"
 
-
   /api/v1/sync/rhpps:
     get:
       tags: [Sync]
@@ -280,7 +254,6 @@ paths:
             application/json:
               schema:
                 $ref: "./components/general.yaml#/GeneralResponse"
-
 
   /api/v1/sync/education:
     get:
@@ -295,7 +268,6 @@ paths:
               schema:
                 $ref: "./components/general.yaml#/GeneralResponse"
 
-
   /api/v1/sync/activity-logs:
     post:
       tags: [Sync]
@@ -308,7 +280,6 @@ paths:
             application/json:
               schema:
                 $ref: "./components/general.yaml#/GeneralResponse"
-
 
 components:
   parameters:
@@ -710,7 +681,6 @@ components:
           allOf:
             - $ref: "#/components/schemas/CoopRequest"
             - $ref: "./components/general.yaml#/OfflineMetadataResponse"
-
 
   securitySchemes:
     ApiKey:

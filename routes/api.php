@@ -112,6 +112,7 @@ Route::prefix('v1')->group(function () {
         // Sync endpoints (Offline-First)
         Route::prefix('sync')->group(function () {
             Route::get('/master-data', [\App\Http\Controllers\Api\V1\MasterDataSyncController::class, 'index']);
+            Route::get('/periods', [\App\Http\Controllers\Api\V1\PeriodSyncController::class, 'index']);
             Route::get('/daily-activities', [DailyActivitySyncController::class, 'index']);
             Route::post('/daily-activities', [DailyActivitySyncController::class, 'store']);
         });

@@ -1,0 +1,70 @@
+# ==========================================
+# PERIODS & CONTRACTS
+# ==========================================
+
+ProductionPeriodDetail:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    coop_id: { type: string, format: uuid }
+    period_number: { type: integer }
+    initial_population: { type: integer }
+    status: { type: string, enum: [active, completed] }
+    investors:
+      type: array
+      items: { $ref: "#/PeriodInvestor" }
+    salaries:
+      type: array
+      items: { $ref: "#/EmployeeSalary" }
+    contracts:
+      type: array
+      items: { $ref: "#/ContractAbk" }
+    documents:
+      type: array
+      items: { $ref: "#/PeriodDocument" }
+
+PeriodInvestor:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    user_id: { type: string, format: uuid }
+    amount: { type: number, format: float }
+    share_percentage: { type: number, format: float }
+
+EmployeeSalary:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    user_id: { type: string, format: uuid }
+    salary_amount: { type: number, format: float }
+    bonus_amount: { type: number, format: float, nullable: true }
+    penalty_amount: { type: number, format: float, nullable: true }
+
+ContractAbk:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    title: { type: string }
+    content_html: { type: string }
+    version: { type: integer }
+    acceptances:
+      type: array
+      items: { $ref: "#/ContractAcceptance" }
+
+ContractAcceptance:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    user_id: { type: string, format: uuid }
+    is_accepted: { type: boolean }
+    signed_at: { type: string, format: date-time, nullable: true }
+
+PeriodDocument:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    title: { type: string }
+    document_type: { type: string }
+    file_metadata:
+      type: object
+      description: "Data JSON berisi metadata file (size, mime, path)."
