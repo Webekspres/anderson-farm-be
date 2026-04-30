@@ -10,6 +10,10 @@ use App\Http\Controllers\Api\V1\CoopUserAssignmentController;
 use App\Http\Controllers\Api\V1\FormConfigController;
 use App\Http\Controllers\Api\V1\OvkItemController;
 use App\Http\Controllers\Api\V1\PeriodController;
+use App\Http\Controllers\Api\V1\PeriodActionController;
+use App\Http\Controllers\Api\V1\RhppDocumentController;
+use App\Http\Controllers\Api\V1\RhppActionController;
+use App\Http\Controllers\Api\V1\RhppSyncController;
 use App\Http\Controllers\Api\V1\PeriodDocumentController;
 use App\Http\Controllers\Api\V1\PeriodFormAssignmentController;
 use App\Http\Controllers\Api\V1\PeriodInvestorController;
@@ -18,6 +22,8 @@ use App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController;
 use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
 use App\Http\Controllers\Api\V1\TransactionCategoryController;
 use App\Http\Controllers\Api\V1\DailyActivitySyncController;
+use App\Http\Controllers\Api\V1\FinanceSyncController;
+use App\Http\Controllers\Api\V1\MaintenanceSyncController;
 use App\Http\Controllers\Api\V1\UploadController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -106,8 +112,12 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/documents', [PeriodDocumentController::class, 'index']);
             Route::post('/documents', [PeriodDocumentController::class, 'store']);
+            // Period action endpoints
+            Route::post('/close', [PeriodActionController::class, 'close']);
+            Route::post('/rhpp-documents', [RhppDocumentController::class, 'store']);
         });
 
+        Route::post('/rhpps/{period_id}/publish', [RhppActionController::class, 'publish']);
 
         // Sync endpoints (Offline-First)
         Route::prefix('sync')->group(function () {
@@ -116,6 +126,11 @@ Route::prefix('v1')->group(function () {
             Route::get('/daily-activities', [DailyActivitySyncController::class, 'index']);
             Route::post('/daily-activities', [DailyActivitySyncController::class, 'store']);
             Route::get('/education', [\App\Http\Controllers\Api\V1\EducationSyncController::class, 'index']);
+            Route::get('/finances', [FinanceSyncController::class, 'index']);
+            Route::post('/finances', [FinanceSyncController::class, 'store']);
+            Route::get('/maintenances', [MaintenanceSyncController::class, 'index']);
+            Route::post('/maintenances', [MaintenanceSyncController::class, 'store']);
+            Route::get('/rhpps', [RhppSyncController::class, 'index']);
         });
     });
 

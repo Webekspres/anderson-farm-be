@@ -106,8 +106,8 @@ Kelompok ini menjadi denyut nadi operasional lapangan yang _blank-spot_. Wajib m
 | `/api/v1/sync/master-data`      |    `GET`    | Mengunduh _cache_ referensi dasar. (Termasuk daftar `ovk_items` dan `coop_documents`) .                                        |
 | `/api/v1/sync/periods`          | `GET, POST` | `GET` untuk menarik detail periode aktif. `POST` HANYA untuk mengirim jejak persetujuan digital `ContractAcceptance` dari ABK. |
 | `/api/v1/sync/daily-activities` | `GET, POST` | **Beban Terberat.** Sinkronisasi satu _Header_ beserta relasi anaknya (HBE, Foto, Panen, `ovk_usages`, & Checklist).           |
-| `/api/v1/sync/finances`         | `GET, POST` | Sinkronisasi Arus Kas (Transaksi pembelian Pakan/DOC, operasional) dan status pembayaran gaji.                                 |
-| `/api/v1/sync/maintenances`     | `GET, POST` | Sinkronisasi perbaikan fisik bangunan kandang (`MaintenanceLog`).                                                              |
+| `/api/v1/sync/finances`         | `GET, POST` | mengelola sinkronisasi data transaksi pengeluaran operasional dan penarikan status gaji dengan pembatasan peran                |
+| `/api/v1/sync/maintenances`     | `GET, POST` | Sinkronisasi pelaporan kerusakan dan status pemeliharaan fasilitas (bangunan dan mesin) berdasarkan spesifik lantai kandang    |
 | `/api/v1/sync/rhpps`            |    `GET`    | Unduh rekap _read-only_ laba bersih akhir dan dokumen PDF-nya untuk dilihat ABK/PIC.                                           |
 | `/api/v1/sync/education`        |    `GET`    | Unduh artikel edukasi & referensi harga secara _offline_.                                                                      |
 | `/api/v1/sync/activity-logs`    |   `POST`    | _Push-only._ Kirim rekam jejak (_audit trail_) tombol aplikasi yang diklik _user_.                                             |

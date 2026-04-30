@@ -1,0 +1,28 @@
+rhpps:
+  get:
+    tags: [Sync - RHPP]
+    summary: Pull Data Laporan RHPP Final
+    description: Menarik rekapitulasi laba akhir dan URL dokumen PDF secara offline-first. Memiliki filter hierarki ketat berdasarkan Role pengguna.
+    security:
+      - sanctum: []
+    parameters:
+      - name: last_sync_timestamp
+        in: query
+        required: false
+        schema: { type: string, format: date-time }
+    responses:
+      "200":
+        description: Berhasil ditarik.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                current_server_timestamp: { type: string, format: date-time }
+                data:
+                  type: object
+                  properties:
+                    rhpps:
+                      type: array
+                      items: { $ref: "../../components/sync/rhpps.yaml#/RhppSyncItem" }

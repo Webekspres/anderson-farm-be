@@ -16,6 +16,8 @@ class MaintenanceLogResource extends JsonResource
             'reported_by' => $this->reported_by,
             'date' => optional($this->date)?->toIso8601String(),
             'description' => $this->description,
+            'image_path_local' => $this->image_path_local,
+            'image_url' => $this->image_url,
             'status' => $this->status,
             'sync_status' => $this->sync_status,
             'created_at_client' => optional($this->created_at_client)?->toIso8601String(),

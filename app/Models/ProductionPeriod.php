@@ -51,6 +51,8 @@ class ProductionPeriod extends Model
         'end_date',
         'initial_stock',
         'closing_reason',
+        'status',
+        'closed_at',
         'sync_status',
         'created_at_client',
         'created_at_server',
@@ -60,13 +62,14 @@ class ProductionPeriod extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'start_date'       => 'date',
+        'end_date'         => 'date',
+        'closed_at'        => 'datetime',
         'created_at_client' => 'datetime',
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
-        'deleted_at' => 'datetime',
+        'deleted_at'       => 'datetime',
     ];
 
     public function floor()

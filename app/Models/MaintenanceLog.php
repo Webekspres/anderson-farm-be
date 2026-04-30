@@ -23,6 +23,8 @@ class MaintenanceLog extends Model
         'reported_by',
         'date',
         'description',
+        'image_path_local',
+        'image_url',
         'status',
         'sync_status',
         'created_at_client',

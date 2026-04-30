@@ -151,7 +151,7 @@ paths:
 
   # === LOGIKA BISNIS & PORTAL EKSTERNAL ===
   /api/v1/periods/{id}/close:
-    $ref: "./paths/period.yaml#/periods-close"
+    $ref: "./paths/period.yaml#/close-period"
 
   /api/v1/rhpps/{period_id}/publish:
     $ref: "./paths/period.yaml#/rhpps-publish"
@@ -193,67 +193,13 @@ paths:
     $ref: "./paths/sync/daily-activity.yaml#/daily-activities"
 
   /api/v1/sync/finances:
-    get:
-      tags: [Sync]
-      summary: Sync data keuangan
-      description: Sinkronisasi arus kas dan status pembayaran gaji.
-      responses:
-        "200":
-          description: Data keuangan berhasil disinkronkan.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
-
-    post:
-      tags: [Sync]
-      summary: Kirim data keuangan
-      description: Push transaksi pembelian, operasional, dan pembayaran gaji.
-      responses:
-        "201":
-          description: Data keuangan berhasil dikirim.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
+    $ref: "./paths/sync/finance.yaml#/finances"
 
   /api/v1/sync/maintenances:
-    get:
-      tags: [Sync]
-      summary: Sync data maintenance
-      description: Sinkronisasi perbaikan fisik bangunan kandang (MaintenanceLog).
-      responses:
-        "200":
-          description: Data maintenance berhasil disinkronkan.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
-
-    post:
-      tags: [Sync]
-      summary: Kirim data maintenance
-      description: Push data perbaikan fisik bangunan kandang.
-      responses:
-        "201":
-          description: Data maintenance berhasil dikirim.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
+    $ref: "./paths/sync/maintenance.yaml#/maintenances"
 
   /api/v1/sync/rhpps:
-    get:
-      tags: [Sync]
-      summary: Sync data RHPP
-      description: Unduh rekap laba bersih akhir dan dokumen PDF-nya untuk dilihat ABK/PIC.
-      responses:
-        "200":
-          description: Data RHPP berhasil ditarik.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
+    $ref: "./paths/sync/rhpps.yaml#/rhpps"
 
   /api/v1/sync/education:
     $ref: "./paths/sync/education.yaml#/education"

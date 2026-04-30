@@ -1,0 +1,70 @@
+finances:
+  get:
+    tags: [Sync - Finances]
+    summary: Pull Arus Kas & Gaji
+    description: Menarik data pengeluaran/pemasukan operasional dan status gaji. Terfilter otomatis berdasarkan Role dan penugasan lantai.
+    security:
+      - sanctum: []
+    parameters:
+      - name: last_sync_timestamp
+        in: query
+        required: false
+        schema: { type: string, format: date-time }
+    responses:
+      "200":
+        description: Berhasil ditarik.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                current_server_timestamp: { type: string, format: date-time }
+                data:
+                  type: object
+                  properties:
+                    transactions:
+                      type: array
+                      items: { $ref: "../../components/sync/finance.yaml#/Transaction" }
+                    employee_salaries:
+                      type: array
+                      items: { $ref: "../../components/sync/production-period.yaml#/EmployeeSalary" }
+  post:
+    tags: [Sync - Finances]
+    summary: Push Transaksi Pengeluaran (Kas Kecil)
+    description: Mengirim data pengeluaran operasional lapangan dari SQLite ke Server. Hanya role PIC, Manager, dan Admin yang diizinkan.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              sync_timestamp: { type: string, format: date-time }
+              transactions:
+                type: array
+                items: { $ref: "../../components/sync/finance.yaml#/TransactionSyncPayload" }
+    responses:
+      "200":
+        description: Hasil sinkronisasi push.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                server_timestamp: { type: string, format: date-time }
+                data:
+                  type: object
+                  properties:
+                    sync_results:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          status: { type: string, enum: [SUCCESS, CONFLICT, FAILED, FORBIDDEN] }
+                          server_id: { type: integer, nullable: true }
+                          error_message: { type: string, nullable: true }
