@@ -76,6 +76,18 @@ class UserController extends Controller
         ], 200);
     }
 
+    public function show($id)
+    {
+        // Cari user berdasarkan server_id (UUID)
+        $user = User::where('server_id', $id)->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail user berhasil diambil.',
+            'data'    => new UserResource($user),
+        ], 200);
+    }
+
     public function store(StoreUserRequest $request)
     {
         $validated = $request->validated();

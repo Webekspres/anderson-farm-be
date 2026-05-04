@@ -26,7 +26,8 @@ SyncMasterDataResponse:
           items: { $ref: "../components/master-setup.yaml#/OvkItemResponse" }
         equipment_types:
           type: array
-          items: { $ref: "../components/master-setup.yaml#/EquipmentTypeResponse" }
+          items:
+            { $ref: "../components/master-setup.yaml#/EquipmentTypeResponse" }
         form_configs:
           type: array
           items: { $ref: "../components/master-setup.yaml#/FormConfigResponse" }

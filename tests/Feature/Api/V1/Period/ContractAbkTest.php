@@ -13,7 +13,7 @@ uses(RefreshDatabase::class);
 describe('ContractAbk API', function () {
 
     beforeEach(function () {
-        $this->user = User::factory()->create();
+        $this->user = User::factory()->create(['role' => 'manager']);
         $this->period = ProductionPeriod::factory()->create();
     });
 

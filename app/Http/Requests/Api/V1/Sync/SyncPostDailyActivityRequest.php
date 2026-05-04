@@ -21,7 +21,7 @@ class SyncPostDailyActivityRequest extends FormRequest
             'headers.*.id' => ['required', 'uuid'],
             'headers.*.period_id' => ['required', 'uuid', 'exists:production_periods,id'],
             'headers.*.user_id' => ['required', 'uuid', 'exists:users,id'],
-            'headers.*.date' => ['required', 'date'],
+            'headers.*.date' => ['required', 'date', 'before_or_equal:today'],
             'headers.*.age_days' => ['required', 'integer', 'min:0'],
             'headers.*.mortality_count' => ['integer', 'min:0'],
             'headers.*.cull_count' => ['integer', 'min:0'],
@@ -54,7 +54,7 @@ class SyncPostDailyActivityRequest extends FormRequest
             // ── OVK Usages ──
             'headers.*.ovk_usages' => ['nullable', 'array'],
             'headers.*.ovk_usages.*.id' => ['required', 'uuid'],
-            'headers.*.ovk_usages.*.ovk_item_id' => ['required', 'uuid'],
+            'headers.*.ovk_usages.*.ovk_item_id' => ['required', 'uuid', 'exists:ovk_items,id'],
             'headers.*.ovk_usages.*.quantity' => ['required', 'numeric', 'min:0'],
             'headers.*.ovk_usages.*.notes' => ['nullable', 'string'],
             'headers.*.ovk_usages.*.created_at_client' => ['required', 'date'],
@@ -91,6 +91,7 @@ class SyncPostDailyActivityRequest extends FormRequest
             'headers.*.period_id.exists' => 'Period ID tidak ditemukan di server.',
             'headers.*.user_id.required' => 'User ID wajib diisi untuk setiap header.',
             'headers.*.date.required' => 'Tanggal laporan wajib diisi.',
+            'headers.*.date.before_or_equal' => 'Laporan harian tidak boleh menggunakan tanggal masa depan.',
         ];
     }
 }

@@ -75,6 +75,34 @@ it('fails to create area with invalid type', function () {
         ->assertJsonValidationErrors(['type']);
 });
 
+it('shows a single area by uuid', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+    $area = Area::factory()->create(['name' => 'Area Tampil']);
+
+    $response = getJson(ENDPOINT . '/' . $area->id);
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.uuid', $area->id)
+        ->assertJsonPath('data.name', 'Area Tampil');
+});
+
+it('returns 404 when showing a non-existent area', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    getJson(ENDPOINT . '/' . fake()->uuid())->assertNotFound();
+});
+
+it('returns 422 when area id is not a valid uuid', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    getJson(ENDPOINT . '/bukan-uuid')->assertStatus(422)
+        ->assertJsonValidationErrors(['area']);
+});
+
 it('updates only the name of an area', function () {
     $user = User::factory()->create();
     actingAs($user);
@@ -99,8 +127,10 @@ it('soft deletes an area', function () {
 
 it('returns 401 if not authenticated', function () {
     $area = Area::factory()->create();
-    // GET
+    // GET index
     getJson(ENDPOINT)->assertUnauthorized();
+    // GET show
+    getJson(ENDPOINT . '/' . $area->id)->assertUnauthorized();
     // POST
     postJson(ENDPOINT, [])->assertUnauthorized();
     // PATCH

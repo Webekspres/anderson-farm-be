@@ -1,0 +1,535 @@
+# Sync Endpoints - Offline-First Data Synchronization
+
+sync-master-data:
+  get:
+    tags: [Sync]
+    summary: Download master data (cache)
+    description: |
+      Mengunduh cache referensi dasar untuk operasional offline.
+      Termasuk daftar ovk_items, form_configs, dan coop_documents.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: last_sync_timestamp
+        schema:
+          type: string
+          format: date-time
+        description: Timestamp sinkronisasi terakhir untuk delta sync
+    responses:
+      "200":
+        description: Master data berhasil diunduh
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                current_server_timestamp:
+                  type: string
+                  format: date-time
+                data:
+                  type: object
+                  properties:
+                    areas:
+                      type: array
+                      items:
+                        $ref: "../components/schemas.yaml#/AreaResponse"
+                    farms:
+                      type: array
+                      items:
+                        $ref: "../components/schemas.yaml#/FarmResponse"
+                    coops:
+                      type: array
+                      items:
+                        $ref: "../components/schemas.yaml#/CoopResponse"
+                    form_configs:
+                      type: array
+                      items:
+                        $ref: "../components/schemas.yaml#/FormConfigResponse"
+                    ovk_items:
+                      type: array
+                      items:
+                        type: object
+
+sync-periods:
+  get:
+    tags: [Sync]
+    summary: Pull periode aktif
+    description: |
+      Mengunduh detail periode aktif beserta relasi investor, dokumen,
+      dan kontrak untuk ditampilkan di mobile.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: last_sync_timestamp
+        schema:
+          type: string
+          format: date-time
+    responses:
+      "200":
+        description: Data periode berhasil diunduh
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                current_server_timestamp:
+                  type: string
+                  format: date-time
+                data:
+                  type: object
+                  properties:
+                    periods:
+                      type: array
+                      items:
+                        type: object
+
+  post:
+    tags: [Sync]
+    summary: Push penerimaan kontrak
+    description: |
+      Mengirim jejak persetujuan digital (signature) kontrak bagi hasil
+      dari ABK ke server. Hanya untuk response kontrak saja.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - contract_acceptances
+            properties:
+              contract_acceptances:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - contract_id
+                    - signature_data
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    contract_id:
+                      type: string
+                      format: uuid
+                    signature_data:
+                      type: string
+                      description: Base64 encoded signature
+                    timestamp:
+                      type: string
+                      format: date-time
+    responses:
+      "200":
+        description: Penerimaan kontrak berhasil disinkronkan
+
+sync-daily-activities:
+  get:
+    tags: [Sync]
+    summary: Pull aktivitas harian (beban terberat)
+    description: |
+      Mengunduh data aktivitas harian beserta relasi:
+      - HBE (Health Behavior Evaluation)
+      - Panen (Harvest)
+      - OVK Usage
+      - Foto Evidensi
+      - Checklist harian
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: period_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: last_sync_timestamp
+        schema:
+          type: string
+          format: date-time
+    responses:
+      "200":
+        description: Data aktivitas harian berhasil diunduh
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                current_server_timestamp:
+                  type: string
+                  format: date-time
+                data:
+                  type: array
+                  items:
+                    type: object
+                    description: Daily activity header dengan child records
+
+  post:
+    tags: [Sync]
+    summary: Push aktivitas harian (bulk sync)
+    description: |
+      Mengirim bulk sync dari mobile. Mendukung wipe & replace strategy
+      untuk anak records dan conflict detection untuk header.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - headers
+            properties:
+              headers:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - period_id
+                    - user_id
+                    - date
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    period_id:
+                      type: string
+                      format: uuid
+                    user_id:
+                      type: string
+                      format: uuid
+                    date:
+                      type: string
+                      format: date
+                    mortality_count:
+                      type: integer
+                    dynamic_logs:
+                      type: array
+                      items:
+                        type: object
+                    harvests:
+                      type: array
+                      items:
+                        type: object
+                    ovk_usages:
+                      type: array
+                      items:
+                        type: object
+                    photos:
+                      type: array
+                      items:
+                        type: object
+                    daily_checklist_logs:
+                      type: array
+                      items:
+                        type: object
+    responses:
+      "200":
+        description: Aktivitas harian berhasil disinkronkan
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  type: object
+                  properties:
+                    sync_results:
+                      type: array
+                      items:
+                        $ref: "../components/schemas.yaml#/SyncResult"
+
+sync-finances:
+  get:
+    tags: [Sync]
+    summary: Pull data keuangan (transaksi & gaji)
+    description: |
+      Mengunduh delta transaksi pengeluaran dan status gaji.
+      - Role ABK: hanya gaji pribadi
+      - Role PIC/Manager/Admin: semua transaksi dan gaji
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: last_sync_timestamp
+        schema:
+          type: string
+          format: date-time
+    responses:
+      "200":
+        description: Data keuangan berhasil diunduh
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                current_server_timestamp:
+                  type: string
+                  format: date-time
+                data:
+                  type: object
+                  properties:
+                    transactions:
+                      type: array
+                      items:
+                        type: object
+                    employee_salaries:
+                      type: array
+                      items:
+                        type: object
+
+  post:
+    tags: [Sync]
+    summary: Push transaksi pengeluaran
+    description: |
+      Mengirim bulk transaksi pengeluaran (kas kecil) dari SQLite ke server.
+      Hanya role PIC, Manager, dan Admin yang diizinkan.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - transactions
+            properties:
+              transactions:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - period_id
+                    - type
+                    - amount
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    period_id:
+                      type: string
+                      format: uuid
+                    type:
+                      type: string
+                      enum: [INCOME, EXPENSE]
+                    category_id:
+                      type: string
+                      format: uuid
+                    amount:
+                      type: number
+                    description:
+                      type: string
+                    business_status:
+                      type: string
+                      enum: [PENDING, APPROVED, REJECTED]
+                    receipt_image_path_local:
+                      type: string
+                      nullable: true
+    responses:
+      "200":
+        description: Transaksi berhasil disinkronkan
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    sync_results:
+                      type: array
+                      items:
+                        $ref: "../components/schemas.yaml#/SyncResult"
+
+sync-maintenances:
+  get:
+    tags: [Sync]
+    summary: Pull laporan maintenance
+    description: |
+      Mengunduh delta laporan pemeliharaan fasilitas.
+      Admin: semua log | User lain: hanya dari coop mereka
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: last_sync_timestamp
+        schema:
+          type: string
+          format: date-time
+    responses:
+      "200":
+        description: Data maintenance berhasil diunduh
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                current_server_timestamp:
+                  type: string
+                  format: date-time
+                data:
+                  type: object
+                  properties:
+                    maintenance_logs:
+                      type: array
+                      items:
+                        type: object
+
+  post:
+    tags: [Sync]
+    summary: Push laporan maintenance
+    description: |
+      Mengirim laporan kerusakan dan status pemeliharaan fasilitas.
+      ABK bisa buat laporan baru; PIC/Manager/Admin bisa update status.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - maintenances
+            properties:
+              maintenances:
+                type: array
+                items:
+                  type: object
+    responses:
+      "200":
+        description: Laporan maintenance berhasil disinkronkan
+
+sync-rhpps:
+  get:
+    tags: [Sync]
+    summary: Pull RHPP final (read-only)
+    description: |
+      Mengunduh rekap laba bersih akhir periode dan dokumen PDF-nya.
+      Data hanya-baca untuk ditampilkan kepada ABK/PIC.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: last_sync_timestamp
+        schema:
+          type: string
+          format: date-time
+    responses:
+      "200":
+        description: Data RHPP berhasil diunduh
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: object
+
+sync-education:
+  get:
+    tags: [Sync]
+    summary: Pull artikel edukasi & referensi harga
+    description: |
+      Mengunduh artikel panduan untuk ABK dan referensi harga komoditas
+      untuk operasional offline.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        description: Data edukasi berhasil diunduh
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    articles:
+                      type: array
+                      items:
+                        type: object
+                    price_references:
+                      type: array
+                      items:
+                        type: object
+
+sync-activity-logs:
+  post:
+    tags: [Sync]
+    summary: Push audit trail aktivitas user
+    description: |
+      Mengirim rekam jejak (audit trail) tombol aplikasi yang diklik user.
+      Push-only endpoint untuk tracking penggunaan aplikasi.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - logs
+            properties:
+              logs:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - action
+                    - timestamp
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    action:
+                      type: string
+                      description: Nama tombol/action yang diklik
+                      example: "open_daily_activity"
+                    timestamp:
+                      type: string
+                      format: date-time
+                    metadata:
+                      type: object
+                      nullable: true
+    responses:
+      "201":
+        description: Audit trail berhasil dikirim
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"

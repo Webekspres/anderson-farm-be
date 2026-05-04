@@ -1,0 +1,476 @@
+# Production Period Management Endpoints
+
+periods:
+  post:
+    tags: [Periode Ternak]
+    summary: Buat periode ternak baru
+    description: Inisiasi periode ternak baru dengan kandang, tanggal mulai, dan stok awal
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/PeriodRequest"
+    responses:
+      "201":
+        description: Periode ternak berhasil dibuat
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  $ref: "../components/schemas.yaml#/PeriodResponse"
+      "422":
+        description: Validasi gagal
+
+periodSingle:
+  get:
+    tags: [Periode Ternak]
+    summary: Ambil detail periode ternak
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Detail periode berhasil diambil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  $ref: "../components/schemas.yaml#/PeriodResponse"
+      "404":
+        description: Periode tidak ditemukan
+
+  patch:
+    tags: [Periode Ternak]
+    summary: Edit periode ternak
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              target_weight:
+                type: number
+              notes:
+                type: string
+    responses:
+      "200":
+        description: Periode berhasil diupdate
+
+period-investors:
+  post:
+    tags: [Periode Ternak]
+    summary: Assign investor ke periode
+    description: Menugaskan investor dan persentase bagi hasil ke periode ternak
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: Period ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - investors
+            properties:
+              investors:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - user_id
+                    - percentage
+                  properties:
+                    user_id:
+                      type: string
+                      format: uuid
+                    percentage:
+                      type: number
+                      minimum: 0
+                      maximum: 100
+    responses:
+      "200":
+        description: Investor berhasil diassign
+
+period-checklist-tasks:
+  get:
+    tags: [Periode Ternak]
+    summary: Ambil checklist tasks periode
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Daftar checklist tasks berhasil diambil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: object
+
+  post:
+    tags: [Periode Ternak]
+    summary: Sync checklist tasks
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - tasks
+            properties:
+              tasks:
+                type: array
+                items:
+                  type: object
+    responses:
+      "200":
+        description: Checklist tasks berhasil disinkronkan
+
+period-form-assignments:
+  get:
+    tags: [Periode Ternak]
+    summary: Ambil form assignments periode
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Daftar form assignments berhasil diambil
+
+  post:
+    tags: [Periode Ternak]
+    summary: Assign forms ke periode
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - form_configs
+            properties:
+              form_configs:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+    responses:
+      "200":
+        description: Forms berhasil diassign
+
+period-contracts:
+  get:
+    tags: [Periode Ternak]
+    summary: Ambil kontrak bagi hasil periode
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Daftar kontrak berhasil diambil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: object
+
+  post:
+    tags: [Periode Ternak]
+    summary: Buat kontrak bagi hasil
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - user_id
+              - contract_document_url
+            properties:
+              user_id:
+                type: string
+                format: uuid
+              contract_document_url:
+                type: string
+                description: URL dokumen kontrak yang sudah diupload
+    responses:
+      "201":
+        description: Kontrak berhasil dibuat
+
+contracts-single:
+  get:
+    tags: [Periode Ternak]
+    summary: Ambil detail kontrak
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Detail kontrak berhasil diambil
+
+  post:
+    tags: [Periode Ternak]
+    summary: Setujui/tandatangani kontrak
+    description: ABK menerima dan menandatangani kontrak bagi hasil
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - signature_data
+            properties:
+              signature_data:
+                type: string
+                description: Data tanda tangan digital (base64)
+    responses:
+      "200":
+        description: Kontrak berhasil diterima
+
+  delete:
+    tags: [Periode Ternak]
+    summary: Hapus kontrak
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Kontrak berhasil dihapus
+
+period-documents:
+  get:
+    tags: [Periode Ternak]
+    summary: Ambil dokumen periode
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Daftar dokumen berhasil diambil
+
+  post:
+    tags: [Periode Ternak]
+    summary: Upload dokumen periode
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - document_name
+              - document_url
+            properties:
+              document_name:
+                type: string
+              document_url:
+                type: string
+    responses:
+      "201":
+        description: Dokumen berhasil ditambahkan
+
+period-rhpp-documents:
+  post:
+    tags: [Periode Ternak]
+    summary: Upload dokumen RHPP Final
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - rhpp_document_url
+            properties:
+              rhpp_document_url:
+                type: string
+                description: URL file PDF RHPP yang sudah diupload
+    responses:
+      "201":
+        description: RHPP dokumen berhasil disimpan
+
+close-period:
+  post:
+    tags: [Periode Ternak]
+    summary: Tutup periode ternak
+    description: |
+      Menutup periode ternak setelah validasi backend.
+      Memastikan tidak ada log pending sebelum periode dikunci.
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Periode berhasil ditutup
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  type: object
+      "400":
+        description: Masih ada log pending, periode tidak bisa ditutup
+
+rhpps-publish:
+  post:
+    tags: [Periode Ternak]
+    summary: Publikasikan RHPP
+    description: |
+      Mengubah status RHPP menjadi PUBLISHED dan mengunci laporan
+      untuk investor dan PIC. Hanya admin yang bisa melakukan ini.
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: period_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: RHPP berhasil dipublikasikan
+      "403":
+        description: Akses ditolak (hanya admin)
+      "400":
+        description: RHPP belum final atau tidak valid

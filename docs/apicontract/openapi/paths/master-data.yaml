@@ -1,0 +1,428 @@
+# Master Data CRUD - Areas, Farms, Coops
+areas:
+  get:
+    tags: [Master Data]
+    summary: Daftar area (paginasi)
+    parameters:
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Cari berdasarkan nama
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Halaman (pagination page/limit)
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+        description: Jumlah per halaman
+      - in: query
+        name: cursor
+        schema:
+          type: string
+        description: Cursor (cursor pagination)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Limit (cursor pagination)
+    responses:
+      "200":
+        description: Daftar area berhasil diambil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        $ref: "../components/schemas.yaml#/AreaResponse"
+                    total:
+                      type: integer
+                    per_page:
+                      type: integer
+                    current_page:
+                      type: integer
+                    last_page:
+                      type: integer
+
+  post:
+    tags: [Master Data]
+    summary: Buat area baru
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/AreaRequest"
+    responses:
+      "201":
+        description: Area berhasil dibuat
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  $ref: "../components/schemas.yaml#/AreaResponse"
+      "422":
+        description: Validasi gagal
+
+areaSingle:
+  get:
+    tags: [Master Data]
+    summary: Ambil detail area
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Detail area berhasil diambil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  $ref: "../components/schemas.yaml#/AreaResponse"
+      "404":
+        description: Area tidak ditemukan
+
+  patch:
+    tags: [Master Data]
+    summary: Edit area
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/AreaRequest"
+    responses:
+      "200":
+        description: Area berhasil diupdate
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  $ref: "../components/schemas.yaml#/AreaResponse"
+      "404":
+        description: Area tidak ditemukan
+
+  delete:
+    tags: [Master Data]
+    summary: Hapus area
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Area berhasil dihapus
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+      "404":
+        description: Area tidak ditemukan
+
+farms:
+  get:
+    tags: [Master Data]
+    summary: Daftar farm (paginasi)
+    parameters:
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+    responses:
+      "200":
+        description: Daftar farm berhasil diambil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        $ref: "../components/schemas.yaml#/FarmResponse"
+
+  post:
+    tags: [Master Data]
+    summary: Buat farm baru
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/FarmRequest"
+    responses:
+      "201":
+        description: Farm berhasil dibuat
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  $ref: "../components/schemas.yaml#/FarmResponse"
+
+farmSingle:
+  get:
+    tags: [Master Data]
+    summary: Ambil detail farm
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Detail farm berhasil diambil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  $ref: "../components/schemas.yaml#/FarmResponse"
+      "404":
+        description: Farm tidak ditemukan
+
+  patch:
+    tags: [Master Data]
+    summary: Edit farm
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/FarmRequest"
+    responses:
+      "200":
+        description: Farm berhasil diupdate
+      "404":
+        description: Farm tidak ditemukan
+
+  delete:
+    tags: [Master Data]
+    summary: Hapus farm
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Farm berhasil dihapus
+      "404":
+        description: Farm tidak ditemukan
+
+coops:
+  get:
+    tags: [Master Data]
+    summary: Daftar kandang (paginasi)
+    parameters:
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: farm_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+    responses:
+      "200":
+        description: Daftar kandang berhasil diambil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        $ref: "../components/schemas.yaml#/CoopResponse"
+
+  post:
+    tags: [Master Data]
+    summary: Buat kandang baru
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/CoopRequest"
+    responses:
+      "201":
+        description: Kandang berhasil dibuat
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  $ref: "../components/schemas.yaml#/CoopResponse"
+
+coopSingle:
+  get:
+    tags: [Master Data]
+    summary: Ambil detail kandang
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Detail kandang berhasil diambil
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  $ref: "../components/schemas.yaml#/CoopResponse"
+      "404":
+        description: Kandang tidak ditemukan
+
+  patch:
+    tags: [Master Data]
+    summary: Edit kandang
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/CoopRequest"
+    responses:
+      "200":
+        description: Kandang berhasil diupdate
+      "404":
+        description: Kandang tidak ditemukan
+
+  delete:
+    tags: [Master Data]
+    summary: Hapus kandang
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Kandang berhasil dihapus
+      "404":
+        description: Kandang tidak ditemukan

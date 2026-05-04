@@ -36,23 +36,23 @@ paths:
 
   # === MASTER DATA: AREA (COLLECTION) ===
   /api/v1/areas:
-    $ref: "./paths/place.yaml#/areas"
+    $ref: "./paths/master-data.yaml#/areas"
 
   # === MASTER DATA: AREA (SINGLE RESOURCE) ===
   /api/v1/areas/{id}:
-    $ref: "./paths/place.yaml#/areaSingle"
+    $ref: "./paths/master-data.yaml#/areaSingle"
 
   /api/v1/farms:
-    $ref: "./paths/place.yaml#/farms"
+    $ref: "./paths/master-data.yaml#/farms"
 
   /api/v1/farms/{id}:
-    $ref: "./paths/place.yaml#/farmSingle"
+    $ref: "./paths/master-data.yaml#/farmSingle"
 
   /api/v1/coops:
-    $ref: "./paths/place.yaml#/coops"
+    $ref: "./paths/master-data.yaml#/coops"
 
   /api/v1/coops/{id}:
-    $ref: "./paths/place.yaml#/coopSingle"
+    $ref: "./paths/master-data.yaml#/coopSingle"
 
   /api/v1/form-configs:
     $ref: "./paths/master-setup.yaml#/form-configs"
@@ -103,6 +103,9 @@ paths:
   /api/v1/coops/{id}/documents:
     $ref: "./paths/documents.yaml#/coop-documents"
 
+  /api/v1/coops/{id}/user-assignments:
+    $ref: "./paths/setup.yaml#/coop-user-assignments"
+
   /api/v1/coops/{id}/form-assignments:
     $ref: "./paths/setup.yaml#/coop-form-assignments"
 
@@ -110,25 +113,28 @@ paths:
     $ref: "./paths/setup.yaml#/coop-equipments"
 
   /api/v1/periods:
-    $ref: "./paths/period.yaml#/periods"
+    $ref: "./paths/period-full.yaml#/periods"
 
   /api/v1/periods/{id}/investors:
-    $ref: "./paths/period.yaml#/periods-investors"
+    $ref: "./paths/period-full.yaml#/period-investors"
 
   /api/v1/periods/{id}/checklist-tasks:
-    $ref: "./paths/period.yaml#/periods-checklist-tasks"
+    $ref: "./paths/period-full.yaml#/period-checklist-tasks"
 
   /api/v1/periods/{id}/form-assignments:
-    $ref: "./paths/period.yaml#/periods-form-assignments"
+    $ref: "./paths/period-full.yaml#/period-form-assignments"
 
   /api/v1/periods/{id}/contracts:
-    $ref: "./paths/period.yaml#/periods-contracts"
+    $ref: "./paths/period-full.yaml#/period-contracts"
+
+  /api/v1/contracts:
+    $ref: "./paths/period-full.yaml#/contracts-single"
 
   /api/v1/periods/{id}/documents:
-    $ref: "./paths/period.yaml#/periods-documents"
+    $ref: "./paths/period-full.yaml#/period-documents"
 
   /api/v1/periods/{id}/rhpp-documents:
-    $ref: "./paths/period.yaml#/periods-rhpp-documents"
+    $ref: "./paths/period-full.yaml#/period-rhpp-documents"
 
   # === EKSPOR, IMPOR & UPLOAD FILE ===
   /api/v1/uploads:
@@ -151,10 +157,10 @@ paths:
 
   # === LOGIKA BISNIS & PORTAL EKSTERNAL ===
   /api/v1/periods/{id}/close:
-    $ref: "./paths/period.yaml#/close-period"
+    $ref: "./paths/period-full.yaml#/close-period"
 
   /api/v1/rhpps/{period_id}/publish:
-    $ref: "./paths/period.yaml#/rhpps-publish"
+    $ref: "./paths/period-full.yaml#/rhpps-publish"
 
   /api/v1/investor/dashboard:
     get:
@@ -184,38 +190,28 @@ paths:
   # SYNC: OFFLINE-FIRST SYNCHRONIZATION
   # =========================================================================
   /api/v1/sync/master-data:
-    $ref: "./paths/sync.yaml#/sync-master-data"
+    $ref: "./paths/sync-full.yaml#/sync-master-data"
 
   /api/v1/sync/periods:
-    $ref: "./paths/sync/production-period.yaml#/periods"
+    $ref: "./paths/sync-full.yaml#/sync-periods"
 
   /api/v1/sync/daily-activities:
-    $ref: "./paths/sync/daily-activity.yaml#/daily-activities"
+    $ref: "./paths/sync-full.yaml#/sync-daily-activities"
 
   /api/v1/sync/finances:
-    $ref: "./paths/sync/finance.yaml#/finances"
+    $ref: "./paths/sync-full.yaml#/sync-finances"
 
   /api/v1/sync/maintenances:
-    $ref: "./paths/sync/maintenance.yaml#/maintenances"
+    $ref: "./paths/sync-full.yaml#/sync-maintenances"
 
   /api/v1/sync/rhpps:
-    $ref: "./paths/sync/rhpps.yaml#/rhpps"
+    $ref: "./paths/sync-full.yaml#/sync-rhpps"
 
   /api/v1/sync/education:
-    $ref: "./paths/sync/education.yaml#/education"
+    $ref: "./paths/sync-full.yaml#/sync-education"
 
   /api/v1/sync/activity-logs:
-    post:
-      tags: [Sync]
-      summary: Kirim audit trail aktivitas user
-      description: Push rekam jejak (audit trail) tombol aplikasi yang diklik user.
-      responses:
-        "201":
-          description: Log aktivitas berhasil dikirim.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
+    $ref: "./paths/sync-full.yaml#/sync-activity-logs"
 
 components:
   parameters:

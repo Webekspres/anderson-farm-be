@@ -50,7 +50,6 @@ NotFoundError:
         message: "Data tidak ditemukan di sistem."
         errors: {}
 
-    # --- RESPONSE SCHEMAS ---
 PaginationMetaPage:
   type: object
   description: Metadata untuk pagination berbasis page/limit

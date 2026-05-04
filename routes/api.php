@@ -7,23 +7,26 @@ use App\Http\Controllers\Api\V1\ContractAbkController;
 use App\Http\Controllers\Api\V1\CoopDocumentController;
 use App\Http\Controllers\Api\V1\CoopEquipmentController;
 use App\Http\Controllers\Api\V1\CoopUserAssignmentController;
+use App\Http\Controllers\Api\V1\DailyActivitySyncController;
+use App\Http\Controllers\Api\V1\EducationSyncController;
+use App\Http\Controllers\Api\V1\FinanceSyncController;
 use App\Http\Controllers\Api\V1\FormConfigController;
+use App\Http\Controllers\Api\V1\MaintenanceSyncController;
+use App\Http\Controllers\Api\V1\MasterDataSyncController;
 use App\Http\Controllers\Api\V1\OvkItemController;
-use App\Http\Controllers\Api\V1\PeriodController;
 use App\Http\Controllers\Api\V1\PeriodActionController;
-use App\Http\Controllers\Api\V1\RhppDocumentController;
-use App\Http\Controllers\Api\V1\RhppActionController;
-use App\Http\Controllers\Api\V1\RhppSyncController;
+use App\Http\Controllers\Api\V1\PeriodController;
 use App\Http\Controllers\Api\V1\PeriodDocumentController;
 use App\Http\Controllers\Api\V1\PeriodFormAssignmentController;
 use App\Http\Controllers\Api\V1\PeriodInvestorController;
+use App\Http\Controllers\Api\V1\PeriodSyncController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\RhppActionController;
+use App\Http\Controllers\Api\V1\RhppDocumentController;
+use App\Http\Controllers\Api\V1\RhppSyncController;
 use App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController;
 use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
 use App\Http\Controllers\Api\V1\TransactionCategoryController;
-use App\Http\Controllers\Api\V1\DailyActivitySyncController;
-use App\Http\Controllers\Api\V1\FinanceSyncController;
-use App\Http\Controllers\Api\V1\MaintenanceSyncController;
 use App\Http\Controllers\Api\V1\UploadController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -44,7 +47,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
 
-        Route::apiResource('users', UserController::class)->except(['show']);
+        Route::apiResource('users', UserController::class);
+
+        // User Password Management
+        Route::post('/users/{user}/reset-password', [App\Http\Controllers\Api\V1\UserPasswordController::class, 'resetByAdmin']);
 
         // Profile
         Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
@@ -56,7 +62,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('equipment-types', App\Http\Controllers\Api\V1\EquipmentTypeController::class);
         Route::post('/equipment-types/{equipment_type}/form-configs', [SyncEquipmentTypeFormConfigController::class, '__invoke']);
 
-        Route::apiResource('areas', App\Http\Controllers\Api\V1\AreaController::class)->except(['show']);
+        Route::apiResource('areas', App\Http\Controllers\Api\V1\AreaController::class);
 
         // ReportTemplate CRUD
         Route::apiResource('report-templates', App\Http\Controllers\Api\V1\ReportTemplateController::class);
@@ -121,11 +127,12 @@ Route::prefix('v1')->group(function () {
 
         // Sync endpoints (Offline-First)
         Route::prefix('sync')->group(function () {
-            Route::get('/master-data', [\App\Http\Controllers\Api\V1\MasterDataSyncController::class, 'index']);
-            Route::get('/periods', [\App\Http\Controllers\Api\V1\PeriodSyncController::class, 'index']);
+            Route::get('/master-data', [MasterDataSyncController::class, 'index']);
+            Route::get('/periods', [PeriodSyncController::class, 'index']);
+            Route::post('/periods', [PeriodSyncController::class, 'store']);
             Route::get('/daily-activities', [DailyActivitySyncController::class, 'index']);
             Route::post('/daily-activities', [DailyActivitySyncController::class, 'store']);
-            Route::get('/education', [\App\Http\Controllers\Api\V1\EducationSyncController::class, 'index']);
+            Route::get('/education', [EducationSyncController::class, 'index']);
             Route::get('/finances', [FinanceSyncController::class, 'index']);
             Route::post('/finances', [FinanceSyncController::class, 'store']);
             Route::get('/maintenances', [MaintenanceSyncController::class, 'index']);

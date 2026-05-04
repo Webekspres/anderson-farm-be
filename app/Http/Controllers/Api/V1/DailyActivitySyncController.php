@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Sync\SyncGetDailyActivityRequest;
 use App\Http\Requests\Api\V1\Sync\SyncPostDailyActivityRequest;
 use App\Http\Resources\Api\V1\DailyActivityHeaderResource;
+use App\Models\CoopUserAssignment;
 use App\Models\DailyActivityHeader;
 use App\Models\DailyChecklistLog;
 use App\Models\DailyDynamicLog;
@@ -16,6 +17,7 @@ use App\Models\ProductionPeriod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
 
 class DailyActivitySyncController extends Controller
 {
@@ -62,11 +64,11 @@ class DailyActivitySyncController extends Controller
         $payloadHeaders = $request->validated('headers');
         $serverTimestamp = now();
         $syncResults = [];
+        $authUser = $request->user();
 
-        DB::transaction(function () use ($payloadHeaders, $serverTimestamp, &$syncResults) {
+        DB::transaction(function () use ($payloadHeaders, $serverTimestamp, &$syncResults, $authUser) {
             foreach ($payloadHeaders as $headerPayload) {
-                $result = $this->processHeader($headerPayload, $serverTimestamp);
-                $syncResults[] = $result;
+                $syncResults[] = $this->processHeader($headerPayload, $serverTimestamp, $authUser);
             }
         });
 
@@ -74,10 +76,25 @@ class DailyActivitySyncController extends Controller
         $conflictCount = collect($syncResults)->where('status', 'CONFLICT')->count();
         $closedCount = collect($syncResults)->where('status', 'PERIOD_CLOSED')->count();
 
+        $duplicateDateCount = collect($syncResults)->where('status', 'DUPLICATE_DATE')->count();
+        $forbiddenCount = collect($syncResults)->where('status', 'FORBIDDEN')->count();
+
         $messageParts = [];
-        if ($syncedCount > 0) $messageParts[] = "{$syncedCount} berhasil";
-        if ($conflictCount > 0) $messageParts[] = "{$conflictCount} konflik";
-        if ($closedCount > 0) $messageParts[] = "{$closedCount} periode ditutup";
+        if ($syncedCount > 0) {
+            $messageParts[] = "{$syncedCount} berhasil";
+        }
+        if ($conflictCount > 0) {
+            $messageParts[] = "{$conflictCount} konflik";
+        }
+        if ($closedCount > 0) {
+            $messageParts[] = "{$closedCount} periode ditutup";
+        }
+        if ($duplicateDateCount > 0) {
+            $messageParts[] = "{$duplicateDateCount} tanggal duplikat";
+        }
+        if ($forbiddenCount > 0) {
+            $messageParts[] = "{$forbiddenCount} akses ditolak";
+        }
 
         return response()->json([
             'success' => true,
@@ -90,19 +107,41 @@ class DailyActivitySyncController extends Controller
     }
 
     /**
-     * Proses satu header: gatekeeping → conflict check → upsert → wipe & replace children.
+     * Proses satu header: gatekeeping → akses kandang → konflik → duplikat tanggal → upsert → wipe & replace anak.
      */
-    private function processHeader(array $headerPayload, Carbon $serverTimestamp): array
+    private function processHeader(array $headerPayload, Carbon $serverTimestamp, User $authUser): array
     {
         $headerId = $headerPayload['id'];
         $periodId = $headerPayload['period_id'];
 
         // ── Step 1: Gatekeeping — Cek apakah periode masih aktif ──
-        $period = ProductionPeriod::find($periodId);
+        $period = ProductionPeriod::query()->with('floor')->find($periodId);
         if (!$period || $period->status !== 'active') {
             return [
                 'id' => $headerId,
                 'status' => 'PERIOD_CLOSED',
+                'server_id' => null,
+            ];
+        }
+
+        $coopId = $period->floor?->coop_id;
+        if (!$coopId) {
+            return [
+                'id' => $headerId,
+                'status' => 'FORBIDDEN',
+                'server_id' => null,
+            ];
+        }
+
+        $hasCoopAccess = CoopUserAssignment::query()
+            ->where('user_id', $authUser->id)
+            ->where('coop_id', $coopId)
+            ->exists();
+
+        if (!$hasCoopAccess) {
+            return [
+                'id' => $headerId,
+                'status' => 'FORBIDDEN',
                 'server_id' => null,
             ];
         }
@@ -123,7 +162,23 @@ class DailyActivitySyncController extends Controller
             }
         }
 
-        // ── Step 3: UPSERT Header ──
+        // ── Step 3: Unik periode + tanggal (UUID berbeda dilarang) ──
+        $incomingDate = Carbon::parse($headerPayload['date'])->startOfDay();
+        $duplicateOtherUuid = DailyActivityHeader::withTrashed()
+            ->where('period_id', $periodId)
+            ->whereDate('date', $incomingDate)
+            ->where('id', '!=', $headerId)
+            ->exists();
+
+        if ($duplicateOtherUuid) {
+            return [
+                'id' => $headerId,
+                'status' => 'DUPLICATE_DATE',
+                'server_id' => null,
+            ];
+        }
+
+        // ── Step 4: UPSERT Header ──
         $header = DailyActivityHeader::withTrashed()->updateOrCreate(
             ['id' => $headerId],
             [
@@ -144,7 +199,7 @@ class DailyActivitySyncController extends Controller
             ],
         );
 
-        // ── Step 4: Wipe & Replace untuk 5 tabel anak ──
+        // ── Step 5: Wipe & Replace untuk 5 tabel anak ──
         $this->wipeAndReplaceChildren($header, $headerPayload, $serverTimestamp);
 
         return [

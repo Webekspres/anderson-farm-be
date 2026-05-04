@@ -18,6 +18,7 @@ class ContractAcceptance extends Model
     const UPDATED_AT = 'updated_at_client';
 
     protected $fillable = [
+        'id',
         'server_id',
         'version',
         'contract_id',

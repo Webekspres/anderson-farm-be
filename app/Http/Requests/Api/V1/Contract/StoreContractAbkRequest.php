@@ -6,9 +6,23 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContractAbkRequest extends FormRequest
 {
+    /**
+     * Kontrak periode hanya boleh dibuat oleh admin atau manager (bukan ABK/PIC di lapangan).
+     */
     public function authorize(): bool
     {
-        return true; // Otorisasi ditangani oleh middleware
+        return in_array($this->user()?->role, ['admin', 'manager'], true);
+    }
+
+    protected function failedAuthorization(): never
+    {
+        throw new \Illuminate\Http\Exceptions\HttpResponseException(
+            response()->json([
+                'success' => false,
+                'message' => 'Anda tidak berhak menambahkan kontrak untuk periode ini.',
+                'data' => null,
+            ], 403)
+        );
     }
 
     public function rules(): array

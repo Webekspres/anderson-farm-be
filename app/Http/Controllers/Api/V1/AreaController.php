@@ -4,6 +4,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Area\ShowAreaRequest;
 use App\Http\Requests\Api\V1\Area\StoreAreaRequest;
 use App\Http\Requests\Api\V1\Area\UpdateAreaRequest;
 use App\Http\Resources\Api\V1\AreaResource;
@@ -54,6 +55,17 @@ class AreaController extends Controller
             'data' => array_merge([
                 'items' => AreaResource::collection($areas->items()),
             ], $meta),
+        ]);
+    }
+
+    public function show(ShowAreaRequest $request, string $area)
+    {
+        $areaModel = Area::query()->findOrFail($area);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail area berhasil diambil.',
+            'data' => new AreaResource($areaModel),
         ]);
     }
 

@@ -1,14 +1,10 @@
 <?php
 
 use App\Models\ChecklistTask;
+use App\Models\CoopUserAssignment;
 use App\Models\DailyActivityHeader;
-use App\Models\DailyChecklistLog;
-use App\Models\DailyDynamicLog;
 use App\Models\FormConfig;
-use App\Models\HarvestEntry;
 use App\Models\OvkItem;
-use App\Models\OvkUsage;
-use App\Models\PhotoEvidence;
 use App\Models\ProductionPeriod;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,11 +43,21 @@ function buildHeaderPayload(
     ], $overrides, $children);
 }
 
+function assignUserToPeriodCoop(User $user, ProductionPeriod $period): void
+{
+    $period->loadMissing('floor');
+    CoopUserAssignment::factory()->create([
+        'user_id' => $user->id,
+        'coop_id' => $period->floor->coop_id,
+    ]);
+}
+
 describe('POST /api/v1/sync/daily-activities', function () {
 
     it('successfully upserts a header with all child relations (Happy Path)', function () {
         $user = postAuthUser();
         $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        assignUserToPeriodCoop($user, $period);
         $formConfig = FormConfig::factory()->create();
         $ovkItem = OvkItem::factory()->create();
         $task = ChecklistTask::factory()->create();
@@ -153,11 +159,13 @@ describe('POST /api/v1/sync/daily-activities', function () {
     it('detects conflict when server data is newer than client data', function () {
         $user = postAuthUser();
         $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        assignUserToPeriodCoop($user, $period);
 
         // Buat header di database dengan updated_at_server yang LEBIH BARU dari updated_at_client payload
         $existingHeader = DailyActivityHeader::factory()->create([
             'period_id' => $period->id,
             'user_id' => $user->id,
+            'date' => '2026-03-15',
             'updated_at_server' => '2026-04-25T12:00:00Z', // Server punya data besok
             'sync_status' => 'SYNCED',
         ]);
@@ -187,6 +195,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
     it('flags PERIOD_CLOSED when period is not active', function () {
         $user = postAuthUser();
         $period = ProductionPeriod::factory()->create(['status' => 'closed']);
+        assignUserToPeriodCoop($user, $period);
 
         $payload = [
             'headers' => [
@@ -215,6 +224,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
     it('returns 422 when required child fields are missing', function () {
         $user = postAuthUser();
         $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        assignUserToPeriodCoop($user, $period);
 
         $payload = [
             'headers' => [
@@ -234,6 +244,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
     it('performs wipe and replace on re-sync (existing children are replaced)', function () {
         $user = postAuthUser();
         $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        assignUserToPeriodCoop($user, $period);
         $formConfig = FormConfig::factory()->create();
 
         $headerId = Str::uuid()->toString();
@@ -300,5 +311,124 @@ describe('POST /api/v1/sync/daily-activities', function () {
         ]);
 
         $response->assertUnauthorized();
+    });
+
+    it('rejects header if another header already exists for the same date and period but different UUID', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        assignUserToPeriodCoop($user, $period);
+
+        $uuidA = Str::uuid()->toString();
+        DailyActivityHeader::factory()->create([
+            'id' => $uuidA,
+            'period_id' => $period->id,
+            'user_id' => $user->id,
+            'date' => '2026-04-24',
+            'updated_at_server' => now(),
+            'sync_status' => 'SYNCED',
+        ]);
+
+        $uuidB = Str::uuid()->toString();
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id, [
+                    'id' => $uuidB,
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        $response->assertOk()
+            ->assertJsonPath('data.sync_results.0.status', 'DUPLICATE_DATE');
+
+        $this->assertDatabaseMissing('daily_activity_headers', [
+            'id' => $uuidB,
+        ]);
+        $this->assertDatabaseHas('daily_activity_headers', [
+            'id' => $uuidA,
+        ]);
+    });
+
+    it('returns 422 if the daily activity date is in the future', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        assignUserToPeriodCoop($user, $period);
+
+        $future = now()->addDays(2)->format('Y-m-d');
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id, [
+                    'date' => $future,
+                    'created_at_client' => $future.'T06:00:00Z',
+                    'updated_at_client' => $future.'T06:00:00Z',
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['headers.0.date']);
+    });
+
+    it('returns FORBIDDEN or 403 if the user is not assigned to the period\'s coop', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id),
+            ],
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        if ($response->status() === 403) {
+            $response->assertForbidden();
+        } else {
+            $response->assertOk()
+                ->assertJsonPath('data.sync_results.0.status', 'FORBIDDEN');
+        }
+
+        $headerIdFromPayload = $payload['headers'][0]['id'];
+        $this->assertDatabaseMissing('daily_activity_headers', [
+            'id' => $headerIdFromPayload,
+        ]);
+    });
+
+    it('rolls back the entire header transaction if a child payload has an invalid foreign key', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        assignUserToPeriodCoop($user, $period);
+
+        $headerId = Str::uuid()->toString();
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id, [
+                    'id' => $headerId,
+                ], [
+                    'ovk_usages' => [
+                        [
+                            'id' => Str::uuid()->toString(),
+                            'ovk_item_id' => Str::uuid()->toString(),
+                            'quantity' => 1,
+                            'notes' => null,
+                            'created_at_client' => '2026-04-24T06:00:00Z',
+                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                        ],
+                    ],
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['headers.0.ovk_usages.0.ovk_item_id']);
+
+        $this->assertDatabaseMissing('daily_activity_headers', [
+            'id' => $headerId,
+        ]);
     });
 });

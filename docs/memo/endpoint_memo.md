@@ -35,18 +35,28 @@ Seluruh aksi di bawah ini wajib dilakukan saat perangkat memiliki koneksi intern
 
 _Operasi CRUD (Create, Read, Update, Delete) untuk tabel referensi sistem._
 
-| Path                             |       Method       | Deskripsi Singkat                                             |
-| :------------------------------- | :----------------: | :------------------------------------------------------------ |
-| `/api/v1/areas`                  | `POST, PATCH, DEL` | Kelola wilayah operasional.                                   |
-| `/api/v1/farms`                  | `POST, PATCH, DEL` | Kelola _farm_ di bawah suatu area.                            |
-| `/api/v1/coops`                  | `POST, PATCH, DEL` | Kelola bangunan fisik kandang, kapasitas, & `coop_type`.      |
-| `/api/v1/form-configs`           | `POST, PATCH, DEL` | Buat format JSON untuk UI _Dynamic Form_ (Sensor/HBE).        |
-| `/api/v1/equipment-types`        | `POST, PATCH, DEL` | Daftar jenis alat/sensor fisik (Kipas, Heater).               |
-| `/api/v1/transaction-categories` | `POST, PATCH, DEL` | Daftar kode akun arus kas (INCOME/EXPENSE).                   |
-| `/api/v1/ovk-items`              | `POST, PATCH, DEL` | Master data jenis Obat, Vaksin, dan Kimia berserta satuannya. |
-| `/api/v1/education-articles`     | `POST, PATCH, DEL` | Kelola artikel panduan/edukasi ABK.                           |
-| `/api/v1/price-references`       | `POST, PATCH, DEL` | Kelola referensi harga komoditas (ayam, pakan).               |
-| `/api/v1/report-templates`       | `POST, PATCH, DEL` | Kelola _template_ auto-teks laporan WhatsApp.                 |
+| Path                                  |         Method          | Deskripsi Singkat                                                       |
+| :------------------------------------ | :---------------------: | :---------------------------------------------------------------------- |
+| `/api/v1/areas`                       | `GET, POST, PATCH, DEL` | Tarik daftar & Kelola wilayah operasional.                              |
+| `/api/v1/areas/{id}`                  |          `GET`          | Ambil detail area tertentu.                                             |
+| `/api/v1/farms`                       | `GET, POST, PATCH, DEL` | Tarik daftar & Kelola _farm_ di bawah suatu area.                       |
+| `/api/v1/farms/{id}`                  |          `GET`          | Ambil detail farm tertentu.                                             |
+| `/api/v1/coops`                       | `GET, POST, PATCH, DEL` | Tarik daftar & Kelola bangunan fisik kandang, kapasitas, & `coop_type`. |
+| `/api/v1/coops/{id}`                  |          `GET`          | Ambil detail kandang tertentu.                                          |
+| `/api/v1/form-configs`                | `GET, POST, PATCH, DEL` | Tarik daftar & Buat format JSON untuk UI _Dynamic Form_.                |
+| `/api/v1/form-configs/{id}`           |          `GET`          | Ambil detail konfigurasi form tertentu.                                 |
+| `/api/v1/equipment-types`             | `GET, POST, PATCH, DEL` | Tarik daftar & Kelola jenis alat/sensor fisik.                          |
+| `/api/v1/equipment-types/{id}`        |          `GET`          | Ambil detail jenis alat tertentu.                                       |
+| `/api/v1/transaction-categories`      | `GET, POST, PATCH, DEL` | Tarik daftar & Kelola kode akun arus kas.                               |
+| `/api/v1/transaction-categories/{id}` |          `GET`          | Ambil detail kategori transaksi tertentu.                               |
+| `/api/v1/ovk-items`                   | `GET, POST, PATCH, DEL` | Tarik daftar & Kelola master data jenis Obat, Vaksin, Kimia.            |
+| `/api/v1/ovk-items/{id}`              |          `GET`          | Ambil detail OVK item tertentu.                                         |
+| `/api/v1/education-articles`          | `GET, POST, PATCH, DEL` | Tarik daftar & Kelola artikel panduan/edukasi ABK.                      |
+| `/api/v1/education-articles/{id}`     |          `GET`          | Ambil detail artikel edukasi tertentu.                                  |
+| `/api/v1/price-references`            | `GET, POST, PATCH, DEL` | Tarik daftar & Kelola referensi harga komoditas.                        |
+| `/api/v1/price-references/{id}`       |          `GET`          | Ambil detail referensi harga tertentu.                                  |
+| `/api/v1/report-templates`            | `GET, POST, PATCH, DEL` | Tarik daftar & Kelola _template_ auto-teks laporan.                     |
+| `/api/v1/report-templates/{id}`       |          `GET`          | Ambil detail report template tertentu.                                  |
 
 ### 4. Setup Kandang & Periode Ternak (Krusial)
 
