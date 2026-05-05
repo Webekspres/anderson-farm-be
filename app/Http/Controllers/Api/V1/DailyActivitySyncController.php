@@ -14,10 +14,10 @@ use App\Models\HarvestEntry;
 use App\Models\OvkUsage;
 use App\Models\PhotoEvidence;
 use App\Models\ProductionPeriod;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Models\User;
 
 class DailyActivitySyncController extends Controller
 {
@@ -78,6 +78,7 @@ class DailyActivitySyncController extends Controller
 
         $duplicateDateCount = collect($syncResults)->where('status', 'DUPLICATE_DATE')->count();
         $forbiddenCount = collect($syncResults)->where('status', 'FORBIDDEN')->count();
+        $lockedCount = collect($syncResults)->where('status', 'LOCKED')->count();
 
         $messageParts = [];
         if ($syncedCount > 0) {
@@ -95,10 +96,13 @@ class DailyActivitySyncController extends Controller
         if ($forbiddenCount > 0) {
             $messageParts[] = "{$forbiddenCount} akses ditolak";
         }
+        if ($lockedCount > 0) {
+            $messageParts[] = "{$lockedCount} terkunci";
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Sinkronisasi selesai. ' . implode(', ', $messageParts) . '.',
+            'message' => 'Sinkronisasi selesai. '.implode(', ', $messageParts).'.',
             'data' => [
                 'server_timestamp' => $serverTimestamp->toIso8601String(),
                 'sync_results' => $syncResults,
@@ -116,7 +120,7 @@ class DailyActivitySyncController extends Controller
 
         // ── Step 1: Gatekeeping — Cek apakah periode masih aktif ──
         $period = ProductionPeriod::query()->with('floor')->find($periodId);
-        if (!$period || $period->status !== 'active') {
+        if (! $period || $period->status !== 'active') {
             return [
                 'id' => $headerId,
                 'status' => 'PERIOD_CLOSED',
@@ -125,7 +129,7 @@ class DailyActivitySyncController extends Controller
         }
 
         $coopId = $period->floor?->coop_id;
-        if (!$coopId) {
+        if (! $coopId) {
             return [
                 'id' => $headerId,
                 'status' => 'FORBIDDEN',
@@ -138,7 +142,7 @@ class DailyActivitySyncController extends Controller
             ->where('coop_id', $coopId)
             ->exists();
 
-        if (!$hasCoopAccess) {
+        if (! $hasCoopAccess) {
             return [
                 'id' => $headerId,
                 'status' => 'FORBIDDEN',
@@ -148,6 +152,14 @@ class DailyActivitySyncController extends Controller
 
         // ── Step 2: Conflict Detection ──
         $existingHeader = DailyActivityHeader::withTrashed()->find($headerId);
+
+        if ($existingHeader && $existingHeader->business_status === 'APPROVED') {
+            return [
+                'id' => $headerId,
+                'status' => 'LOCKED',
+                'server_id' => $existingHeader->server_id,
+            ];
+        }
 
         if ($existingHeader && $existingHeader->updated_at_server) {
             $clientUpdatedAt = Carbon::parse($headerPayload['updated_at_client']);
@@ -191,10 +203,10 @@ class DailyActivitySyncController extends Controller
                 'average_weight' => $headerPayload['average_weight'] ?? null,
                 'business_status' => $headerPayload['business_status'],
                 'sync_status' => 'SYNCED',
-                'created_at_client' => $headerPayload['created_at_client'],
-                'created_at_server' => $existingHeader?->created_at_server ?? $serverTimestamp,
-                'updated_at_client' => $headerPayload['updated_at_client'],
-                'updated_at_server' => $serverTimestamp,
+                'created_at_client' => $this->toMysqlDateTime($headerPayload['created_at_client']),
+                'created_at_server' => $this->toMysqlDateTime($existingHeader?->created_at_server ?? $serverTimestamp),
+                'updated_at_client' => $this->toMysqlDateTime($headerPayload['updated_at_client']),
+                'updated_at_server' => $this->toMysqlDateTime($serverTimestamp),
                 'deleted_at' => null, // Restore jika sebelumnya soft-deleted
             ],
         );
@@ -227,21 +239,21 @@ class DailyActivitySyncController extends Controller
         DailyChecklistLog::withTrashed()->where('header_id', $headerId)->forceDelete();
 
         // ── Bulk Insert: Dynamic Logs ──
-        if (!empty($headerPayload['dynamic_logs'])) {
+        if (! empty($headerPayload['dynamic_logs'])) {
             $dynamicLogs = array_map(fn (array $log) => [
                 'id' => $log['id'],
                 'header_id' => $headerId,
                 'form_config_id' => $log['form_config_id'],
                 'value' => $log['value'],
                 'sync_status' => 'SYNCED',
-                'created_at_client' => $log['created_at_client'],
-                'updated_at_client' => $log['updated_at_client'],
+                'created_at_client' => $this->toMysqlDateTime($log['created_at_client']),
+                'updated_at_client' => $this->toMysqlDateTime($log['updated_at_client']),
             ], $headerPayload['dynamic_logs']);
             DailyDynamicLog::insert($dynamicLogs);
         }
 
         // ── Bulk Insert: Harvest Entries ──
-        if (!empty($headerPayload['harvests'])) {
+        if (! empty($headerPayload['harvests'])) {
             $harvests = array_map(fn (array $harvest) => [
                 'id' => $harvest['id'],
                 'header_id' => $headerId,
@@ -253,16 +265,16 @@ class DailyActivitySyncController extends Controller
                 'total_revenue' => $harvest['total_revenue'],
                 'delivery_order_no' => $harvest['delivery_order_no'] ?? null,
                 'sync_status' => 'SYNCED',
-                'created_at_client' => $harvest['created_at_client'],
-                'created_at_server' => $serverTimestamp,
-                'updated_at_client' => $harvest['updated_at_client'],
-                'updated_at_server' => $serverTimestamp,
+                'created_at_client' => $this->toMysqlDateTime($harvest['created_at_client']),
+                'created_at_server' => $this->toMysqlDateTime($serverTimestamp),
+                'updated_at_client' => $this->toMysqlDateTime($harvest['updated_at_client']),
+                'updated_at_server' => $this->toMysqlDateTime($serverTimestamp),
             ], $headerPayload['harvests']);
             HarvestEntry::insert($harvests);
         }
 
         // ── Bulk Insert: OVK Usages ──
-        if (!empty($headerPayload['ovk_usages'])) {
+        if (! empty($headerPayload['ovk_usages'])) {
             $ovkUsages = array_map(fn (array $ovk) => [
                 'id' => $ovk['id'],
                 'header_id' => $headerId,
@@ -270,16 +282,16 @@ class DailyActivitySyncController extends Controller
                 'quantity' => $ovk['quantity'],
                 'notes' => $ovk['notes'] ?? null,
                 'sync_status' => 'SYNCED',
-                'created_at_client' => $ovk['created_at_client'],
-                'created_at_server' => $serverTimestamp,
-                'updated_at_client' => $ovk['updated_at_client'],
-                'updated_at_server' => $serverTimestamp,
+                'created_at_client' => $this->toMysqlDateTime($ovk['created_at_client']),
+                'created_at_server' => $this->toMysqlDateTime($serverTimestamp),
+                'updated_at_client' => $this->toMysqlDateTime($ovk['updated_at_client']),
+                'updated_at_server' => $this->toMysqlDateTime($serverTimestamp),
             ], $headerPayload['ovk_usages']);
             OvkUsage::insert($ovkUsages);
         }
 
         // ── Bulk Insert: Photo Evidences ──
-        if (!empty($headerPayload['photos'])) {
+        if (! empty($headerPayload['photos'])) {
             $photos = array_map(fn (array $photo) => [
                 'id' => $photo['id'],
                 'header_id' => $headerId,
@@ -288,16 +300,16 @@ class DailyActivitySyncController extends Controller
                 'photo_type' => $photo['photo_type'],
                 'description' => $photo['description'] ?? null,
                 'sync_status' => 'SYNCED',
-                'created_at_client' => $photo['created_at_client'],
-                'created_at_server' => $serverTimestamp,
-                'updated_at_client' => $photo['updated_at_client'],
-                'updated_at_server' => $serverTimestamp,
+                'created_at_client' => $this->toMysqlDateTime($photo['created_at_client']),
+                'created_at_server' => $this->toMysqlDateTime($serverTimestamp),
+                'updated_at_client' => $this->toMysqlDateTime($photo['updated_at_client']),
+                'updated_at_server' => $this->toMysqlDateTime($serverTimestamp),
             ], $headerPayload['photos']);
             PhotoEvidence::insert($photos);
         }
 
         // ── Bulk Insert: Checklist Logs ──
-        if (!empty($headerPayload['checklist_logs'])) {
+        if (! empty($headerPayload['checklist_logs'])) {
             $checklistLogs = array_map(fn (array $log) => [
                 'id' => $log['id'],
                 'header_id' => $headerId,
@@ -306,10 +318,18 @@ class DailyActivitySyncController extends Controller
                 'text_value' => $log['text_value'] ?? null,
                 'notes' => $log['notes'] ?? null,
                 'sync_status' => 'SYNCED',
-                'created_at_client' => $log['created_at_client'],
-                'updated_at_client' => $log['updated_at_client'],
+                'created_at_client' => $this->toMysqlDateTime($log['created_at_client']),
+                'updated_at_client' => $this->toMysqlDateTime($log['updated_at_client']),
             ], $headerPayload['checklist_logs']);
             DailyChecklistLog::insert($checklistLogs);
         }
+    }
+
+    /**
+     * Bulk insert melewati Eloquent cast; MySQL menolak ISO-8601 bertipe `...T...Z`.
+     */
+    private function toMysqlDateTime(\DateTimeInterface|string $value): string
+    {
+        return Carbon::parse($value)->format('Y-m-d H:i:s');
     }
 }

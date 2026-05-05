@@ -5,6 +5,7 @@ use App\Models\Coop;
 use App\Models\CoopFloor;
 use App\Models\CoopUserAssignment;
 use App\Models\EducationArticle;
+use App\Models\EquipmentType;
 use App\Models\Farm;
 use App\Models\FormConfig;
 use App\Models\OvkItem;
@@ -41,6 +42,7 @@ beforeEach(function () {
 
     // Setup Global Data
     FormConfig::factory()->count(2)->create();
+    EquipmentType::factory()->count(2)->create();
     OvkItem::factory()->count(2)->create();
     EducationArticle::factory()->count(2)->create();
     PriceReference::factory()->count(2)->create();
@@ -62,6 +64,7 @@ it('can fetch all master data for the assigned user (Happy Path)', function () {
                 'areas',
                 'production_periods',
                 'form_configs',
+                'equipment_types',
                 'ovk_items',
                 'education_articles',
                 'price_references',
@@ -78,6 +81,7 @@ it('can fetch all master data for the assigned user (Happy Path)', function () {
 
     // Verify global data count
     $response->assertJsonCount(2, 'data.form_configs');
+    $response->assertJsonCount(2, 'data.equipment_types');
     $response->assertJsonCount(2, 'data.ovk_items');
 });
 
@@ -111,7 +115,7 @@ it('can fetch only new master data using last_sync_timestamp (Delta Sync)', func
     ]);
 
     // Make the request with delta sync
-    $response = $this->getJson('/api/v1/sync/master-data?last_sync_timestamp=' . urlencode($lastSync));
+    $response = $this->getJson('/api/v1/sync/master-data?last_sync_timestamp='.urlencode($lastSync));
 
     $response->assertOk();
 
@@ -122,5 +126,6 @@ it('can fetch only new master data using last_sync_timestamp (Delta Sync)', func
     $response->assertJsonCount(1, 'data.coop_user_assignments'); // Only 1 new assignment
 
     $response->assertJsonCount(1, 'data.form_configs'); // Only 1 new form config
+    $response->assertJsonCount(0, 'data.equipment_types'); // No new equipment types
     $response->assertJsonCount(0, 'data.ovk_items'); // No new ovk items
 });

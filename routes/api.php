@@ -1,18 +1,25 @@
 <?php
 
 use App\Http\Controllers\Api\CheckController;
+use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ChecklistTaskController;
 use App\Http\Controllers\Api\V1\ContractAbkController;
+use App\Http\Controllers\Api\V1\CoopController;
 use App\Http\Controllers\Api\V1\CoopDocumentController;
 use App\Http\Controllers\Api\V1\CoopEquipmentController;
 use App\Http\Controllers\Api\V1\CoopUserAssignmentController;
 use App\Http\Controllers\Api\V1\DailyActivitySyncController;
+use App\Http\Controllers\Api\V1\EducationArticleController;
 use App\Http\Controllers\Api\V1\EducationSyncController;
+use App\Http\Controllers\Api\V1\EquipmentTypeController;
+use App\Http\Controllers\Api\V1\FarmController;
+use App\Http\Controllers\Api\V1\FcmTokenController;
 use App\Http\Controllers\Api\V1\FinanceSyncController;
 use App\Http\Controllers\Api\V1\FormConfigController;
 use App\Http\Controllers\Api\V1\MaintenanceSyncController;
 use App\Http\Controllers\Api\V1\MasterDataSyncController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OvkItemController;
 use App\Http\Controllers\Api\V1\PeriodActionController;
 use App\Http\Controllers\Api\V1\PeriodController;
@@ -20,7 +27,9 @@ use App\Http\Controllers\Api\V1\PeriodDocumentController;
 use App\Http\Controllers\Api\V1\PeriodFormAssignmentController;
 use App\Http\Controllers\Api\V1\PeriodInvestorController;
 use App\Http\Controllers\Api\V1\PeriodSyncController;
+use App\Http\Controllers\Api\V1\PriceReferenceController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ReportTemplateController;
 use App\Http\Controllers\Api\V1\RhppActionController;
 use App\Http\Controllers\Api\V1\RhppDocumentController;
 use App\Http\Controllers\Api\V1\RhppSyncController;
@@ -29,6 +38,7 @@ use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
 use App\Http\Controllers\Api\V1\TransactionCategoryController;
 use App\Http\Controllers\Api\V1\UploadController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\UserPasswordController;
 use Illuminate\Support\Facades\Route;
 
 // Laravel otomatis menambahkan prefix '/api' di depan route ini
@@ -41,42 +51,40 @@ Route::prefix('v1')->group(function () {
     // Rute Terlindungi (Wajib Bawa Token)
     Route::middleware('auth:sanctum')->group(function () {
 
-
-
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
-
+        Route::post('/auth/fcm-token', FcmTokenController::class);
 
         Route::apiResource('users', UserController::class);
 
         // User Password Management
-        Route::post('/users/{user}/reset-password', [App\Http\Controllers\Api\V1\UserPasswordController::class, 'resetByAdmin']);
+        Route::post('/users/{user}/reset-password', [UserPasswordController::class, 'resetByAdmin']);
 
         // Profile
         Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
 
         // Coop endpoints
-        Route::apiResource('coops', App\Http\Controllers\Api\V1\CoopController::class);
+        Route::apiResource('coops', CoopController::class);
 
         // EquipmentType endpoints
-        Route::apiResource('equipment-types', App\Http\Controllers\Api\V1\EquipmentTypeController::class);
+        Route::apiResource('equipment-types', EquipmentTypeController::class);
         Route::post('/equipment-types/{equipment_type}/form-configs', [SyncEquipmentTypeFormConfigController::class, '__invoke']);
 
-        Route::apiResource('areas', App\Http\Controllers\Api\V1\AreaController::class);
+        Route::apiResource('areas', AreaController::class);
 
         // ReportTemplate CRUD
-        Route::apiResource('report-templates', App\Http\Controllers\Api\V1\ReportTemplateController::class);
+        Route::apiResource('report-templates', ReportTemplateController::class);
         // Farm CRUD
-        Route::apiResource('farms', App\Http\Controllers\Api\V1\FarmController::class);
+        Route::apiResource('farms', FarmController::class);
 
         // TransactionCategory CRUD
         Route::apiResource('transaction-categories', TransactionCategoryController::class);
         // OvkItem CRUD
         Route::apiResource('ovk-items', OvkItemController::class);
         // EducationArticle CRUD
-        Route::apiResource('education-articles', App\Http\Controllers\Api\V1\EducationArticleController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('education-articles', EducationArticleController::class)->only(['store', 'update', 'destroy']);
         // PriceReference CRUD
-        Route::apiResource('price-references', App\Http\Controllers\Api\V1\PriceReferenceController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('price-references', PriceReferenceController::class)->only(['store', 'update', 'destroy']);
         // FormConfig CRUD
         Route::apiResource('form-configs', FormConfigController::class);
 
@@ -97,9 +105,6 @@ Route::prefix('v1')->group(function () {
         // Bulk assignment pekerja ke kandang
         Route::post('/coops/{coop}/user-assignments', [CoopUserAssignmentController::class, 'sync']);
         Route::post('/coops/{coop}/form-assignments', SyncCoopFormAssignmentController::class);
-
-
-
 
         // Production Period endpoints
         Route::post('/periods', [PeriodController::class, 'store']);
@@ -139,9 +144,13 @@ Route::prefix('v1')->group(function () {
             Route::post('/maintenances', [MaintenanceSyncController::class, 'store']);
             Route::get('/rhpps', [RhppSyncController::class, 'index']);
         });
-    });
 
-    Route::get('/contracts/{contract}', [ContractAbkController::class, 'show']);
-    Route::post('/contracts/{contract}', [ContractAbkController::class, 'accept']); // Method POST untuk menyetujui
-    Route::delete('/contracts/{contract}', [ContractAbkController::class, 'destroy']);
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
+        Route::get('/contracts/{contract}', [ContractAbkController::class, 'show']);
+        Route::post('/contracts/{contract}', [ContractAbkController::class, 'accept']); // Method POST untuk menyetujui
+        Route::delete('/contracts/{contract}', [ContractAbkController::class, 'destroy']);
+    });
 });

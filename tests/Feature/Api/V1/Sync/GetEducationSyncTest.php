@@ -17,6 +17,9 @@ it('returns all education and price data (full sync)', function () {
     $articles = EducationArticle::factory()->count(2)->create();
     $prices = PriceReference::factory()->count(2)->create();
 
+    $articlesById = $articles->sortBy('id')->values();
+    $pricesById = $prices->sortBy('id')->values();
+
     actingAs($this->user, 'sanctum')
         ->getJson('/api/v1/sync/education')
         ->assertOk()
@@ -24,12 +27,12 @@ it('returns all education and price data (full sync)', function () {
             'success' => true,
             'data' => [
                 'education_articles' => [
-                    ['id' => $articles[0]->id],
-                    ['id' => $articles[1]->id],
+                    ['id' => $articlesById[0]->id],
+                    ['id' => $articlesById[1]->id],
                 ],
                 'price_references' => [
-                    ['id' => $prices[0]->id],
-                    ['id' => $prices[1]->id],
+                    ['id' => $pricesById[0]->id],
+                    ['id' => $pricesById[1]->id],
                 ],
             ],
         ])
@@ -86,7 +89,7 @@ it('returns only updated records for delta sync', function () {
     $timestamp = now()->subHour()->toIso8601String();
 
     actingAs($this->user, 'sanctum')
-        ->getJson('/api/v1/sync/education?last_sync_timestamp=' . urlencode($timestamp))
+        ->getJson('/api/v1/sync/education?last_sync_timestamp='.urlencode($timestamp))
         ->assertOk()
         ->assertJson([
             'success' => true,

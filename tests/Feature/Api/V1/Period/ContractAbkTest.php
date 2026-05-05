@@ -1,10 +1,14 @@
 <?php
 
+use App\Jobs\NotifyAbksOfNewContractJob;
 use App\Models\ContractAbk;
+use App\Models\ContractAcceptance;
 use App\Models\ProductionPeriod;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
+
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 
@@ -32,14 +36,16 @@ describe('ContractAbk API', function () {
                 'success',
                 'message',
                 'data' => [
-                    '*' => ['id', 'title', 'file_url', 'uploaded_by', 'uploader_name']
-                ]
+                    '*' => ['id', 'title', 'file_url', 'uploaded_by', 'uploader_name'],
+                ],
             ]);
 
         expect($response->json('data'))->toHaveCount(2);
     });
 
     it('berhasil menyimpan kontrak baru melalui POST', function () {
+        Queue::fake();
+
         Sanctum::actingAs($this->user);
 
         $payload = [
@@ -58,6 +64,12 @@ describe('ContractAbk API', function () {
             'title' => 'Kontrak FCR Kemitraan Final',
             'uploaded_by' => $this->user->id,
         ]);
+
+        $this->app->terminate();
+
+        Queue::assertPushed(NotifyAbksOfNewContractJob::class, function (NotifyAbksOfNewContractJob $job): bool {
+            return $job->productionPeriodId === $this->period->id;
+        });
     });
 
     it('gagal 422 jika judul kosong saat POST', function () {
@@ -90,7 +102,7 @@ describe('ContractAbk API', function () {
         // Tanpa Sanctum::actingAs()
         $payload = [
             'title' => 'Kontrak Rahasia',
-            'file_url' => 'http://test.com/x.pdf'
+            'file_url' => 'http://test.com/x.pdf',
         ];
 
         $response = postJson("/api/v1/periods/{$this->period->id}/contracts", $payload);
@@ -119,8 +131,8 @@ describe('ContractAbk API', function () {
         $response->assertStatus(201);
         $this->assertDatabaseHas('contract_acceptances', [
             'contract_id' => $contract->id,
-            'user_id'     => $this->user->id,
-            'device_id'   => 'SAMSUNG-S21-XYZ'
+            'user_id' => $this->user->id,
+            'device_id' => 'SAMSUNG-S21-XYZ',
         ]);
     });
 
@@ -129,7 +141,7 @@ describe('ContractAbk API', function () {
         $contract = ContractAbk::factory()->create(['period_id' => $this->period->id]);
 
         // Buat tanda tangan palsu
-        \App\Models\ContractAcceptance::factory()->create(['contract_id' => $contract->id]);
+        ContractAcceptance::factory()->create(['contract_id' => $contract->id]);
 
         $response = $this->deleteJson("/api/v1/contracts/{$contract->id}");
 

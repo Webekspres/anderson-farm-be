@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests\Api\V1\Sync;
 
+use App\Models\ProductionPeriod;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class SyncPostDailyActivityRequest extends FormRequest
 {
@@ -80,6 +83,33 @@ class SyncPostDailyActivityRequest extends FormRequest
             'headers.*.checklist_logs.*.created_at_client' => ['required', 'date'],
             'headers.*.checklist_logs.*.updated_at_client' => ['required', 'date'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $headers = $this->input('headers', []);
+            foreach ($headers as $index => $header) {
+                if (! is_array($header) || empty($header['period_id']) || empty($header['date'])) {
+                    continue;
+                }
+
+                $period = ProductionPeriod::query()->find($header['period_id']);
+                if (! $period || ! $period->start_date) {
+                    continue;
+                }
+
+                $activityDate = Carbon::parse($header['date'])->startOfDay();
+                $startDate = Carbon::parse($period->start_date)->startOfDay();
+
+                if ($activityDate->lt($startDate)) {
+                    $validator->errors()->add(
+                        "headers.{$index}.date",
+                        'Tanggal aktivitas tidak boleh sebelum tanggal mulai periode.'
+                    );
+                }
+            }
+        });
     }
 
     public function messages(): array

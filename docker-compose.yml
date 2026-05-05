@@ -27,6 +27,9 @@ services:
     container_name: anderson_db_testing
     ports:
       - "3307:3306"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: "anderson_farm_be"
     env_file:
       - .env.docker # <--- MySQL juga otomatis membaca konfigurasi DB dari sini
     volumes:

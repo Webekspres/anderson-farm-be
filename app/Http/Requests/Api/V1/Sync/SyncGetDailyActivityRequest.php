@@ -2,13 +2,33 @@
 
 namespace App\Http\Requests\Api\V1\Sync;
 
+use App\Models\CoopUserAssignment;
+use App\Models\ProductionPeriod;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SyncGetDailyActivityRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $periodId = $this->input('period_id');
+        if (! $periodId) {
+            return true;
+        }
+
+        $period = ProductionPeriod::query()->with('floor')->find($periodId);
+        if (! $period) {
+            return true;
+        }
+
+        $coopId = $period->floor?->coop_id;
+        if (! $coopId) {
+            return false;
+        }
+
+        return CoopUserAssignment::query()
+            ->where('user_id', $this->user()->id)
+            ->where('coop_id', $coopId)
+            ->exists();
     }
 
     public function rules(): array

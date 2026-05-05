@@ -13,16 +13,18 @@ class EducationSyncService
         $since = $lastSyncTimestamp ? Carbon::parse($lastSyncTimestamp) : null;
 
         $educationArticles = EducationArticle::withTrashed()
-            ->when($since, fn($q) => $q->where('updated_at_server', '>', $since))
+            ->when($since, fn ($q) => $q->where('updated_at_server', '>', $since))
+            ->orderBy('id')
             ->get();
 
         $priceReferences = PriceReference::withTrashed()
-            ->when($since, fn($q) => $q->where('updated_at_server', '>', $since))
+            ->when($since, fn ($q) => $q->where('updated_at_server', '>', $since))
+            ->orderBy('id')
             ->get();
 
         return [
             'education_articles' => $educationArticles,
-            'price_references'   => $priceReferences,
+            'price_references' => $priceReferences,
         ];
     }
 }

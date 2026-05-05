@@ -360,8 +360,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
             'headers' => [
                 buildHeaderPayload($period->id, $user->id, [
                     'date' => $future,
-                    'created_at_client' => $future.'T06:00:00Z',
-                    'updated_at_client' => $future.'T06:00:00Z',
+                    'created_at_client' => $future . 'T06:00:00Z',
+                    'updated_at_client' => $future . 'T06:00:00Z',
                 ]),
             ],
         ];
@@ -430,5 +430,189 @@ describe('POST /api/v1/sync/daily-activities', function () {
         $this->assertDatabaseMissing('daily_activity_headers', [
             'id' => $headerId,
         ]);
+    });
+
+    it('applies partial success on bulk POST without rolling back successful headers when one conflicts', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create([
+            'status' => 'active',
+            'start_date' => now()->subMonths(3)->format('Y-m-d'),
+        ]);
+        assignUserToPeriodCoop($user, $period);
+
+        $dayOlder = now()->subDays(22)->format('Y-m-d');
+        $dayNewA = now()->subDays(9)->format('Y-m-d');
+        $dayNewB = now()->subDays(8)->format('Y-m-d');
+
+        $existingHeader = DailyActivityHeader::factory()->create([
+            'period_id' => $period->id,
+            'user_id' => $user->id,
+            'date' => $dayOlder,
+            'updated_at_server' => now()->addDay()->toIso8601String(),
+            'sync_status' => 'SYNCED',
+        ]);
+
+        $uuidNew1 = Str::uuid()->toString();
+        $uuidNew3 = Str::uuid()->toString();
+
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id, [
+                    'id' => $uuidNew1,
+                    'date' => $dayNewA,
+                    'created_at_client' => $dayNewA . 'T06:00:00Z',
+                    'updated_at_client' => $dayNewA . 'T06:00:00Z',
+                ]),
+                buildHeaderPayload($period->id, $user->id, [
+                    'id' => $existingHeader->id,
+                    'date' => $dayOlder,
+                    'updated_at_client' => now()->subDays(2)->toIso8601String(),
+                ]),
+                buildHeaderPayload($period->id, $user->id, [
+                    'id' => $uuidNew3,
+                    'date' => $dayNewB,
+                    'created_at_client' => $dayNewB . 'T06:00:00Z',
+                    'updated_at_client' => $dayNewB . 'T06:00:00Z',
+                ]),
+            ],
+        ];
+
+        $existingHeader->refresh();
+        $untouchedServerTs = $existingHeader->updated_at_server->clone();
+        $untouchedDate = $existingHeader->date->format('Y-m-d');
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        $response->assertOk()
+            ->assertJsonCount(3, 'data.sync_results')
+            ->assertJsonPath('data.sync_results.0.status', 'SYNCED')
+            ->assertJsonPath('data.sync_results.1.status', 'CONFLICT')
+            ->assertJsonPath('data.sync_results.2.status', 'SYNCED');
+
+        $this->assertDatabaseHas('daily_activity_headers', [
+            'id' => $uuidNew1,
+            'sync_status' => 'SYNCED',
+        ]);
+        $this->assertDatabaseHas('daily_activity_headers', [
+            'id' => $uuidNew3,
+            'sync_status' => 'SYNCED',
+        ]);
+
+        $existingHeader->refresh();
+        expect($existingHeader->sync_status)->toBe('SYNCED')
+            ->and($existingHeader->updated_at_server->equalTo($untouchedServerTs))->toBeTrue()
+            ->and($existingHeader->date->format('Y-m-d'))->toBe($untouchedDate);
+    });
+
+    it('rejects modification when business_status on server is APPROVED', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create([
+            'status' => 'active',
+            'start_date' => now()->subMonths(2)->format('Y-m-d'),
+        ]);
+        assignUserToPeriodCoop($user, $period);
+
+        $activityDay = now()->subDays(4)->format('Y-m-d');
+
+        $existingHeader = DailyActivityHeader::factory()->create([
+            'period_id' => $period->id,
+            'user_id' => $user->id,
+            'date' => $activityDay,
+            'business_status' => 'APPROVED',
+            'updated_at_server' => now()->subDays(4)->toIso8601String(),
+            'sync_status' => 'SYNCED',
+        ]);
+
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id, [
+                    'id' => $existingHeader->id,
+                    'date' => $activityDay,
+                    'business_status' => 'DRAFT',
+                    'updated_at_client' => now()->toIso8601String(),
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        $response->assertOk()
+            ->assertJsonPath('data.sync_results.0.status', 'LOCKED');
+
+        $this->assertDatabaseHas('daily_activity_headers', [
+            'id' => $existingHeader->id,
+            'business_status' => 'APPROVED',
+        ]);
+    });
+
+    it('returns 422 when mortality, culls, or OVK quantity are negative', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create([
+            'status' => 'active',
+            'start_date' => now()->subMonths(1)->format('Y-m-d'),
+        ]);
+        assignUserToPeriodCoop($user, $period);
+        $ovkItem = OvkItem::factory()->create();
+
+        $day = now()->subDays(2)->format('Y-m-d');
+
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id, [
+                    'date' => $day,
+                    'created_at_client' => $day . 'T06:00:00Z',
+                    'updated_at_client' => $day . 'T06:00:00Z',
+                    'mortality_count' => -5,
+                    'cull_count' => -2,
+                ], [
+                    'ovk_usages' => [
+                        [
+                            'id' => Str::uuid()->toString(),
+                            'ovk_item_id' => $ovkItem->id,
+                            'quantity' => -10,
+                            'notes' => null,
+                            'created_at_client' => '2026-04-24T06:00:00Z',
+                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                        ],
+                    ],
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'headers.0.mortality_count',
+                'headers.0.cull_count',
+                'headers.0.ovk_usages.0.quantity',
+            ]);
+    });
+
+    it('returns 422 when daily activity date is before the period start_date', function () {
+        $user = postAuthUser();
+        $periodStart = now()->subDays(10)->format('Y-m-d');
+        $period = ProductionPeriod::factory()->create([
+            'status' => 'active',
+            'start_date' => $periodStart,
+        ]);
+        assignUserToPeriodCoop($user, $period);
+
+        $tooEarly = now()->subDays(25)->format('Y-m-d');
+
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id, [
+                    'date' => $tooEarly,
+                    'created_at_client' => $tooEarly . 'T06:00:00Z',
+                    'updated_at_client' => $tooEarly . 'T06:00:00Z',
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['headers.0.date']);
     });
 });

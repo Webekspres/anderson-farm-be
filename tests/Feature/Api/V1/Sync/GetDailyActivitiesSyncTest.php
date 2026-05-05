@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\CoopUserAssignment;
 use App\Models\DailyActivityHeader;
 use App\Models\DailyChecklistLog;
 use App\Models\DailyDynamicLog;
@@ -15,6 +16,15 @@ uses(RefreshDatabase::class);
 function createAuthUser(): User
 {
     return User::factory()->create();
+}
+
+function assignAuthUserToPeriodCoop(User $user, ProductionPeriod $period): void
+{
+    $period->loadMissing('floor');
+    CoopUserAssignment::factory()->create([
+        'user_id' => $user->id,
+        'coop_id' => $period->floor->coop_id,
+    ]);
 }
 
 function createPeriodWithHeaders(int $headerCount = 3, ?string $updatedAtServer = null): array
@@ -45,7 +55,9 @@ describe('GET /api/v1/sync/daily-activities', function () {
         PhotoEvidence::factory()->create(['header_id' => $firstHeader->id]);
         DailyChecklistLog::factory()->create(['header_id' => $firstHeader->id]);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/sync/daily-activities?' . http_build_query([
+        assignAuthUserToPeriodCoop($user, $period);
+
+        $response = $this->actingAs($user)->getJson('/api/v1/sync/daily-activities?'.http_build_query([
             'period_id' => $period->id,
         ]));
 
@@ -97,7 +109,9 @@ describe('GET /api/v1/sync/daily-activities', function () {
             'updated_at_server' => '2026-04-22T12:00:00Z',
         ]);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/sync/daily-activities?' . http_build_query([
+        assignAuthUserToPeriodCoop($user, $period);
+
+        $response = $this->actingAs($user)->getJson('/api/v1/sync/daily-activities?'.http_build_query([
             'period_id' => $period->id,
             'last_sync_timestamp' => '2026-04-21T00:00:00Z',
         ]));
@@ -117,7 +131,9 @@ describe('GET /api/v1/sync/daily-activities', function () {
         ]);
         $deletedHeader->delete(); // soft delete
 
-        $response = $this->actingAs($user)->getJson('/api/v1/sync/daily-activities?' . http_build_query([
+        assignAuthUserToPeriodCoop($user, $period);
+
+        $response = $this->actingAs($user)->getJson('/api/v1/sync/daily-activities?'.http_build_query([
             'period_id' => $period->id,
         ]));
 
@@ -139,10 +155,28 @@ describe('GET /api/v1/sync/daily-activities', function () {
     });
 
     it('returns 401 when not authenticated', function () {
-        $response = $this->getJson('/api/v1/sync/daily-activities?' . http_build_query([
+        $response = $this->getJson('/api/v1/sync/daily-activities?'.http_build_query([
             'period_id' => fake()->uuid(),
         ]));
 
         $response->assertUnauthorized();
+    });
+
+    it('returns 403 when the user is not assigned to the period coop (authorization leak)', function () {
+        $userA = createAuthUser();
+        $userB = createAuthUser();
+
+        $periodA = ProductionPeriod::factory()->create();
+        $periodB = ProductionPeriod::factory()->create();
+
+        assignAuthUserToPeriodCoop($userA, $periodA);
+
+        expect($userB->id)->not->toBe($userA->id);
+
+        $response = $this->actingAs($userA)->getJson('/api/v1/sync/daily-activities?'.http_build_query([
+            'period_id' => $periodB->id,
+        ]));
+
+        $response->assertForbidden();
     });
 });

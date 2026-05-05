@@ -18,7 +18,9 @@ class DailyDynamicLog extends Model
 
     protected $casts = [
         'created_at_client' => 'datetime',
+        'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
+        'updated_at_server' => 'datetime',
     ];
 
     public function header()
