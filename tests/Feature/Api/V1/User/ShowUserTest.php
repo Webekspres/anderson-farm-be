@@ -1,17 +1,17 @@
 <?php
 
 use App\Models\User;
-use Laravel\Sanctum\Sanctum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create([
         'username' => 'budi_abk1',
-        'name'     => 'Budi Santoso',
-        'role'     => 'abk',
-        'email'    => 'budi@example.com',
+        'name' => 'Budi Santoso',
+        'role' => 'abk',
+        'email' => 'budi@example.com',
         'phone_number' => '08123456789',
         'is_active' => true,
     ]);
@@ -20,7 +20,7 @@ beforeEach(function () {
 it('berhasil menampilkan detail user dengan token yang valid (200)', function () {
     Sanctum::actingAs($this->user, ['*']);
 
-    $response = $this->getJson("/api/v1/users/{$this->user->server_id}");
+    $response = $this->getJson("/api/v1/users/{$this->user->id}");
 
     $response->assertStatus(200)
         ->assertJsonStructure([
@@ -28,17 +28,19 @@ it('berhasil menampilkan detail user dengan token yang valid (200)', function ()
             'message',
             'data' => [
                 'id',
+                'server_id',
                 'username',
                 'name',
                 'role',
                 'email',
                 'phone',
                 'is_active',
-            ]
+            ],
         ])
         ->assertJsonPath('success', true)
         ->assertJsonPath('message', 'Detail user berhasil diambil.')
-        ->assertJsonPath('data.id', $this->user->server_id)
+        ->assertJsonPath('data.id', $this->user->id)
+        ->assertJsonPath('data.server_id', $this->user->server_id)
         ->assertJsonPath('data.username', 'budi_abk1')
         ->assertJsonPath('data.name', 'Budi Santoso')
         ->assertJsonPath('data.role', 'abk')
@@ -48,7 +50,7 @@ it('berhasil menampilkan detail user dengan token yang valid (200)', function ()
 });
 
 it('ditolak jika mengakses tanpa token (401)', function () {
-    $response = $this->getJson("/api/v1/users/{$this->user->server_id}");
+    $response = $this->getJson("/api/v1/users/{$this->user->id}");
 
     $response->assertStatus(401)
         ->assertJsonPath('message', 'Unauthenticated.');
@@ -66,7 +68,7 @@ it('mengembalikan 404 jika user tidak ditemukan', function () {
 it('mengikuti format response standar (success, message, data)', function () {
     Sanctum::actingAs($this->user, ['*']);
 
-    $response = $this->getJson("/api/v1/users/{$this->user->server_id}");
+    $response = $this->getJson("/api/v1/users/{$this->user->id}");
 
     $response->assertStatus(200)
         ->assertJsonStructure([
@@ -84,7 +86,7 @@ it('mengikuti format response standar (success, message, data)', function () {
 it('tidak mengekspos data sensitif seperti password', function () {
     Sanctum::actingAs($this->user, ['*']);
 
-    $response = $this->getJson("/api/v1/users/{$this->user->server_id}");
+    $response = $this->getJson("/api/v1/users/{$this->user->id}");
 
     $responseJson = json_encode($response->json('data'));
 
@@ -95,7 +97,7 @@ it('tidak mengekspos data sensitif seperti password', function () {
 it('memetakan field database ke field API dengan benar', function () {
     Sanctum::actingAs($this->user, ['*']);
 
-    $response = $this->getJson("/api/v1/users/{$this->user->server_id}");
+    $response = $this->getJson("/api/v1/users/{$this->user->id}");
 
     $data = $response->json('data');
 
@@ -104,8 +106,9 @@ it('memetakan field database ke field API dengan benar', function () {
         ->and($data)->not->toHaveKey('phone_number')
         ->and($data['phone'])->toBe($this->user->phone_number);
 
-    // server_id di DB → id di API
+    // id di DB → id di API, server_id di DB → server_id di API
     expect($data)->toHaveKey('id')
-        ->and($data)->not->toHaveKey('server_id')
-        ->and($data['id'])->toBe($this->user->server_id);
+        ->and($data)->toHaveKey('server_id')
+        ->and($data['id'])->toBe($this->user->id)
+        ->and($data['server_id'])->toBe($this->user->server_id);
 });

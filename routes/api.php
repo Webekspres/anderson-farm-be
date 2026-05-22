@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReportTemplateController;
 use App\Http\Controllers\Api\V1\RhppActionController;
 use App\Http\Controllers\Api\V1\RhppDocumentController;
+use App\Http\Controllers\Api\V1\RhppExportController;
 use App\Http\Controllers\Api\V1\RhppSyncController;
 use App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController;
 use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
@@ -129,6 +130,9 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::post('/rhpps/{period_id}/publish', [RhppActionController::class, 'publish']);
+
+        // Export endpoints
+        Route::get('/export/rhpp', [RhppExportController::class, 'show']);
 
         // Sync endpoints (Offline-First)
         Route::prefix('sync')->group(function () {

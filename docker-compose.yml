@@ -13,10 +13,9 @@ services:
       - .:/var/www/html
       - ./.env.docker:/var/www/html/.env
     env_file:
-      - .env.docker # <--- Docker akan menggunakan env ini
+      - .env.docker
     command: >
-      bash -c "composer install &&
-               php artisan config:clear &&
+      bash -c "php artisan config:clear && 
                php artisan serve --host=0.0.0.0 --port=8000 --env=docker"
     depends_on:
       - db

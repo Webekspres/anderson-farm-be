@@ -42,12 +42,11 @@ it('successfully completes the new worker onboarding journey from account creati
     $createWorkerResponse->assertCreated()
         ->assertJsonPath('success', true);
 
-    // Respons memuat `data.id` sebagai server_id; assignment membutuhkan UUID primary key `users.id`.
+    // Respons memuat `data.id` sebagai UUID primary key `users.id`.
     $capturedUserIdFromApi = $createWorkerResponse->json('data.id');
-    expect($capturedUserIdFromApi)->not->toBeNull();
+    expect($capturedUserIdFromApi)->not->toBeNull()->toBeString();
 
-    $newWorkerUuid = User::query()->where('server_id', $capturedUserIdFromApi)->value('id');
-    expect($newWorkerUuid)->not->toBeNull()->toBeString();
+    $newWorkerUuid = $capturedUserIdFromApi;
 
     $assignmentResponse = $this->postJson("/api/v1/coops/{$this->coop->id}/user-assignments", [
         'assignments' => [

@@ -10,10 +10,12 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "barryvdh/laravel-dompdf": "*",
         "devkandil/notifire": "*",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "*",
-        "laravel/tinker": "^3.0"
+        "laravel/tinker": "^3.0",
+        "phpoffice/phpspreadsheet": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

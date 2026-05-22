@@ -1,38 +1,38 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Create an admin user
     $this->admin = User::factory()->create([
-        'role'     => 'admin',
+        'role' => 'admin',
         'username' => 'admin_super',
-        'name'     => 'Admin Utama',
+        'name' => 'Admin Utama',
     ]);
 
     // Create an ABK user (target for password reset)
     $this->abk = User::factory()->create([
-        'role'     => 'abk',
+        'role' => 'abk',
         'username' => 'budi_abk',
-        'name'     => 'Budi Santoso',
+        'name' => 'Budi Santoso',
     ]);
 
     // Create other role users for authorization testing
     $this->manager = User::factory()->create([
-        'role'     => 'manager',
+        'role' => 'manager',
         'username' => 'manager_budi',
-        'name'     => 'Manager Budi',
+        'name' => 'Manager Budi',
     ]);
 
     $this->pic = User::factory()->create([
-        'role'     => 'pic',
+        'role' => 'pic',
         'username' => 'pic_Ahmad',
-        'name'     => 'PIC Ahmad',
+        'name' => 'PIC Ahmad',
     ]);
 });
 
@@ -48,7 +48,7 @@ it('berhasil mereset password user oleh admin (200)', function () {
 
     // Send POST request to reset password
     $response = $this->postJson(
-        "/api/v1/users/{$this->abk->server_id}/reset-password",
+        "/api/v1/users/{$this->abk->id}/reset-password",
         ['new_password' => $newPassword]
     );
 
@@ -75,7 +75,7 @@ it('menolak reset password jika bukan admin (403)', function () {
     Sanctum::actingAs($this->manager, ['*']);
 
     $response = $this->postJson(
-        "/api/v1/users/{$this->abk->server_id}/reset-password",
+        "/api/v1/users/{$this->abk->id}/reset-password",
         ['new_password' => 'NewSecurePassword123']
     );
 
@@ -87,7 +87,7 @@ it('menolak reset password jika bukan admin (403)', function () {
     Sanctum::actingAs($this->pic, ['*']);
 
     $response = $this->postJson(
-        "/api/v1/users/{$this->abk->server_id}/reset-password",
+        "/api/v1/users/{$this->abk->id}/reset-password",
         ['new_password' => 'NewSecurePassword123']
     );
 
@@ -99,7 +99,7 @@ it('menolak reset password jika bukan admin (403)', function () {
     Sanctum::actingAs($this->abk, ['*']);
 
     $response = $this->postJson(
-        "/api/v1/users/{$this->manager->server_id}/reset-password",
+        "/api/v1/users/{$this->manager->id}/reset-password",
         ['new_password' => 'NewSecurePassword123']
     );
 
@@ -114,7 +114,7 @@ it('menolak jika password terlalu pendek (422)', function () {
 
     // Test with password that is too short (less than 8 characters)
     $response = $this->postJson(
-        "/api/v1/users/{$this->abk->server_id}/reset-password",
+        "/api/v1/users/{$this->abk->id}/reset-password",
         ['new_password' => '123']  // Only 3 characters, needs min 8
     );
 
@@ -129,7 +129,7 @@ it('menolak jika password tidak dikirim (422)', function () {
 
     // Send request without new_password field
     $response = $this->postJson(
-        "/api/v1/users/{$this->abk->server_id}/reset-password",
+        "/api/v1/users/{$this->abk->id}/reset-password",
         []  // Missing new_password
     );
 
@@ -157,7 +157,7 @@ it('menolak jika user tidak ada (404)', function () {
 it('menolak jika tidak ada token autentikasi (401)', function () {
     // Send request WITHOUT authentication token
     $response = $this->postJson(
-        "/api/v1/users/{$this->abk->server_id}/reset-password",
+        "/api/v1/users/{$this->abk->id}/reset-password",
         ['new_password' => 'NewSecurePassword123']
     );
 

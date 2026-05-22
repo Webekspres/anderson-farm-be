@@ -22,12 +22,12 @@ class UserPasswordController extends Controller
 
     /**
      * Admin-forced password reset for another user.
-     * 
+     *
      * This endpoint allows only admin users to reset passwords for any user.
      * The authenticated user must have the 'admin' role.
-     * 
-     * @param string $id The server_id of the user whose password is being reset
-     * @param AdminResetPasswordRequest $request Validated request with new_password
+     *
+     * @param  string  $id  The id (UUID) of the user whose password is being reset
+     * @param  AdminResetPasswordRequest  $request  Validated request with new_password
      * @return JsonResponse Standard response with success message
      */
     public function resetByAdmin($id, AdminResetPasswordRequest $request): JsonResponse
@@ -40,12 +40,12 @@ class UserPasswordController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only administrators can reset user passwords.',
-                'data'    => null,
+                'data' => null,
             ], 403);
         }
 
-        // Fetch the target user by server_id
-        $user = User::where('server_id', $id)->firstOrFail();
+        // Fetch the target user by id
+        $user = User::where('id', $id)->firstOrFail();
 
         // Extract and update password using the service
         $newPassword = $request->validated('new_password');
@@ -55,7 +55,7 @@ class UserPasswordController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Password untuk user '{$user->username}' berhasil direset.",
-            'data'    => null,
+            'data' => null,
         ], 200);
     }
 }
