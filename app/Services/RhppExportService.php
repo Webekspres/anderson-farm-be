@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\HarvestEntry;
 use App\Models\ProductionPeriod;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Color;
@@ -37,7 +38,6 @@ class RhppExportService
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle('Summary');
 
-            // Summary Sheet
             $row = 1;
             $sheet->setCellValue("A{$row}", 'RHPP Export Summary');
             $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(14);
@@ -51,7 +51,6 @@ class RhppExportService
             $sheet->setCellValue("B{$row}", $period->floor?->coop?->name ?? 'N/A');
             $row += 2;
 
-            // Metrics
             $sheet->setCellValue("A{$row}", 'Gross Revenue');
             $sheet->setCellValue("B{$row}", $metrics['gross_revenue']);
             $row++;
@@ -60,9 +59,10 @@ class RhppExportService
             $sheet->setCellValue("B{$row}", $metrics['total_cost']);
             $row++;
 
+            $netProfitRow = $row;
             $sheet->setCellValue("A{$row}", 'Net Profit');
             $sheet->setCellValue("B{$row}", $metrics['net_profit']);
-            $sheet->getStyle("B{$row}")->getFont()->setBold(true)->setColor(new Color('008000'));
+            $sheet->getStyle("B{$netProfitRow}")->getFont()->setBold(true)->setColor(new Color('FF008000'));
             $row++;
 
             $sheet->setCellValue("A{$row}", 'FCR (Feed Conversion Ratio)');
@@ -75,59 +75,57 @@ class RhppExportService
 
             $sheet->setCellValue("A{$row}", 'Profitability Margin (%)');
             $sheet->setCellValue("B{$row}", $metrics['profitability_margin']);
-            $row++;
 
-            // Auto-fit columns
             $sheet->getColumnDimension('A')->setAutoSize(true);
             $sheet->getColumnDimension('B')->setAutoSize(true);
 
-            // Harvest Sheet
-            $harvestSheet = $spreadsheet->createSheet('Harvests');
+            $harvestSheet = $spreadsheet->createSheet();
+            $harvestSheet->setTitle('Harvests');
             $harvestSheet->setCellValue('A1', 'Date');
             $harvestSheet->setCellValue('B1', 'Weight (kg)');
             $harvestSheet->setCellValue('C1', 'Price/kg');
             $harvestSheet->setCellValue('D1', 'Total Revenue');
+            $harvestSheet->getStyle('A1:D1')->getFont()->setBold(true);
 
             $harvestRow = 2;
             foreach ($period->dailyActivityHeaders as $header) {
                 foreach ($header->harvests as $harvest) {
-                    $harvestSheet->setCellValue("A{$harvestRow}", $header->activity_date->format('Y-m-d'));
+                    $harvestSheet->setCellValue("A{$harvestRow}", $header->date?->format('Y-m-d') ?? '');
                     $harvestSheet->setCellValue("B{$harvestRow}", $harvest->total_weight);
                     $harvestSheet->setCellValue("C{$harvestRow}", $harvest->price_per_kg);
-                    $harvestSheet->setCellValue("D{$harvestRow}", $harvest->total_weight * $harvest->price_per_kg);
+                    $harvestSheet->setCellValue("D{$harvestRow}", $this->harvestRevenue($harvest));
                     $harvestRow++;
                 }
             }
 
-            $harvestSheet->getColumnDimension('A')->setAutoSize(true);
-            $harvestSheet->getColumnDimension('B')->setAutoSize(true);
-            $harvestSheet->getColumnDimension('C')->setAutoSize(true);
-            $harvestSheet->getColumnDimension('D')->setAutoSize(true);
+            foreach (['A', 'B', 'C', 'D'] as $column) {
+                $harvestSheet->getColumnDimension($column)->setAutoSize(true);
+            }
 
-            // Costs Sheet
-            $costsSheet = $spreadsheet->createSheet('Costs');
+            $costsSheet = $spreadsheet->createSheet();
+            $costsSheet->setTitle('Costs');
             $costsSheet->setCellValue('A1', 'Description');
             $costsSheet->setCellValue('B1', 'Amount');
+            $costsSheet->getStyle('A1:B1')->getFont()->setBold(true);
 
             $costRow = 2;
             $costsSheet->setCellValue("A{$costRow}", 'Initial DOC Cost');
             $costsSheet->setCellValue("B{$costRow}", $period->initial_doc_cost ?? 0);
             $costRow++;
 
-            $costsSheet->setCellValue("A{$costRow}", 'Total Feed Cost');
+            $costsSheet->setCellValue("A{$costRow}", 'Total Feed Consumption (kg)');
             $costsSheet->setCellValue("B{$costRow}", $metrics['feed_consumption']);
             $costRow++;
 
             $costsSheet->setCellValue("A{$costRow}", 'Operating Expenses');
             $costsSheet->setCellValue("B{$costRow}", $metrics['total_cost'] - ($period->initial_doc_cost ?? 0));
-            $costRow++;
 
             $costsSheet->getColumnDimension('A')->setAutoSize(true);
             $costsSheet->getColumnDimension('B')->setAutoSize(true);
 
-            // Write to output
             $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
+            $spreadsheet->disconnectWorksheets();
         }, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -141,13 +139,11 @@ class RhppExportService
     {
         $filename = sprintf('DRAFT_RHPP_%s.pdf', $period->id);
 
-        // Load the blade view and render as HTML
         $html = view('rhpp.export-pdf', [
             'period' => $period,
             'metrics' => $metrics,
         ])->render();
 
-        // Use DOMPDF to convert HTML to PDF
         return response()->streamDownload(function () use ($html) {
             $pdf = \PDF::loadHTML($html);
             echo $pdf->stream();
@@ -155,5 +151,17 @@ class RhppExportService
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
+    }
+
+    /**
+     * @param  HarvestEntry  $harvest
+     */
+    private function harvestRevenue(object $harvest): float
+    {
+        if ($harvest->total_revenue !== null) {
+            return (float) $harvest->total_revenue;
+        }
+
+        return (float) (($harvest->total_weight ?? 0) * ($harvest->price_per_kg ?? 0));
     }
 }

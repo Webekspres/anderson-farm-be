@@ -2,11 +2,14 @@
 
 use App\Models\Coop;
 use App\Models\CoopFloor;
+use App\Models\DailyActivityHeader;
+use App\Models\HarvestEntry;
 use App\Models\ProductionPeriod;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 uses(RefreshDatabase::class);
 
@@ -34,6 +37,41 @@ it('successfully streams an excel file for authorized manager', function () {
         ->toContain('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     expect($response->headers->get('Content-Disposition'))
         ->toContain('attachment');
+});
+
+it('exports excel with harvest rows using activity date column', function () {
+    Sanctum::actingAs($this->manager, ['*']);
+
+    $header = DailyActivityHeader::factory()->create([
+        'period_id' => $this->period->id,
+        'user_id' => $this->manager->id,
+        'date' => '2026-01-15 08:00:00',
+    ]);
+
+    HarvestEntry::factory()->create([
+        'header_id' => $header->id,
+        'total_weight' => 500.5,
+        'price_per_kg' => 20000,
+        'total_revenue' => 10010000,
+    ]);
+
+    $response = $this->get('/api/v1/export/rhpp?period_id='.$this->period->id.'&format=excel');
+
+    $response->assertOk();
+
+    $tempPath = tempnam(sys_get_temp_dir(), 'rhpp_export_').'.xlsx';
+    file_put_contents($tempPath, $response->streamedContent());
+
+    $spreadsheet = IOFactory::load($tempPath);
+    $harvestSheet = $spreadsheet->getSheetByName('Harvests');
+
+    expect($harvestSheet)->not->toBeNull();
+    expect($harvestSheet->getCell('A2')->getValue())->toBe('2026-01-15');
+    expect($harvestSheet->getCell('B2')->getValue())->toBe(500.5);
+    expect($harvestSheet->getCell('D2')->getValue())->toBe(10010000.0);
+
+    @unlink($tempPath);
+    $spreadsheet->disconnectWorksheets();
 });
 
 it('successfully streams an excel file for authorized pic', function () {
