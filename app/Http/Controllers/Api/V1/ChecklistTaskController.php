@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\SyncChecklistTaskRequest;
-use App\Http\Resources\Api\V1\ChecklistTaskResource;
+use App\Http\Resources\Api\V1\ChecklistTaskSyncResource;
 use App\Models\ChecklistTask;
 use App\Models\ProductionPeriod;
 use Illuminate\Http\JsonResponse;
@@ -13,23 +13,9 @@ use Illuminate\Support\Str;
 
 class ChecklistTaskController extends Controller
 {
-    /**
-     * Melihat daftar tugas (SOP) untuk periode tertentu.
-     */
-    public function index(string $periodId): JsonResponse
+    public function __construct()
     {
-        // Validasi keberadaan periode
-        $period = ProductionPeriod::findOrFail($periodId);
-
-        $tasks = ChecklistTask::where('period_id', $period->id)
-            ->orderBy('created_at_client', 'asc')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Berhasil mengambil daftar tugas SOP.',
-            'data'    => ChecklistTaskResource::collection($tasks),
-        ]);
+        $this->middleware('auth:sanctum');
     }
 
     /**
@@ -75,7 +61,7 @@ class ChecklistTaskController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Daftar tugas SOP berhasil disinkronisasi.',
-            'data'    => ChecklistTaskResource::collection($updatedTasks),
+            'data'    => ChecklistTaskSyncResource::collection($updatedTasks),
         ], 200);
     }
 }

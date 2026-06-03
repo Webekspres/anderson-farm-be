@@ -230,13 +230,32 @@ class DailyActivitySyncController extends Controller
         Carbon $serverTimestamp,
     ): void {
         $headerId = $header->id;
+        $periodId = $header->period_id;
 
         // Force-delete existing children (bypass SoftDeletes)
         DailyDynamicLog::withTrashed()->where('header_id', $headerId)->forceDelete();
         HarvestEntry::withTrashed()->where('header_id', $headerId)->forceDelete();
         OvkUsage::withTrashed()->where('header_id', $headerId)->forceDelete();
         PhotoEvidence::withTrashed()->where('header_id', $headerId)->forceDelete();
-        DailyChecklistLog::withTrashed()->where('header_id', $headerId)->forceDelete();
+
+        DailyChecklistLog::withTrashed()
+            ->where(function ($query) use ($headerId, $periodId, $headerPayload) {
+                $query->where('header_id', $headerId);
+                if (! empty($headerPayload['checklist_logs'])) {
+                    $preChickInTaskIds = collect($headerPayload['checklist_logs'])
+                        ->filter(fn ($log) => empty($log['header_id']))
+                        ->pluck('task_id')
+                        ->all();
+                    if (! empty($preChickInTaskIds)) {
+                        $query->orWhere(function ($q) use ($periodId, $preChickInTaskIds) {
+                            $q->where('period_id', $periodId)
+                                ->whereNull('header_id')
+                                ->whereIn('task_id', $preChickInTaskIds);
+                        });
+                    }
+                }
+            })
+            ->forceDelete();
 
         // ── Bulk Insert: Dynamic Logs ──
         if (! empty($headerPayload['dynamic_logs'])) {
@@ -245,6 +264,8 @@ class DailyActivitySyncController extends Controller
                 'header_id' => $headerId,
                 'form_config_id' => $log['form_config_id'],
                 'value' => $log['value'],
+                'value_numeric' => isset($log['value_numeric']) ? (float) $log['value_numeric'] : null,
+                'value_boolean' => isset($log['value_boolean']) ? (bool) $log['value_boolean'] : null,
                 'sync_status' => 'SYNCED',
                 'created_at_client' => $this->toMysqlDateTime($log['created_at_client']),
                 'updated_at_client' => $this->toMysqlDateTime($log['updated_at_client']),
@@ -296,7 +317,7 @@ class DailyActivitySyncController extends Controller
                 'id' => $photo['id'],
                 'header_id' => $headerId,
                 'photo_path_local' => $photo['photo_path_local'],
-                'photo_url' => $photo['photo_url'],
+                'photo_url' => $photo['photo_url'] ?? null,
                 'photo_type' => $photo['photo_type'],
                 'description' => $photo['description'] ?? null,
                 'sync_status' => 'SYNCED',
@@ -312,7 +333,8 @@ class DailyActivitySyncController extends Controller
         if (! empty($headerPayload['checklist_logs'])) {
             $checklistLogs = array_map(fn (array $log) => [
                 'id' => $log['id'],
-                'header_id' => $headerId,
+                'header_id' => ! empty($log['header_id']) ? $log['header_id'] : null,
+                'period_id' => $log['period_id'] ?? $periodId,
                 'task_id' => $log['task_id'],
                 'boolean_value' => $log['boolean_value'] ?? null,
                 'text_value' => $log['text_value'] ?? null,

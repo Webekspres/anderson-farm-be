@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Coop extends Model
@@ -12,7 +12,9 @@ class Coop extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'coops';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -21,7 +23,6 @@ class Coop extends Model
         'version',
         'farm_id',
         'name',
-        'capacity',
         'coop_type',
         'note',
         'is_active',
@@ -40,7 +41,8 @@ class Coop extends Model
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
-        'deleted_at'        => 'datetime',
+        'deleted_at' => 'datetime',
+        'server_id' => 'integer',
     ];
 
     public function farm()
@@ -51,5 +53,10 @@ class Coop extends Model
     public function coopFloors()
     {
         return $this->hasMany(CoopFloor::class, 'coop_id');
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'coop_id');
     }
 }

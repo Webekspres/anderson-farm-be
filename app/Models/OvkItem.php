@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class OvkItem extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'ovk_items';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -29,7 +31,7 @@ class OvkItem extends Model
         'created_at_server',
         'updated_at_client',
         'updated_at_server',
-        'deleted_at'
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -39,6 +41,7 @@ class OvkItem extends Model
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
         'deleted_at' => 'datetime',
+        'server_id' => 'integer',
     ];
 
     public function usages()

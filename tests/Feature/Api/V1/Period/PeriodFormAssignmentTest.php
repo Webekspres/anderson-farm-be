@@ -11,6 +11,8 @@ use function Pest\Laravel\actingAs;
 use function Pest\Laravel\postJson;
 use function Pest\Laravel\getJson;
 
+const FORM_ASSIGNMENT_ENDPOINT = '/api/v1/periods/%s/form-assignments';
+
 uses(RefreshDatabase::class);
 describe('Authenticated', function () {
     beforeEach(function () {
@@ -20,31 +22,107 @@ describe('Authenticated', function () {
         $this->formConfigs = \App\Models\FormConfig::factory()->count(3)->create();
     });
 
-    describe('GET /api/v1/periods/{period_id}/form-assignments', function () {
-        it('returns assignments for the period', function () {
-            $assignments = [
-                PeriodFormAssignment::factory()->create([
-                    'period_id' => $this->period->id,
-                    'form_config_id' => $this->formConfigs[0]->id,
-                ]),
-                PeriodFormAssignment::factory()->create([
-                    'period_id' => $this->period->id,
-                    'form_config_id' => $this->formConfigs[1]->id,
-                ]),
-            ];
 
-            $response = getJson("/api/v1/periods/{$this->period->id}/form-assignments");
-            $response->assertOk();
-            $response->assertJsonStructure([
-                'success',
-                'message',
-                'data' => [['id', 'form_config_id', 'form_config']]
-            ]);
-            $response->assertJsonFragment([
-                'period_id' => $this->period->id,
-            ]);
-        });
+    it('returns active form blueprint sorted by display_order with parsed ui_metadata', function () {
+        $configHbe = FormConfig::factory()->create([
+            'category' => 'HBE',
+            'key_name' => 'hbe_panting',
+            'config_value' => json_encode([
+                'type' => 'scale',
+                'min' => 1,
+                'max' => 5,
+                'label' => 'Tingkat Panting',
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $configEquipment = FormConfig::factory()->create([
+            'category' => 'EQUIPMENT',
+            'key_name' => 'temp_sensor_1',
+            'config_value' => json_encode([
+                'type' => 'number',
+                'label' => 'Suhu Kandang',
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $second = PeriodFormAssignment::factory()->create([
+            'period_id' => $this->period->id,
+            'form_config_id' => $configEquipment->id,
+            'display_order' => 2,
+            'is_active' => true,
+        ]);
+
+        $first = PeriodFormAssignment::factory()->create([
+            'period_id' => $this->period->id,
+            'form_config_id' => $configHbe->id,
+            'display_order' => 1,
+            'is_active' => true,
+        ]);
+
+        PeriodFormAssignment::factory()->create([
+            'period_id' => $this->period->id,
+            'form_config_id' => FormConfig::factory()->create()->id,
+            'display_order' => 3,
+            'is_active' => false,
+        ]);
+
+        $response = getJson(sprintf(FORM_ASSIGNMENT_ENDPOINT, $this->period->id));
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.id', $first->id)
+            ->assertJsonPath('data.0.form_config_id', $configHbe->id)
+            ->assertJsonPath('data.0.category', 'HBE')
+            ->assertJsonPath('data.0.key_name', 'hbe_panting')
+            ->assertJsonPath('data.0.display_order', 1)
+            ->assertJsonPath('data.0.ui_metadata.type', 'scale')
+            ->assertJsonPath('data.0.ui_metadata.label', 'Tingkat Panting')
+            ->assertJsonPath('data.1.id', $second->id)
+            ->assertJsonPath('data.1.category', 'EQUIPMENT')
+            ->assertJsonPath('data.1.key_name', 'temp_sensor_1')
+            ->assertJsonPath('data.1.display_order', 2);
+
+        expect($response->json('data.0.ui_metadata'))->toBeArray()
+            ->and($response->json('data.0.ui_metadata'))->not->toBeString();
     });
+
+    it('returns empty ui_metadata when config_value json is invalid', function () {
+        $config = FormConfig::factory()->create([
+            'key_name' => 'broken_json_field',
+        ]);
+
+        DB::table('form_configs')
+            ->where('id', $config->id)
+            ->update(['config_value' => '{not-valid-json']);
+
+        $config->refresh();
+
+        PeriodFormAssignment::factory()->create([
+            'period_id' => $this->period->id,
+            'form_config_id' => $config->id,
+            'is_active' => true,
+        ]);
+
+        $response = getJson(sprintf(FORM_ASSIGNMENT_ENDPOINT, $this->period->id));
+
+        $response->assertOk()
+            ->assertJsonPath('data.0.ui_metadata', []);
+    });
+
+    it('returns 404 when period uuid does not exist', function () {
+        $response = getJson(sprintf(FORM_ASSIGNMENT_ENDPOINT, (string) Str::uuid()));
+
+        $response->assertNotFound();
+    });
+
+    it('returns 401 when unauthenticated', function () {
+        Auth::guard('sanctum')->forgetUser();
+
+        $response = getJson(sprintf(FORM_ASSIGNMENT_ENDPOINT, $this->period->id));
+
+        $response->assertUnauthorized();
+    });
+
 
     describe('POST /api/v1/periods/{period_id}/form-assignments', function () {
         it('syncs assignments and returns the new list', function () {

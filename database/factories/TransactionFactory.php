@@ -2,8 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\ProductionPeriod;
 use App\Models\Transaction;
+use App\Models\TransactionCategory;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Transaction>
@@ -18,12 +22,13 @@ class TransactionFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => (string) \Illuminate\Support\Str::uuid(),
-            'server_id' => $this->faker->unique()->randomNumber(),
+            'id' => (string) Str::uuid(),
+            'server_id' => $this->faker->unique()->numberBetween(1, 9999999999),
             'version' => 1,
-            'period_id' => \App\Models\ProductionPeriod::factory(),
-            'user_id' => \App\Models\User::factory(),
-            'category_id' => \App\Models\TransactionCategory::factory(),
+            'period_id' => ProductionPeriod::factory(),
+            'coop_id' => null,
+            'user_id' => User::factory(),
+            'category_id' => TransactionCategory::factory(),
             'harvest_id' => null,
             'salary_id' => null,
             'date' => $this->faker->dateTime(),
@@ -32,6 +37,7 @@ class TransactionFactory extends Factory
             'reference_no' => $this->faker->uuid(),
             'receipt_url' => $this->faker->optional()->url(),
             'receipt_path_local' => $this->faker->optional()->filePath(),
+            'expense_scope' => $this->faker->randomElement(['FLOOR_SPECIFIC', 'COOP_SHARED']),
             'business_status' => $this->faker->randomElement(['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED']),
             'approved_by' => null,
             'rejection_reason' => null,

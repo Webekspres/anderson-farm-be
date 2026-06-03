@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('price_references', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->integer('server_id')->unique()->nullable();
+            $table->bigInteger('server_id')->unsigned()->nullable()->unique();
             $table->integer('version')->default(1);
             $table->string('name');
             $table->float('highlight_price')->nullable();

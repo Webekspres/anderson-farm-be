@@ -14,7 +14,7 @@ return new class extends Migration
             $table->uuid('header_id')->index();
 
             $table->string('photo_path_local');
-            $table->string('photo_url');
+            $table->string('photo_url')->nullable();
             $table->string('photo_type');
             $table->text('description')->nullable();
 

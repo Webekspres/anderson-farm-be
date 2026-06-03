@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('checklist_tasks', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            // server_id auto-increment pada non-primary key biasanya butuh raw SQL atau trigger, 
+            // server_id auto-increment pada non-primary key biasanya butuh raw SQL atau trigger,
             // kita buat nullable & unique sesuai standar Prisma
-            $table->unsignedBigInteger('server_id')->unique()->nullable();
+            $table->bigInteger('server_id')->unsigned()->nullable()->unique();
             $table->integer('version')->default(1);
 
             // Business Fields
@@ -31,12 +31,12 @@ return new class extends Migration
                 'PENDING_SYNC',
                 'SYNCED',
                 'SYNC_FAILED',
-                'CONFLICT'
+                'CONFLICT',
             ])->default('PENDING_SYNC');
 
-            $table->timestamp('created_at_client')->nullable();;
+            $table->timestamp('created_at_client')->nullable();
             $table->timestamp('created_at_server')->nullable();
-            $table->timestamp('updated_at_client')->nullable();;
+            $table->timestamp('updated_at_client')->nullable();
             $table->timestamp('updated_at_server')->nullable();
             $table->softDeletes('deleted_at');
 

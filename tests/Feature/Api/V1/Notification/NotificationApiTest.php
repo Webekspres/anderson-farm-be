@@ -5,6 +5,11 @@ declare(strict_types=1);
 use App\Models\Notification;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+const NOTIFICATION_READ_ALL_ENDPOINT = '/api/v1/notifications/read-all';
 
 describe('Notification API', function (): void {
 
@@ -81,26 +86,46 @@ describe('Notification API', function (): void {
         $notificationB->refresh();
         expect($notificationB->read_at)->toBeNull();
     });
+});
 
-    it('marks all notifications read for the authenticated user', function (): void {
-        $user = User::factory()->create();
+describe('PATCH /api/v1/notifications/read-all', function (): void {
+    it('marks all unread notifications as read for the authenticated user', function (): void {
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
 
-        Notification::factory()->count(5)->create([
-            'user_id' => $user->id,
+        $unreadNotifications = Notification::factory()->count(3)->create([
+            'user_id' => $userA->id,
             'read_at' => null,
             'sync_status' => 'SYNCED',
         ]);
 
-        $this->actingAs($user)
-            ->patchJson('/api/v1/notifications/read-all')
-            ->assertOk()
-            ->assertJsonPath('success', true);
+        $otherUserUnread = Notification::factory()->create([
+            'user_id' => $userB->id,
+            'read_at' => null,
+            'sync_status' => 'SYNCED',
+        ]);
 
-        expect(
-            Notification::query()
-                ->where('user_id', $user->id)
-                ->whereNull('read_at')
-                ->count()
-        )->toBe(0);
+        $response = $this->actingAs($userA)->patchJson(NOTIFICATION_READ_ALL_ENDPOINT);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'message' => 'Semua notifikasi berhasil ditandai sebagai dibaca.',
+                'data' => null,
+            ]);
+
+        foreach ($unreadNotifications as $notification) {
+            $notification->refresh();
+            expect($notification->read_at)->not->toBeNull();
+        }
+
+        $otherUserUnread->refresh();
+        expect($otherUserUnread->read_at)->toBeNull();
+    });
+
+    it('returns 401 when unauthenticated', function (): void {
+        $response = $this->patchJson(NOTIFICATION_READ_ALL_ENDPOINT);
+
+        $response->assertUnauthorized();
     });
 });

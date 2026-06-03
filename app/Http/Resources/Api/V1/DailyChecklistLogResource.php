@@ -12,8 +12,9 @@ class DailyChecklistLogResource extends JsonResource
         return [
             'id' => $this->id,
             'header_id' => $this->header_id,
+            'period_id' => $this->period_id,
             'task_id' => $this->task_id,
-            'boolean_value' => $this->boolean_value,
+            'boolean_value' => $this->boolean_value !== null ? (bool) $this->boolean_value : null,
             'text_value' => $this->text_value,
             'notes' => $this->notes,
             'sync_status' => $this->sync_status,

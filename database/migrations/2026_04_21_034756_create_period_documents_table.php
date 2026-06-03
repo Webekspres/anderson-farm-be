@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('period_documents', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->unsignedBigInteger('server_id')->unique()->nullable();
+            $table->bigInteger('server_id')->unsigned()->nullable()->unique();
             $table->integer('version')->default(1);
 
             // Business Fields
@@ -27,7 +27,7 @@ return new class extends Migration
                 'PENDING_SYNC',
                 'SYNCED',
                 'SYNC_FAILED',
-                'CONFLICT'
+                'CONFLICT',
             ])->default('PENDING_SYNC');
 
             $table->timestamp('created_at_client')->nullable();

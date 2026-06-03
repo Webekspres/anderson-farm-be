@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 // If Transaction model exists, import it. Otherwise, comment out the relation.
 // use App\Models\Transaction;
@@ -16,7 +15,9 @@ class TransactionCategory extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'transaction_categories';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -31,7 +32,7 @@ class TransactionCategory extends Model
         'created_at_server',
         'updated_at_client',
         'updated_at_server',
-        'deleted_at'
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -41,11 +42,11 @@ class TransactionCategory extends Model
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
         'deleted_at' => 'datetime',
+        'server_id' => 'integer',
     ];
 
-    // Uncomment if Transaction model exists
-    // public function transactions()
-    // {
-    //     return $this->hasMany(Transaction::class, 'category_id');
-    // }
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'category_id');
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\EmployeeSalaryFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,15 +10,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EmployeeSalary extends Model
 {
-    /** @use HasFactory<\Database\Factories\EmployeeSalaryFactory> */
+    /** @use HasFactory<EmployeeSalaryFactory> */
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'employee_salaries';
 
     // Gunakan kolom timestamp custom untuk offline-first.
     const CREATED_AT = 'created_at_client';
+
     const UPDATED_AT = 'updated_at_client';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -44,6 +48,7 @@ class EmployeeSalary extends Model
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
         'deleted_at' => 'datetime',
+        'server_id' => 'integer',
     ];
 
     public function period()

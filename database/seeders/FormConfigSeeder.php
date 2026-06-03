@@ -2,10 +2,12 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\CoopEquipment;
+use App\Models\CoopFormAssignment;
 use App\Models\FormConfig;
 use App\Models\PeriodFormAssignment;
-use App\Models\CoopFormAssignment;
+use App\Models\ProductionPeriod;
+use Illuminate\Database\Seeder;
 
 class FormConfigSeeder extends Seeder
 {
@@ -22,21 +24,31 @@ class FormConfigSeeder extends Seeder
 
         // 2. Dummy assignments ke period/coop
         // Cek data period dan coop_equipment valid
-        $periodId = \App\Models\ProductionPeriod::query()->value('id');
-        $coopEquipmentId = \App\Models\CoopEquipment::query()->value('id');
+        $periodId = ProductionPeriod::query()->value('id');
+        $coopEquipmentId = CoopEquipment::query()->value('id');
 
         foreach ($formConfigs as $formConfig) {
             if ($periodId) {
-                PeriodFormAssignment::factory()->create([
-                    'form_config_id' => $formConfig->id,
-                    'period_id' => $periodId,
-                ]);
+                $existsPeriod = PeriodFormAssignment::where('period_id', $periodId)
+                    ->where('form_config_id', $formConfig->id)
+                    ->exists();
+                if (! $existsPeriod) {
+                    PeriodFormAssignment::factory()->create([
+                        'form_config_id' => $formConfig->id,
+                        'period_id' => $periodId,
+                    ]);
+                }
             }
             if ($coopEquipmentId) {
-                CoopFormAssignment::factory()->create([
-                    'form_config_id' => $formConfig->id,
-                    'coop_equipment_id' => $coopEquipmentId,
-                ]);
+                $existsCoop = CoopFormAssignment::where('coop_equipment_id', $coopEquipmentId)
+                    ->where('form_config_id', $formConfig->id)
+                    ->exists();
+                if (! $existsCoop) {
+                    CoopFormAssignment::factory()->create([
+                        'form_config_id' => $formConfig->id,
+                        'coop_equipment_id' => $coopEquipmentId,
+                    ]);
+                }
             }
         }
         // Tambahkan ke DatabaseSeeder.php:

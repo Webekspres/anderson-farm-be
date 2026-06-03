@@ -12,9 +12,13 @@ class PhotoEvidence extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'photo_evidences';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
+
     protected $guarded = [];
 
     protected $casts = [
@@ -22,6 +26,7 @@ class PhotoEvidence extends Model
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
+        'server_id' => 'integer',
     ];
 
     public function header()

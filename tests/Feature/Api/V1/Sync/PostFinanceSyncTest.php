@@ -21,13 +21,13 @@ uses(RefreshDatabase::class);
  */
 function createActivePeriod(string $picId): ProductionPeriod
 {
-    $coop  = Coop::factory()->create();
+    $coop = Coop::factory()->create();
     $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
 
     return ProductionPeriod::factory()->create([
         'floor_id' => $floor->id,
-        'pic_id'   => $picId,
-        'status'   => 'active',
+        'pic_id' => $picId,
+        'status' => 'active',
     ]);
 }
 
@@ -37,19 +37,20 @@ function createActivePeriod(string $picId): ProductionPeriod
 function buildTransactionPayload(
     string $periodId,
     string $categoryId,
-    array  $overrides = [],
+    array $overrides = [],
 ): array {
     return array_merge([
-        'id'                       => Str::uuid()->toString(),
-        'period_id'                => $periodId,
-        'category_id'              => $categoryId,
-        'transaction_date'         => '2026-04-27T10:00:00Z',
-        'type'                     => 'EXPENSE',
-        'amount'                   => 150000.00,
-        'description'              => 'Beli solar genset',
+        'id' => Str::uuid()->toString(),
+        'period_id' => $periodId,
+        'category_id' => $categoryId,
+        'transaction_date' => '2026-04-27T10:00:00Z',
+        'type' => 'EXPENSE',
+        'amount' => 150000.00,
+        'description' => 'Beli solar genset',
         'receipt_image_path_local' => '/images/receipts/xxx.jpg',
-        'created_at_client'        => '2026-04-27T10:05:00Z',
-        'updated_at_client'        => '2026-04-27T10:05:00Z',
+        'expense_scope' => 'FLOOR_SPECIFIC',
+        'created_at_client' => '2026-04-27T10:05:00Z',
+        'updated_at_client' => '2026-04-27T10:05:00Z',
     ], $overrides);
 }
 
@@ -62,8 +63,8 @@ describe('POST /api/v1/sync/finances', function () {
     // ── Happy Path ────────────────────────────────────────────
 
     it('allows PIC with valid assignment to push EXPENSE — SUCCESS', function () {
-        $pic      = User::factory()->create(['role' => 'pic']);
-        $period   = createActivePeriod($pic->id);
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createActivePeriod($pic->id);
         $category = TransactionCategory::factory()->create(['type' => 'EXPENSE']);
 
         // Buat assignment PIC ke coop yang dimiliki floor period ini
@@ -75,7 +76,7 @@ describe('POST /api/v1/sync/finances', function () {
         $transactionId = Str::uuid()->toString();
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload($period->id, $category->id, ['id' => $transactionId]),
             ],
         ];
@@ -97,23 +98,23 @@ describe('POST /api/v1/sync/finances', function () {
         $response->assertJsonPath('data.sync_results.0.status', 'SUCCESS');
 
         $this->assertDatabaseHas('transactions', [
-            'id'          => $transactionId,
+            'id' => $transactionId,
             'sync_status' => 'SYNCED',
-            'user_id'     => $pic->id,
+            'user_id' => $pic->id,
         ]);
     });
 
     it('allows manager to push EXPENSE with global access (no assignment needed) — SUCCESS', function () {
-        $manager  = User::factory()->create(['role' => 'manager']);
-        $pic      = User::factory()->create(['role' => 'pic']);
-        $period   = createActivePeriod($pic->id);
+        $manager = User::factory()->create(['role' => 'manager']);
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createActivePeriod($pic->id);
         $category = TransactionCategory::factory()->create(['type' => 'EXPENSE']);
 
         // Manager tidak perlu assignment ke coop
 
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload($period->id, $category->id),
             ],
         ];
@@ -131,7 +132,7 @@ describe('POST /api/v1/sync/finances', function () {
 
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload(Str::uuid()->toString(), Str::uuid()->toString()),
             ],
         ];
@@ -147,7 +148,7 @@ describe('POST /api/v1/sync/finances', function () {
 
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload(Str::uuid()->toString(), Str::uuid()->toString()),
             ],
         ];
@@ -160,8 +161,8 @@ describe('POST /api/v1/sync/finances', function () {
     // ── Business Logic ───────────────────────────────────────
 
     it('returns FAILED status for items with type INCOME', function () {
-        $pic      = User::factory()->create(['role' => 'pic']);
-        $period   = createActivePeriod($pic->id);
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createActivePeriod($pic->id);
         $category = TransactionCategory::factory()->create(['type' => 'INCOME']);
 
         CoopUserAssignment::factory()->create([
@@ -171,7 +172,7 @@ describe('POST /api/v1/sync/finances', function () {
 
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload($period->id, $category->id, ['type' => 'INCOME']),
             ],
         ];
@@ -184,19 +185,19 @@ describe('POST /api/v1/sync/finances', function () {
     });
 
     it('returns FAILED status when period is not active (completed)', function () {
-        $pic      = User::factory()->create(['role' => 'pic']);
-        $coop     = Coop::factory()->create();
-        $floor    = CoopFloor::factory()->create(['coop_id' => $coop->id]);
-        $period   = ProductionPeriod::factory()->create([
+        $pic = User::factory()->create(['role' => 'pic']);
+        $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
+        $period = ProductionPeriod::factory()->create([
             'floor_id' => $floor->id,
-            'pic_id'   => $pic->id,
-            'status'   => 'completed', // Period sudah ditutup
+            'pic_id' => $pic->id,
+            'status' => 'completed', // Period sudah ditutup
         ]);
         $category = TransactionCategory::factory()->create(['type' => 'EXPENSE']);
 
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload($period->id, $category->id),
             ],
         ];
@@ -209,15 +210,15 @@ describe('POST /api/v1/sync/finances', function () {
     });
 
     it('returns FAILED when PIC has no coop assignment for the period', function () {
-        $pic      = User::factory()->create(['role' => 'pic']);
-        $period   = createActivePeriod($pic->id);
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createActivePeriod($pic->id);
         $category = TransactionCategory::factory()->create(['type' => 'EXPENSE']);
 
         // TIDAK membuat CoopUserAssignment untuk pic ini
 
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload($period->id, $category->id),
             ],
         ];
@@ -232,8 +233,8 @@ describe('POST /api/v1/sync/finances', function () {
     // ── Idempotency ──────────────────────────────────────────
 
     it('only updates receipt_path_local when existing transaction is APPROVED', function () {
-        $pic      = User::factory()->create(['role' => 'pic']);
-        $period   = createActivePeriod($pic->id);
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createActivePeriod($pic->id);
         $category = TransactionCategory::factory()->create(['type' => 'EXPENSE']);
 
         CoopUserAssignment::factory()->create([
@@ -242,30 +243,30 @@ describe('POST /api/v1/sync/finances', function () {
         ]);
 
         // Buat transaksi yang sudah APPROVED di server dengan amount asli
-        $originalAmount   = 200000.00;
-        $transactionId    = Str::uuid()->toString();
+        $originalAmount = 200000.00;
+        $transactionId = Str::uuid()->toString();
         $existingTransaction = Transaction::create([
-            'id'                 => $transactionId,
-            'period_id'          => $period->id,
-            'user_id'            => $pic->id,
-            'category_id'        => $category->id,
-            'date'               => now(),
-            'amount'             => $originalAmount,
-            'business_status'    => 'APPROVED', // Sudah disetujui
-            'sync_status'        => 'SYNCED',
+            'id' => $transactionId,
+            'period_id' => $period->id,
+            'user_id' => $pic->id,
+            'category_id' => $category->id,
+            'date' => now(),
+            'amount' => $originalAmount,
+            'business_status' => 'APPROVED', // Sudah disetujui
+            'sync_status' => 'SYNCED',
             'receipt_path_local' => '/old/path.jpg',
-            'created_at_client'  => now(),
-            'updated_at_client'  => now(),
+            'created_at_client' => now(),
+            'updated_at_client' => now(),
         ]);
 
         // Mobile mengirim ulang dengan amount berbeda dan path baru
         $newReceiptPath = '/new/receipt/path.jpg';
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload($period->id, $category->id, [
-                    'id'                       => $transactionId,
-                    'amount'                   => 999999.00, // Amount berbeda, harus diabaikan
+                    'id' => $transactionId,
+                    'amount' => 999999.00, // Amount berbeda, harus diabaikan
                     'receipt_image_path_local' => $newReceiptPath,
                 ]),
             ],
@@ -278,15 +279,15 @@ describe('POST /api/v1/sync/finances', function () {
 
         // Amount harus tetap TIDAK berubah
         $this->assertDatabaseHas('transactions', [
-            'id'                 => $transactionId,
-            'amount'             => $originalAmount,
+            'id' => $transactionId,
+            'amount' => $originalAmount,
             'receipt_path_local' => $newReceiptPath, // Path boleh berubah
         ]);
     });
 
     it('successfully upserts on re-sync for non-APPROVED transaction', function () {
-        $pic      = User::factory()->create(['role' => 'pic']);
-        $period   = createActivePeriod($pic->id);
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createActivePeriod($pic->id);
         $category = TransactionCategory::factory()->create(['type' => 'EXPENSE']);
 
         CoopUserAssignment::factory()->create([
@@ -299,9 +300,9 @@ describe('POST /api/v1/sync/finances', function () {
         // Sync pertama
         $this->actingAs($pic)->postJson('/api/v1/sync/finances', [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload($period->id, $category->id, [
-                    'id'     => $transactionId,
+                    'id' => $transactionId,
                     'amount' => 50000.00,
                 ]),
             ],
@@ -312,9 +313,9 @@ describe('POST /api/v1/sync/finances', function () {
         // Sync kedua — update amount (status masih DRAFT)
         $response = $this->actingAs($pic)->postJson('/api/v1/sync/finances', [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload($period->id, $category->id, [
-                    'id'     => $transactionId,
+                    'id' => $transactionId,
                     'amount' => 75000.00, // Update amount
                 ]),
             ],
@@ -332,7 +333,7 @@ describe('POST /api/v1/sync/finances', function () {
     it('returns 401 when not authenticated', function () {
         $response = $this->postJson('/api/v1/sync/finances', [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [],
+            'transactions' => [],
         ]);
 
         $response->assertUnauthorized();
@@ -352,12 +353,12 @@ describe('POST /api/v1/sync/finances', function () {
     });
 
     it('returns 422 when category_id does not exist in DB', function () {
-        $pic    = User::factory()->create(['role' => 'pic']);
+        $pic = User::factory()->create(['role' => 'pic']);
         $period = createActivePeriod($pic->id);
 
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
-            'transactions'   => [
+            'transactions' => [
                 buildTransactionPayload($period->id, Str::uuid()->toString()), // category tidak ada
             ],
         ];
@@ -366,5 +367,44 @@ describe('POST /api/v1/sync/finances', function () {
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors('transactions.0.category_id');
+    });
+
+    it('returns 422 when expense_scope is invalid', function () {
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createActivePeriod($pic->id);
+        $category = TransactionCategory::factory()->create(['type' => 'EXPENSE']);
+
+        $payload = [
+            'sync_timestamp' => now()->toIso8601String(),
+            'transactions' => [
+                buildTransactionPayload($period->id, $category->id, ['expense_scope' => 'INVALID_SCOPE']),
+            ],
+        ];
+
+        $response = $this->actingAs($pic)->postJson('/api/v1/sync/finances', $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('transactions.0.expense_scope');
+    });
+
+    it('returns 422 when expense_scope is COOP_SHARED but coop_id is missing or invalid', function () {
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createActivePeriod($pic->id);
+        $category = TransactionCategory::factory()->create(['type' => 'EXPENSE']);
+
+        $payload = [
+            'sync_timestamp' => now()->toIso8601String(),
+            'transactions' => [
+                buildTransactionPayload($period->id, $category->id, [
+                    'expense_scope' => 'COOP_SHARED',
+                    'coop_id' => null,
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($pic)->postJson('/api/v1/sync/finances', $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('transactions.0.coop_id');
     });
 });

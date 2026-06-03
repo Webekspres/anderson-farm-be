@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\ProductionPeriod;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -40,6 +39,7 @@ class ChecklistTask extends Model
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
+        'server_id' => 'integer',
     ];
 
     /**

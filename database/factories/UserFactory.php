@@ -26,7 +26,7 @@ class UserFactory extends Factory
     {
         return [
             'id' => fake()->uuid(),
-            'server_id' => fake()->unique()->numberBetween(1, 999999),
+            'server_id' => fake()->unique()->numberBetween(1, 9999999999),
             'username' => fake()->unique()->userName(),
             'password_hash' => static::$password ??= Hash::make('password123'),
             'name' => fake()->name(),

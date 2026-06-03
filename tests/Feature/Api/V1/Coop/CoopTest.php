@@ -11,7 +11,6 @@ use Laravel\Sanctum\Sanctum;
 
 describe('Coop API', function () {
 
-
     beforeEach(function () {
         $this->user = User::factory()->create();
         Sanctum::actingAs($this->user, ['*']);
@@ -27,7 +26,6 @@ describe('Coop API', function () {
                     'uuid',
                     'farm_id',
                     'name',
-                    'capacity',
                     'coop_type',
                     'note',
                     'is_active',
@@ -36,10 +34,10 @@ describe('Coop API', function () {
                     'created_at_server',
                     'updated_at_client',
                     'updated_at_server',
-                    'deleted_at'
-                ]
+                    'deleted_at',
+                ],
             ],
-            'meta' => ['current_page', 'last_page', 'per_page', 'total']
+            'meta' => ['current_page', 'last_page', 'per_page', 'total'],
         ]);
     });
 
@@ -48,7 +46,6 @@ describe('Coop API', function () {
         $payload = [
             'farm_id' => $farm->id,
             'name' => 'Kandang A',
-            'capacity' => 2000,
             'coop_type' => 'CH_PLASTIC_SLAT',
             'note' => 'Catatan',
             'is_active' => true,
@@ -63,23 +60,22 @@ describe('Coop API', function () {
 
     it('can show a coop', function () {
         $coop = Coop::factory()->create();
-        $response = $this->getJson('/api/v1/coops/' . $coop->id);
+        $response = $this->getJson('/api/v1/coops/'.$coop->id);
         $response->assertOk()->assertJsonPath('data.uuid', $coop->id);
     });
 
     it('can update a coop', function () {
         $coop = Coop::factory()->create();
-        $response = $this->patchJson('/api/v1/coops/' . $coop->id, [
+        $response = $this->patchJson('/api/v1/coops/'.$coop->id, [
             'name' => 'Kandang B',
-            'capacity' => 3000
         ]);
         $response->assertOk()->assertJsonPath('data.name', 'Kandang B');
-        $this->assertDatabaseHas('coops', ['id' => $coop->id, 'name' => 'Kandang B', 'capacity' => 3000]);
+        $this->assertDatabaseHas('coops', ['id' => $coop->id, 'name' => 'Kandang B']);
     });
 
     it('can delete a coop', function () {
         $coop = Coop::factory()->create();
-        $response = $this->deleteJson('/api/v1/coops/' . $coop->id);
+        $response = $this->deleteJson('/api/v1/coops/'.$coop->id);
         $response->assertOk()->assertJson(['message' => 'Deleted successfully']);
         $this->assertSoftDeleted('coops', ['id' => $coop->id]);
     });

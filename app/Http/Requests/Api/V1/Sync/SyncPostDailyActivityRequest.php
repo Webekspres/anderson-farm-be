@@ -38,6 +38,8 @@ class SyncPostDailyActivityRequest extends FormRequest
             'headers.*.dynamic_logs.*.id' => ['required', 'uuid'],
             'headers.*.dynamic_logs.*.form_config_id' => ['required', 'uuid'],
             'headers.*.dynamic_logs.*.value' => ['required', 'string'],
+            'headers.*.dynamic_logs.*.value_numeric' => ['nullable', 'numeric'],
+            'headers.*.dynamic_logs.*.value_boolean' => ['nullable', 'boolean'],
             'headers.*.dynamic_logs.*.created_at_client' => ['required', 'date'],
             'headers.*.dynamic_logs.*.updated_at_client' => ['required', 'date'],
 
@@ -67,7 +69,7 @@ class SyncPostDailyActivityRequest extends FormRequest
             'headers.*.photos' => ['nullable', 'array'],
             'headers.*.photos.*.id' => ['required', 'uuid'],
             'headers.*.photos.*.photo_path_local' => ['required', 'string', 'max:500'],
-            'headers.*.photos.*.photo_url' => ['required', 'string', 'max:500'],
+            'headers.*.photos.*.photo_url' => ['nullable', 'string', 'url', 'max:500'],
             'headers.*.photos.*.photo_type' => ['required', 'string', 'max:50'],
             'headers.*.photos.*.description' => ['nullable', 'string'],
             'headers.*.photos.*.created_at_client' => ['required', 'date'],
@@ -76,6 +78,8 @@ class SyncPostDailyActivityRequest extends FormRequest
             // ── Checklist Logs ──
             'headers.*.checklist_logs' => ['nullable', 'array'],
             'headers.*.checklist_logs.*.id' => ['required', 'uuid'],
+            'headers.*.checklist_logs.*.header_id' => ['nullable', 'uuid', 'exists:daily_activity_headers,id'],
+            'headers.*.checklist_logs.*.period_id' => ['nullable', 'uuid', 'exists:production_periods,id'],
             'headers.*.checklist_logs.*.task_id' => ['required', 'uuid'],
             'headers.*.checklist_logs.*.boolean_value' => ['nullable', 'boolean'],
             'headers.*.checklist_logs.*.text_value' => ['nullable', 'string'],

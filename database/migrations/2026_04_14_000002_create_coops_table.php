@@ -14,7 +14,6 @@ return new class extends Migration
             $table->integer('version')->default(1);
             $table->uuid('farm_id');
             $table->string('name');
-            $table->integer('capacity');
             $table->enum('coop_type', ['CH_POSTAL', 'CH_PLASTIC_SLAT', 'CH_MULTI_TIER']);
             $table->text('note')->nullable();
             $table->boolean('is_active')->default(true);
@@ -30,6 +29,7 @@ return new class extends Migration
             $table->index('farm_id');
         });
     }
+
     public function down(): void
     {
         Schema::dropIfExists('coops');

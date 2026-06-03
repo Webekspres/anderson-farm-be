@@ -12,8 +12,11 @@ class DailyDynamicLog extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
+
     protected $guarded = [];
 
     protected $casts = [
@@ -21,6 +24,8 @@ class DailyDynamicLog extends Model
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
+        'value_numeric' => 'double',
+        'value_boolean' => 'boolean',
     ];
 
     public function header()

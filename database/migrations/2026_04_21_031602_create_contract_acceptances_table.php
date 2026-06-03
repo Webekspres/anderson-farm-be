@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('contract_acceptances', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->unsignedBigInteger('server_id')->unique()->nullable();
+            $table->bigInteger('server_id')->unsigned()->nullable()->unique();
             $table->integer('version')->default(1);
 
             // Business Fields
@@ -18,6 +18,8 @@ return new class extends Migration
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamp('accepted_at');
             $table->string('device_id')->nullable();
+            $table->double('current_loan_accumulated')->default(0);
+            $table->double('remaining_loan_limit')->default(3000000.0);
 
             // Offline-first Fields
             $table->enum('sync_status', [
@@ -25,7 +27,7 @@ return new class extends Migration
                 'PENDING_SYNC',
                 'SYNCED',
                 'SYNC_FAILED',
-                'CONFLICT'
+                'CONFLICT',
             ])->default('PENDING_SYNC');
 
             $table->timestamp('created_at_client')->nullable();

@@ -70,6 +70,7 @@ class User extends Authenticatable
             'updated_at_client' => 'datetime',
             'updated_at_server' => 'datetime',
             'is_active' => 'boolean',
+            'server_id' => 'integer',
         ];
     }
 

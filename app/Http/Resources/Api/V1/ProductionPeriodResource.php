@@ -18,11 +18,11 @@ class ProductionPeriodResource extends JsonResource
             'id' => $this->id,
             'period_code' => $this->period_code,
             'status' => $this->status,
-            'floor' => $this->whenLoaded('floor', fn() => [
+            'floor' => $this->whenLoaded('floor', fn () => [
                 'id' => $this->floor->id,
                 'name' => $this->floor->name,
             ]),
-            'pic' => $this->whenLoaded('pic', fn() => [
+            'pic' => $this->whenLoaded('pic', fn () => [
                 'id' => $this->pic->id,
                 'name' => $this->pic->name,
             ]),
@@ -37,6 +37,7 @@ class ProductionPeriodResource extends JsonResource
             'updated_at_client' => optional($this->updated_at_client)->toIso8601String(),
             'updated_at_server' => optional($this->updated_at_server)->toIso8601String(),
             'deleted_at' => optional($this->deleted_at)->toIso8601String(),
+            'contracts' => ContractAbkResource::collection($this->whenLoaded('contracts')),
         ];
     }
 }

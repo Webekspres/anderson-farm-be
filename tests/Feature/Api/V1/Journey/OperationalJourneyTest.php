@@ -104,6 +104,7 @@ it('successfully syncs finances and maintenances and strictly isolates data betw
                 'amount' => 50000,
                 'description' => 'Beli Sapu Lidi',
                 'receipt_image_path_local' => null,
+                'expense_scope' => 'FLOOR_SPECIFIC',
                 'created_at_client' => now()->toIso8601String(),
                 'updated_at_client' => now()->toIso8601String(),
             ],

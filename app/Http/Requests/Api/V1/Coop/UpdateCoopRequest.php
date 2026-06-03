@@ -16,7 +16,6 @@ class UpdateCoopRequest extends FormRequest
         return [
             'farm_id' => ['sometimes', 'uuid', 'exists:farms,id'],
             'name' => ['sometimes', 'string', 'max:255'],
-            'capacity' => ['sometimes', 'integer', 'min:1'],
             'floor' => ['sometimes', 'integer', 'min:1'],
             'coop_type' => ['sometimes', 'in:CH_POSTAL,CH_PLASTIC_SLAT,CH_MULTI_TIER'],
             'note' => ['nullable', 'string'],

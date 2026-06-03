@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->integer('server_id')->unique()->nullable();
+            $table->bigInteger('server_id')->unsigned()->nullable()->unique();
             $table->integer('version')->default(1);
-            
+
             $table->uuid('period_id');
+            $table->uuid('coop_id')->nullable();
             $table->uuid('user_id');
             $table->uuid('category_id');
             $table->uuid('harvest_id')->nullable();
@@ -27,12 +28,14 @@ return new class extends Migration
             $table->string('reference_no')->nullable();
             $table->string('receipt_url')->nullable();
             $table->string('receipt_path_local')->nullable();
-            
+
+            $table->enum('expense_scope', ['FLOOR_SPECIFIC', 'COOP_SHARED'])->default('FLOOR_SPECIFIC');
+
             $table->enum('business_status', ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED'])->default('DRAFT');
             $table->uuid('approved_by')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->uuid('linked_transaction_id')->nullable();
-            
+
             $table->enum('sync_status', ['LOCAL_SAVED', 'PENDING_SYNC', 'SYNCED', 'SYNC_FAILED', 'CONFLICT'])->default('PENDING_SYNC');
             $table->dateTime('created_at_client');
             $table->dateTime('created_at_server')->nullable();
@@ -40,16 +43,18 @@ return new class extends Migration
             $table->dateTime('updated_at_server')->nullable();
             $table->softDeletes('deleted_at');
             $table->text('sync_metadata')->nullable();
-            
+
             $table->foreign('linked_transaction_id')->references('id')->on('transactions')->onDelete('set null');
             $table->foreign('period_id')->references('id')->on('production_periods')->onDelete('cascade');
+            $table->foreign('coop_id')->references('id')->on('coops')->onDelete('set null');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('category_id')->references('id')->on('transaction_categories')->onDelete('cascade');
             $table->foreign('harvest_id')->references('id')->on('harvest_entries')->onDelete('set null');
             $table->foreign('salary_id')->references('id')->on('employee_salaries')->onDelete('set null');
             $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');
-            
+
             $table->index('period_id');
+            $table->index('coop_id');
             $table->index('category_id');
             $table->index('harvest_id');
             $table->index('salary_id');

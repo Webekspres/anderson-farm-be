@@ -16,7 +16,6 @@ class StoreCoopRequest extends FormRequest
         return [
             'farm_id' => ['required', 'uuid', 'exists:farms,id'],
             'name' => ['required', 'string', 'max:255'],
-            'capacity' => ['required', 'integer', 'min:1'],
             'floor' => ['nullable', 'integer', 'min:1'],
             'coop_type' => ['required', 'in:CH_POSTAL,CH_PLASTIC_SLAT,CH_MULTI_TIER'],
             'note' => ['nullable', 'string'],

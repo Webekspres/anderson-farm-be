@@ -1,6 +1,7 @@
 {
     "agents": [
         "cursor",
+        "gemini",
         "copilot"
     ],
     "cloud": false,

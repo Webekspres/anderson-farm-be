@@ -16,8 +16,9 @@ class ContractAbkResource extends JsonResource
             'file_url' => $this->file_url,
             'uploaded_by' => $this->uploaded_by,
             // Opsional: muat relasi jika diminta
-            'uploader_name' => $this->whenLoaded('uploader', fn() => $this->uploader->name),
+            'uploader_name' => $this->whenLoaded('uploader', fn () => $this->uploader->name),
             'created_at' => $this->created_at_client?->toIso8601String(),
+            'acceptances' => ContractAcceptanceResource::collection($this->whenLoaded('acceptances')),
         ];
     }
 }

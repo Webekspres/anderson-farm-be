@@ -16,11 +16,13 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
         $this->call([
-            UserSeeder::class,
             AreaSeeder::class,
             FarmSeeder::class,
             CoopSeeder::class,
             CoopFloorSeeder::class,
+            UserSeeder::class,
+            ProductionPeriodSeeder::class,
+            CoopUserAssignmentSeeder::class,
             EquipmentTypeSeeder::class,
             TransactionCategorySeeder::class,
             ReportTemplateSeeder::class,
@@ -30,9 +32,7 @@ class DatabaseSeeder extends Seeder
             OvkItemSeeder::class,
             PriceReferenceSeeder::class,
             FormConfigSeeder::class,
-            ProductionPeriodSeeder::class,
             CoopEquipmentSeeder::class,
-            CoopUserAssignmentSeeder::class,
             EquipmentTypeFormConfigSeeder::class,
             PeriodFormAssignmentSeeder::class,
             ChecklistTaskSeeder::class,

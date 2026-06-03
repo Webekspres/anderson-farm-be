@@ -12,19 +12,28 @@ class DailyChecklistLog extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
+
     protected $guarded = [];
 
     protected $casts = [
         'boolean_value' => 'boolean',
         'created_at_client' => 'datetime',
         'updated_at_client' => 'datetime',
+        'server_id' => 'integer',
     ];
 
     public function header()
     {
         return $this->belongsTo(DailyActivityHeader::class, 'header_id');
+    }
+
+    public function period()
+    {
+        return $this->belongsTo(ProductionPeriod::class, 'period_id');
     }
 
     public function task()

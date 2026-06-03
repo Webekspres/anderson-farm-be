@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductionPeriod extends Model
@@ -37,7 +37,9 @@ class ProductionPeriod extends Model
     }
 
     protected $table = 'production_periods';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -62,14 +64,15 @@ class ProductionPeriod extends Model
     ];
 
     protected $casts = [
-        'start_date'       => 'date',
-        'end_date'         => 'date',
-        'closed_at'        => 'datetime',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'closed_at' => 'datetime',
         'created_at_client' => 'datetime',
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
-        'deleted_at'       => 'datetime',
+        'deleted_at' => 'datetime',
+        'server_id' => 'integer',
     ];
 
     public function floor()
@@ -85,6 +88,11 @@ class ProductionPeriod extends Model
     public function dailyActivityHeaders()
     {
         return $this->hasMany(DailyActivityHeader::class, 'period_id');
+    }
+
+    public function dailyChecklistLogs()
+    {
+        return $this->hasMany(DailyChecklistLog::class, 'period_id');
     }
 
     public function rhpp()

@@ -24,6 +24,8 @@ class TransactionResource extends JsonResource
             'reference_no' => $this->reference_no,
             'receipt_url' => $this->receipt_url,
             'receipt_path_local' => $this->receipt_path_local,
+            'expense_scope' => $this->expense_scope,
+            'coop_id' => $this->coop_id,
             'business_status' => $this->business_status,
             'approved_by' => $this->approved_by,
             'rejection_reason' => $this->rejection_reason,

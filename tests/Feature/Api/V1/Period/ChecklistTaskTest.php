@@ -3,47 +3,91 @@
 use App\Models\ChecklistTask;
 use App\Models\ProductionPeriod;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
-describe('Authenticated', function () {
+const CHECKLIST_TASK_ENDPOINT = '/api/v1/periods/%s/checklist-tasks';
+
+describe('GET /api/v1/periods/{period_id}/checklist-tasks', function () {
     beforeEach(function () {
-        // Siapkan data dasar untuk testing
         $this->user = User::factory()->create();
         $this->period = ProductionPeriod::factory()->create();
-
-        // Otentikasi otomatis sebelum tiap test
         Sanctum::actingAs($this->user);
     });
 
-    it('can fetch checklist tasks for a period', function () {
-        // Siapkan 3 data dummy
-        ChecklistTask::factory()->count(3)->create([
+    it('returns active checklist tasks with erd business fields', function () {
+        $activeTask = ChecklistTask::factory()->create([
             'period_id' => $this->period->id,
+            'task_name' => 'Pembakaran belerang 15kg',
+            'task_type' => 'BOOLEAN',
+            'description' => 'Bakar belerang merata per lantai sebelum DOC masuk.',
+            'is_active' => true,
         ]);
 
-        $response = $this->getJson("/api/v1/periods/{$this->period->id}/checklist-tasks");
+        ChecklistTask::factory()->create([
+            'period_id' => $this->period->id,
+            'task_name' => 'Tugas nonaktif',
+            'is_active' => false,
+        ]);
 
-        $response->assertStatus(200)
+        $response = $this->getJson(sprintf(CHECKLIST_TASK_ENDPOINT, $this->period->id));
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(1, 'data')
             ->assertJsonStructure([
                 'success',
                 'message',
                 'data' => [
-                    '*' => ['id', 'task_name', 'task_type', 'is_active']
-                ]
-            ]);
+                    [
+                        'id',
+                        'period_id',
+                        'task_name',
+                        'task_type',
+                        'description',
+                        'is_active',
+                    ],
+                ],
+            ])
+            ->assertJsonPath('data.0.id', $activeTask->id)
+            ->assertJsonPath('data.0.period_id', $this->period->id)
+            ->assertJsonPath('data.0.task_name', 'Pembakaran belerang 15kg')
+            ->assertJsonPath('data.0.task_type', 'BOOLEAN')
+            ->assertJsonPath('data.0.description', 'Bakar belerang merata per lantai sebelum DOC masuk.')
+            ->assertJsonPath('data.0.is_active', true);
+    });
 
-        expect($response->json('data'))->toHaveCount(3);
+    it('returns 404 when period uuid does not exist', function () {
+        $response = $this->getJson(sprintf(CHECKLIST_TASK_ENDPOINT, (string) Str::uuid()));
+
+        $response->assertNotFound();
+    });
+
+    it('returns 401 when unauthenticated', function () {
+        Auth::guard('sanctum')->forgetUser();
+
+        $response = $this->getJson(sprintf(CHECKLIST_TASK_ENDPOINT, $this->period->id));
+
+        $response->assertUnauthorized();
+    });
+});
+
+describe('POST /api/v1/periods/{period_id}/checklist-tasks', function () {
+    beforeEach(function () {
+        $this->user = User::factory()->create();
+        $this->period = ProductionPeriod::factory()->create();
+        Sanctum::actingAs($this->user);
     });
 
     it('can bulk sync checklist tasks (replace old with new)', function () {
-        // Buat 2 tugas lama
         ChecklistTask::factory()->count(2)->create([
             'period_id' => $this->period->id,
         ]);
 
-        // Siapkan payload 1 tugas baru
         $payload = [
             'tasks' => [
                 [
@@ -51,16 +95,15 @@ describe('Authenticated', function () {
                     'task_type' => 'TEXT',
                     'description' => 'Ini tugas baru',
                     'is_active' => true,
-                ]
-            ]
+                ],
+            ],
         ];
 
-        $response = $this->postJson("/api/v1/periods/{$this->period->id}/checklist-tasks", $payload);
+        $response = $this->postJson(sprintf(CHECKLIST_TASK_ENDPOINT, $this->period->id), $payload);
 
-        $response->assertStatus(200)
+        $response->assertOk()
             ->assertJsonPath('success', true);
 
-        // Pastikan di database sisa 1 tugas (tugas lama terhapus)
         $this->assertDatabaseCount('checklist_tasks', 1);
         $this->assertDatabaseHas('checklist_tasks', [
             'task_name' => 'Tugas Baru 1',
@@ -73,14 +116,12 @@ describe('Authenticated', function () {
             'period_id' => $this->period->id,
         ]);
 
-        $payload = [
-            'tasks' => [] // Kirim array kosong
-        ];
+        $response = $this->postJson(sprintf(CHECKLIST_TASK_ENDPOINT, $this->period->id), [
+            'tasks' => [],
+        ]);
 
-        $response = $this->postJson("/api/v1/periods/{$this->period->id}/checklist-tasks", $payload);
-
-        $response->assertStatus(200);
-        $this->assertDatabaseCount('checklist_tasks', 0); // Pastikan tabel kosong untuk periode tsb
+        $response->assertOk();
+        $this->assertDatabaseCount('checklist_tasks', 0);
     });
 
     it('fails validation when task_type is invalid', function () {
@@ -88,24 +129,25 @@ describe('Authenticated', function () {
             'tasks' => [
                 [
                     'task_name' => 'Tugas Salah',
-                    'task_type' => 'GAMBAR', // Tipe tidak diizinkan
+                    'task_type' => 'GAMBAR',
                     'is_active' => true,
-                ]
-            ]
+                ],
+            ],
         ];
 
-        $response = $this->postJson("/api/v1/periods/{$this->period->id}/checklist-tasks", $payload);
+        $response = $this->postJson(sprintf(CHECKLIST_TASK_ENDPOINT, $this->period->id), $payload);
 
-        $response->assertStatus(422)
+        $response->assertUnprocessable()
             ->assertJsonValidationErrors(['tasks.0.task_type']);
     });
+
     it('returns 401 when unauthenticated', function () {
-        // Hapus otentikasi Sanctum
         Auth::guard('sanctum')->forgetUser();
 
+        $response = $this->postJson(sprintf(CHECKLIST_TASK_ENDPOINT, $this->period->id), [
+            'tasks' => [],
+        ]);
 
-        $response = $this->getJson("/api/v1/periods/{$this->period->id}/checklist-tasks");
-
-        $response->assertStatus(401);
+        $response->assertUnauthorized();
     });
 });

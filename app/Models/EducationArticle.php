@@ -2,19 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class EducationArticle extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $table = 'education_articles';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     const CREATED_AT = 'created_at_client';
+
     const UPDATED_AT = 'updated_at_client';
 
     protected $fillable = [
@@ -38,5 +41,6 @@ class EducationArticle extends Model
         'updated_at_client' => 'datetime',
         'created_at_server' => 'datetime',
         'updated_at_server' => 'datetime',
+        'server_id' => 'integer',
     ];
 }

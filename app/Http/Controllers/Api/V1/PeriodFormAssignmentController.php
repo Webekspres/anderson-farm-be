@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Period\IndexPeriodFormAssignmentRequest;
 use App\Http\Requests\Api\V1\Period\SyncPeriodFormAssignmentRequest;
+use App\Http\Resources\Api\V1\FormAssignmentResource;
 use App\Http\Resources\Api\V1\PeriodFormAssignmentResource;
 use App\Models\PeriodFormAssignment;
 use App\Models\ProductionPeriod;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class PeriodFormAssignmentController extends Controller
@@ -15,17 +18,22 @@ class PeriodFormAssignmentController extends Controller
     {
         $this->middleware('auth:sanctum');
     }
-    public function index($period_id)
+
+    public function index(IndexPeriodFormAssignmentRequest $request): JsonResponse
     {
-        $assignments = PeriodFormAssignment::with('formConfig')
-            ->where('period_id', $period_id)
+        $period = $request->period();
+
+        $assignments = PeriodFormAssignment::query()
+            ->with('formConfig')
+            ->where('period_id', $period->id)
+            ->where('is_active', true)
             ->orderBy('display_order')
             ->get();
 
         return response()->json([
             'success' => true,
-            'message' => 'List of form assignments for period.',
-            'data' => PeriodFormAssignmentResource::collection($assignments),
+            'message' => 'Cetak biru form dinamis berhasil diambil.',
+            'data' => FormAssignmentResource::collection($assignments),
         ]);
     }
 

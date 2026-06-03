@@ -13,6 +13,8 @@ return new class extends Migration
             $table->uuid('header_id')->index();
             $table->uuid('form_config_id')->index();
             $table->string('value');
+            $table->double('value_numeric')->nullable()->index();
+            $table->boolean('value_boolean')->nullable()->index();
 
             $table->string('sync_status')->default('LOCAL_SAVED');
             $table->datetime('created_at_client');
@@ -20,7 +22,7 @@ return new class extends Migration
             $table->softDeletes('deleted_at');
 
             $table->unique(['header_id', 'form_config_id']);
-            
+
             $table->foreign('header_id')->references('id')->on('daily_activity_headers')->onDelete('cascade');
             $table->foreign('form_config_id')->references('id')->on('form_configs')->onDelete('cascade');
         });

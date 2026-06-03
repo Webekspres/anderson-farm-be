@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     /**
      * GET /api/v1/notifications
      * Mengambil daftar riwayat notifikasi milik user yang sedang login.
@@ -72,14 +77,14 @@ class NotificationController extends Controller
 
     /**
      * PATCH /api/v1/notifications/read-all
-     * Menandai SEMUA notifikasi milik user ini menjadi sudah dibaca.
+     * Menandai SEMUA notifikasi unread milik user sesi aktif sebagai sudah dibaca (mass update).
      */
-    public function markAllAsRead(): JsonResponse
+    public function readAll(Request $request): JsonResponse
     {
         $now = now();
 
         Notification::query()
-            ->where('user_id', '=', Auth::id())
+            ->where('user_id', $request->user()->id)
             ->whereNull('read_at')
             ->update([
                 'read_at' => $now,
@@ -88,8 +93,8 @@ class NotificationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Semua notifikasi ditandai sudah dibaca.',
+            'message' => 'Semua notifikasi berhasil ditandai sebagai dibaca.',
             'data' => null,
-        ], 200);
+        ]);
     }
 }

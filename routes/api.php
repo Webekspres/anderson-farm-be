@@ -3,11 +3,14 @@
 use App\Http\Controllers\Api\CheckController;
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BopExportController;
 use App\Http\Controllers\Api\V1\ChecklistTaskController;
+use App\Http\Controllers\Api\V1\PeriodChecklistTaskController;
 use App\Http\Controllers\Api\V1\ContractAbkController;
 use App\Http\Controllers\Api\V1\CoopController;
 use App\Http\Controllers\Api\V1\CoopDocumentController;
 use App\Http\Controllers\Api\V1\CoopEquipmentController;
+use App\Http\Controllers\Api\V1\CoopFloorController;
 use App\Http\Controllers\Api\V1\CoopUserAssignmentController;
 use App\Http\Controllers\Api\V1\DailyActivitySyncController;
 use App\Http\Controllers\Api\V1\EducationArticleController;
@@ -20,6 +23,7 @@ use App\Http\Controllers\Api\V1\FormConfigController;
 use App\Http\Controllers\Api\V1\MaintenanceSyncController;
 use App\Http\Controllers\Api\V1\MasterDataSyncController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\OvkExportController;
 use App\Http\Controllers\Api\V1\OvkItemController;
 use App\Http\Controllers\Api\V1\PeriodActionController;
 use App\Http\Controllers\Api\V1\PeriodController;
@@ -32,10 +36,9 @@ use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReportTemplateController;
 use App\Http\Controllers\Api\V1\RhppActionController;
 use App\Http\Controllers\Api\V1\RhppDocumentController;
-use App\Http\Controllers\Api\V1\RhppExportController;
 use App\Http\Controllers\Api\V1\RhppSyncController;
 use App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController;
-use App\Http\Controllers\Api\V1\SyncEquipmentTypeFormConfigController;
+use App\Http\Controllers\Api\V1\EquipmentTypeFormConfigController;
 use App\Http\Controllers\Api\V1\TransactionCategoryController;
 use App\Http\Controllers\Api\V1\UploadController;
 use App\Http\Controllers\Api\V1\UserController;
@@ -67,9 +70,12 @@ Route::prefix('v1')->group(function () {
         // Coop endpoints
         Route::apiResource('coops', CoopController::class);
 
+        Route::apiResource('coop-floors', CoopFloorController::class);
+
         // EquipmentType endpoints
         Route::apiResource('equipment-types', EquipmentTypeController::class);
-        Route::post('/equipment-types/{equipment_type}/form-configs', [SyncEquipmentTypeFormConfigController::class, '__invoke']);
+        Route::get('/equipment-types/{equipment_type}/form-configs', [EquipmentTypeFormConfigController::class, 'getFormConfigs']);
+        Route::post('/equipment-types/{equipment_type}/form-configs', [EquipmentTypeFormConfigController::class, 'syncFormConfigs']);
 
         Route::apiResource('areas', AreaController::class);
 
@@ -116,7 +122,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/form-assignments', [PeriodFormAssignmentController::class, 'index']);
             Route::post('/form-assignments', [PeriodFormAssignmentController::class, 'sync']);
 
-            Route::get('/checklist-tasks', [ChecklistTaskController::class, 'index']);
+            Route::get('/checklist-tasks', [PeriodChecklistTaskController::class, 'index']);
             Route::post('/checklist-tasks', [ChecklistTaskController::class, 'sync']);
 
             Route::get('/contracts', [ContractAbkController::class, 'index']);
@@ -132,7 +138,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/rhpps/{period_id}/publish', [RhppActionController::class, 'publish']);
 
         // Export endpoints
-        Route::get('/export/rhpp', [RhppExportController::class, 'show']);
+        Route::get('/export/ovk-usages', [OvkExportController::class, 'show']);
+        Route::get('/export/bop-details', [BopExportController::class, 'show']);
 
         // Sync endpoints (Offline-First)
         Route::prefix('sync')->group(function () {
@@ -150,7 +157,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::get('/notifications', [NotificationController::class, 'index']);
-        Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);
         Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
         Route::get('/contracts/{contract}', [ContractAbkController::class, 'show']);

@@ -14,6 +14,8 @@ class DailyDynamicLogResource extends JsonResource
             'header_id' => $this->header_id,
             'form_config_id' => $this->form_config_id,
             'value' => $this->value,
+            'value_numeric' => $this->value_numeric !== null ? (float) $this->value_numeric : null,
+            'value_boolean' => $this->value_boolean !== null ? (bool) $this->value_boolean : null,
             'sync_status' => $this->sync_status,
             'created_at_client' => $this->created_at_client?->toIso8601String(),
             'updated_at_client' => $this->updated_at_client?->toIso8601String(),

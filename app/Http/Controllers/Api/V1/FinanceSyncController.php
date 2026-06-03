@@ -31,16 +31,16 @@ class FinanceSyncController extends Controller
     public function index(SyncGetFinancesRequest $request): JsonResponse
     {
         /** @var User $user */
-        $user              = Auth::user();
+        $user = Auth::user();
         $lastSyncTimestamp = $request->validated('last_sync_timestamp');
 
         $payload = $this->financeService->getPullPayload($user, $lastSyncTimestamp);
 
         return response()->json([
-            'success'                  => true,
+            'success' => true,
             'current_server_timestamp' => now()->toIso8601String(),
-            'data'                     => [
-                'transactions'      => TransactionResource::collection($payload['transactions']),
+            'data' => [
+                'transactions' => TransactionResource::collection($payload['transactions']),
                 'employee_salaries' => EmployeeSalaryResource::collection($payload['employee_salaries']),
             ],
         ]);
@@ -58,8 +58,8 @@ class FinanceSyncController extends Controller
         $user = Auth::user();
 
         $payloadTransactions = $request->validated('transactions');
-        $serverTimestamp     = now();
-        $syncResults         = [];
+        $serverTimestamp = now();
+        $syncResults = [];
 
         // Proses setiap transaksi di luar DB transaction agar setiap item
         // bisa memiliki status individual (SUCCESS / FAILED) tanpa rollback semua.
@@ -68,17 +68,21 @@ class FinanceSyncController extends Controller
         }
 
         $successCount = collect($syncResults)->where('status', 'SUCCESS')->count();
-        $failedCount  = collect($syncResults)->where('status', 'FAILED')->count();
+        $failedCount = collect($syncResults)->where('status', 'FAILED')->count();
 
         $messageParts = [];
-        if ($successCount > 0) $messageParts[] = "{$successCount} berhasil disinkronkan";
-        if ($failedCount > 0)  $messageParts[] = "{$failedCount} gagal";
+        if ($successCount > 0) {
+            $messageParts[] = "{$successCount} berhasil disinkronkan";
+        }
+        if ($failedCount > 0) {
+            $messageParts[] = "{$failedCount} gagal";
+        }
 
         return response()->json([
-            'success'          => true,
-            'message'          => 'Sinkronisasi selesai. ' . implode(', ', $messageParts) . '.',
+            'success' => true,
+            'message' => 'Sinkronisasi selesai. '.implode(', ', $messageParts).'.',
             'server_timestamp' => $serverTimestamp->toIso8601String(),
-            'data'             => [
+            'data' => [
                 'sync_results' => $syncResults,
             ],
         ]);
@@ -92,8 +96,8 @@ class FinanceSyncController extends Controller
      * 4. Upsert dengan idempotency untuk status APPROVED
      */
     private function processTransaction(
-        array  $payload,
-        User   $user,
+        array $payload,
+        User $user,
         Carbon $serverTimestamp,
     ): array {
         $transactionId = $payload['id'];
@@ -101,9 +105,9 @@ class FinanceSyncController extends Controller
         // ── Step 1: Tolak jika bukan EXPENSE ──
         if ($payload['type'] !== 'EXPENSE') {
             return [
-                'id'            => $transactionId,
-                'status'        => 'FAILED',
-                'server_id'     => null,
+                'id' => $transactionId,
+                'status' => 'FAILED',
+                'server_id' => null,
                 'error_message' => 'Hanya transaksi bertipe EXPENSE yang diizinkan untuk di-push.',
             ];
         }
@@ -111,11 +115,11 @@ class FinanceSyncController extends Controller
         // ── Step 2: Validasi periode aktif ──
         $period = ProductionPeriod::with('floor')->find($payload['period_id']);
 
-        if (!$period || $period->status !== 'active') {
+        if (! $period || $period->status !== 'active') {
             return [
-                'id'            => $transactionId,
-                'status'        => 'FAILED',
-                'server_id'     => null,
+                'id' => $transactionId,
+                'status' => 'FAILED',
+                'server_id' => null,
                 'error_message' => 'Periode tidak ditemukan atau sudah ditutup. Tidak dapat menambah transaksi.',
             ];
         }
@@ -128,11 +132,11 @@ class FinanceSyncController extends Controller
                 ->whereNull('deleted_at')
                 ->exists();
 
-            if (!$isAssigned) {
+            if (! $isAssigned) {
                 return [
-                    'id'            => $transactionId,
-                    'status'        => 'FAILED',
-                    'server_id'     => null,
+                    'id' => $transactionId,
+                    'status' => 'FAILED',
+                    'server_id' => null,
                     'error_message' => 'Anda tidak memiliki akses ke kandang pada periode ini.',
                 ];
             }
@@ -145,13 +149,13 @@ class FinanceSyncController extends Controller
         if ($existingTransaction && $existingTransaction->business_status === 'APPROVED') {
             $existingTransaction->update([
                 'receipt_path_local' => $payload['receipt_image_path_local'] ?? $existingTransaction->receipt_path_local,
-                'updated_at_server'  => $serverTimestamp,
+                'updated_at_server' => $serverTimestamp,
             ]);
 
             return [
-                'id'            => $existingTransaction->id,
-                'status'        => 'SUCCESS',
-                'server_id'     => $existingTransaction->server_id,
+                'id' => $existingTransaction->id,
+                'status' => 'SUCCESS',
+                'server_id' => $existingTransaction->server_id,
                 'error_message' => null,
             ];
         }
@@ -160,27 +164,29 @@ class FinanceSyncController extends Controller
         $transaction = Transaction::withTrashed()->updateOrCreate(
             ['id' => $transactionId],
             [
-                'period_id'          => $payload['period_id'],
-                'user_id'            => $user->id,
-                'category_id'        => $payload['category_id'],
-                'date'               => $payload['transaction_date'],
-                'amount'             => $payload['amount'],
-                'description'        => $payload['description'] ?? null,
+                'period_id' => $payload['period_id'],
+                'user_id' => $user->id,
+                'category_id' => $payload['category_id'],
+                'date' => $payload['transaction_date'],
+                'amount' => $payload['amount'],
+                'description' => $payload['description'] ?? null,
                 'receipt_path_local' => $payload['receipt_image_path_local'] ?? null,
-                'business_status'    => $existingTransaction?->business_status ?? 'DRAFT',
-                'sync_status'        => 'SYNCED',
-                'created_at_client'  => $payload['created_at_client'],
-                'created_at_server'  => $existingTransaction?->created_at_server ?? $serverTimestamp,
-                'updated_at_client'  => $payload['updated_at_client'],
-                'updated_at_server'  => $serverTimestamp,
-                'deleted_at'         => null, // Restore jika sebelumnya soft-deleted
+                'expense_scope' => $payload['expense_scope'] ?? 'FLOOR_SPECIFIC',
+                'coop_id' => isset($payload['expense_scope']) && $payload['expense_scope'] === 'COOP_SHARED' ? ($payload['coop_id'] ?? null) : null,
+                'business_status' => $existingTransaction?->business_status ?? 'DRAFT',
+                'sync_status' => 'SYNCED',
+                'created_at_client' => $payload['created_at_client'],
+                'created_at_server' => $existingTransaction?->created_at_server ?? $serverTimestamp,
+                'updated_at_client' => $payload['updated_at_client'],
+                'updated_at_server' => $serverTimestamp,
+                'deleted_at' => null, // Restore jika sebelumnya soft-deleted
             ],
         );
 
         return [
-            'id'            => $transaction->id,
-            'status'        => 'SUCCESS',
-            'server_id'     => $transaction->server_id,
+            'id' => $transaction->id,
+            'status' => 'SUCCESS',
+            'server_id' => $transaction->server_id,
             'error_message' => null,
         ];
     }

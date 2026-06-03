@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContractAbk extends Model
 {
@@ -17,6 +17,7 @@ class ContractAbk extends Model
 
     // Memberitahu Laravel untuk menggunakan field custom ini sebagai timestamps bawaan
     const CREATED_AT = 'created_at_client';
+
     const UPDATED_AT = 'updated_at_client';
 
     protected $fillable = [
@@ -31,7 +32,7 @@ class ContractAbk extends Model
         'created_at_client',
         'created_at_server',
         'updated_at_client',
-        'updated_at_server'
+        'updated_at_server',
     ];
 
     protected $casts = [
@@ -39,6 +40,7 @@ class ContractAbk extends Model
         'created_at_server' => 'datetime',
         'updated_at_client' => 'datetime',
         'updated_at_server' => 'datetime',
+        'server_id' => 'integer',
     ];
 
     public function period(): BelongsTo

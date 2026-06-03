@@ -42,13 +42,7 @@ it('successfully completes the end-to-end coop setup journey', function () {
 
     // STEP 3: Sync EquipmentType <-> FormConfig
     $syncFormConfigPayload = [
-        'form_assignments' => [
-            [
-                'form_config_id' => $formConfigId,
-                'display_order' => 1,
-                'is_active' => true,
-            ],
-        ],
+        'form_config_ids' => [$formConfigId],
     ];
     $response = $this->postJson("/api/v1/equipment-types/{$equipmentTypeId}/form-configs", $syncFormConfigPayload);
     $response->assertStatus(200)->assertJson(['success' => true]);
