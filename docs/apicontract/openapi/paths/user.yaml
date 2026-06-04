@@ -120,81 +120,11 @@ users:
                   - "Password minimal 8 karakter."
 
 userSingle:
-  put:
-    tags: [Users]
-    summary: Edit profil pekerja (full)
-    description: |
-      Edit seluruh data profil pekerja. Hanya dapat diakses oleh admin dan manager.
-    security:
-      - sanctum: []
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: "../openapi.yaml#/components/schemas/UserCreateRequest"
-          example:
-            username: "budi_abk1"
-            password: "RahasiaPassword123!"
-            name: "Budi Santoso"
-            email: "budi@andersonfarm.id"
-            phone: "+628123456789"
-            role: "abk"
-    responses:
-      "200":
-        description: Profil pekerja berhasil diupdate
-        content:
-          application/json:
-            schema:
-              $ref: "../openapi.yaml#/components/schemas/UserResponse"
-            example:
-              id: "user-uuid-1234"
-              username: "budi_abk1"
-              name: "Budi Santoso"
-              role: "abk"
-              email: "budi@andersonfarm.id"
-              phone: "+628123456789"
-              is_active: true
-              created_at: "2024-01-01T12:00:00Z"
-              updated_at: "2024-01-10T12:00:00Z"
-      "400":
-        description: Username/email sudah terdaftar
-        content:
-          application/json:
-            schema:
-              $ref: "../components/general.yaml#/ValidationErrorResponse"
-            example:
-              success: false
-      "401":
-        description: Unauthenticated
-        content:
-          application/json:
-            schema:
-              $ref: "../components/general.yaml#/ValidationErrorResponse"
-            example:
-              success: false
-      "403":
-        description: Forbidden (tidak punya akses)
-        content:
-          application/json:
-            schema:
-              $ref: "../components/general.yaml#/ValidationErrorResponse"
-            example:
-              success: false
-      "422":
-        description: Validasi gagal
-        content:
-          application/json:
-            schema:
-              $ref: "../components/general.yaml#/ValidationErrorResponse"
-            example:
-              success: false
-
   patch:
     tags: [Users]
-    summary: Edit parsial profil pekerja
+    summary: Edit profil pekerja
     description: |
-      Edit sebagian data profil pekerja, misal reset/unbind device_id pekerja jika HP hilang. Hanya dapat diakses oleh admin dan manager.
+      Edit data profil pekerja (parsial atau keseluruhan). Hanya dapat diakses oleh admin dan manager.
     security:
       - sanctum: []
     requestBody:

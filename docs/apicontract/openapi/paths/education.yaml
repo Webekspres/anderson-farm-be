@@ -29,7 +29,7 @@ education-articles:
 single-education-articles:
   parameters:
     - $ref: "../openapi.yaml#/components/parameters/ResourceId"
-  put:
+  patch:
     tags: [Master - Education Article]
     summary: Edit Artikel Edukasi
     description: Mengubah data artikel panduan/edukasi.
@@ -99,7 +99,7 @@ price-references:
 single-price-references:
   parameters:
     - $ref: "../openapi.yaml#/components/parameters/ResourceId"
-  put:
+  patch:
     tags: [Master - Price Reference]
     summary: Edit Referensi Harga
     description: Mengubah data referensi harga komoditas.

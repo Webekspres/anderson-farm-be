@@ -14,4 +14,12 @@ return [
 
     'header_table_color' => env('HEADER_TABLE_COLOR', 'FFC6EFCE'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Import gaji — kategori transaksi pengeluaran
+    |--------------------------------------------------------------------------
+    */
+
+    'salary_expense_category_name' => env('SALARY_EXPENSE_CATEGORY_NAME', 'Gaji Pegawai'),
+
 ];

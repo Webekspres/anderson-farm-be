@@ -1,16 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
+use App\Http\Requests\Api\V1\Auth\ResetPasswordRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
+use App\Services\UserPasswordService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly UserPasswordService $passwordService,
+    ) {}
+
     public function login(LoginRequest $request)
     {
         $validated = $request->validated();
@@ -22,20 +32,20 @@ class AuthController extends Controller
         })->first();
 
         // 2. Verifikasi keberadaan user dan kecocokan password_hash
-        if (!$user || !Hash::check($validated['password'], $user->password_hash)) {
+        if (! $user || ! Hash::check($validated['password'], $user->password_hash)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Username/email atau password salah.',
-                'errors'  => (object)[] // Object kosong sesuai kontrak OpenAPI
+                'errors' => (object) [], // Object kosong sesuai kontrak OpenAPI
             ], 401);
         }
 
         // 3. Pengecekan status aktif user
-        if (!$user->is_active) {
+        if (! $user->is_active) {
             return response()->json([
                 'success' => false,
                 'message' => 'Akun Anda dinonaktifkan. Hubungi Admin.',
-                'errors'  => (object)[]
+                'errors' => (object) [],
             ], 403);
         }
 
@@ -44,14 +54,14 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Akun ini sudah terikat dengan perangkat lain. Hubungi Admin untuk reset device.',
-                'errors'  => (object)[]
+                'errors' => (object) [],
             ], 401);
         }
 
         // 5. Jika device_id masih kosong (Login pertama kali), ikat sekarang!
         if ($user->device_id === null) {
             $user->update([
-                'device_id'       => $validated['device_id'],
+                'device_id' => $validated['device_id'],
                 'device_bound_at' => now(),
             ]);
         }
@@ -65,38 +75,37 @@ class AuthController extends Controller
         // 7. Kembalikan Response Sukses
         return response()->json([
             'success' => true,
-            'token'   => $token,
-            'data'    => [
-                'id'        => $user->id,
-                'username'  => $user->username,
-                'name'      => $user->name,
-                'role'      => $user->role,
+            'token' => $token,
+            'data' => [
+                'id' => $user->id,
+                'username' => $user->username,
+                'name' => $user->name,
+                'role' => $user->role,
                 'device_id' => $user->device_id,
-            ]
+            ],
         ], 200);
     }
 
     /**
      * Ambil data user yang sedang login (cek sesi aktif)
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function me(Request $request)
     {
         $user = $request->user();
+
         // Jika ingin menambah relasi/hak akses lain, eager load di sini
         return (new UserResource($user))->additional([
             'success' => true,
-            'message' => 'Sesi aktif. Data user berhasil diambil.'
+            'message' => 'Sesi aktif. Data user berhasil diambil.',
         ]);
     }
 
     /**
      * Logout user yang sedang login (revoke token)
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function logout(Request $request)
     {
@@ -105,10 +114,146 @@ class AuthController extends Controller
             // Hapus semua token milik user (revoke all tokens)
             $user->tokens()->delete();
         }
+
         return response()->json([
             'success' => true,
             'message' => 'Berhasil logout.',
-            'errors'  => []
+            'errors' => [],
         ], 200);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $method = $validated['method'];
+
+        if ($method === 'otp') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Metode OTP belum tersedia.',
+                'data' => null,
+            ], 422);
+        }
+
+        if ($method === 'admin_reset') {
+            return $this->resetPasswordByAdmin($request, $validated);
+        }
+
+        return $this->resetPasswordWithOldPassword($validated);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function resetPasswordWithOldPassword(array $validated): JsonResponse
+    {
+        $user = $this->findUserByIdentifier($validated['username']);
+
+        if (! $user || ! Hash::check($validated['current_password'], $user->password_hash)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username/email atau password salah.',
+                'data' => null,
+            ], 401);
+        }
+
+        if (! $user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda dinonaktifkan. Hubungi Admin.',
+                'data' => null,
+            ], 403);
+        }
+
+        $this->passwordService->forceUpdatePassword($user, $validated['new_password']);
+        $user->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password berhasil direset. Silakan login dengan password baru.',
+            'data' => null,
+        ], 200);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function resetPasswordByAdmin(Request $request, array $validated): JsonResponse
+    {
+        $authUser = $this->resolveSanctumUser($request);
+
+        if ($authUser === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+                'data' => null,
+            ], 401);
+        }
+
+        if ($authUser->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only administrators can reset user passwords.',
+                'data' => null,
+            ], 403);
+        }
+
+        $target = User::query()->find($validated['user_id']);
+
+        if ($target === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username/email atau password salah.',
+                'data' => null,
+            ], 401);
+        }
+
+        if (! $target->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda dinonaktifkan. Hubungi Admin.',
+                'data' => null,
+            ], 403);
+        }
+
+        $this->passwordService->forceUpdatePassword($target, $validated['new_password']);
+        $target->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Password untuk user '{$target->username}' berhasil direset.",
+            'data' => null,
+        ], 200);
+    }
+
+    private function findUserByIdentifier(string $identifier): ?User
+    {
+        return User::query()
+            ->where(function ($query) use ($identifier): void {
+                $query->where('username', $identifier)
+                    ->orWhere('email', $identifier);
+            })
+            ->first();
+    }
+
+    private function resolveSanctumUser(Request $request): ?User
+    {
+        $user = $request->user('sanctum');
+
+        if ($user instanceof User) {
+            return $user;
+        }
+
+        $bearerToken = $request->bearerToken();
+
+        if ($bearerToken === null) {
+            return null;
+        }
+
+        $token = PersonalAccessToken::findToken($bearerToken);
+
+        $tokenable = $token?->tokenable;
+
+        return $tokenable instanceof User ? $tokenable : null;
     }
 }

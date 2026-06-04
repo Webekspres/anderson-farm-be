@@ -360,8 +360,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
             'headers' => [
                 buildHeaderPayload($period->id, $user->id, [
                     'date' => $future,
-                    'created_at_client' => $future . 'T06:00:00Z',
-                    'updated_at_client' => $future . 'T06:00:00Z',
+                    'created_at_client' => $future.'T06:00:00Z',
+                    'updated_at_client' => $future.'T06:00:00Z',
                 ]),
             ],
         ];
@@ -460,8 +460,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                 buildHeaderPayload($period->id, $user->id, [
                     'id' => $uuidNew1,
                     'date' => $dayNewA,
-                    'created_at_client' => $dayNewA . 'T06:00:00Z',
-                    'updated_at_client' => $dayNewA . 'T06:00:00Z',
+                    'created_at_client' => $dayNewA.'T06:00:00Z',
+                    'updated_at_client' => $dayNewA.'T06:00:00Z',
                 ]),
                 buildHeaderPayload($period->id, $user->id, [
                     'id' => $existingHeader->id,
@@ -471,8 +471,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                 buildHeaderPayload($period->id, $user->id, [
                     'id' => $uuidNew3,
                     'date' => $dayNewB,
-                    'created_at_client' => $dayNewB . 'T06:00:00Z',
-                    'updated_at_client' => $dayNewB . 'T06:00:00Z',
+                    'created_at_client' => $dayNewB.'T06:00:00Z',
+                    'updated_at_client' => $dayNewB.'T06:00:00Z',
                 ]),
             ],
         ];
@@ -560,8 +560,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
             'headers' => [
                 buildHeaderPayload($period->id, $user->id, [
                     'date' => $day,
-                    'created_at_client' => $day . 'T06:00:00Z',
-                    'updated_at_client' => $day . 'T06:00:00Z',
+                    'created_at_client' => $day.'T06:00:00Z',
+                    'updated_at_client' => $day.'T06:00:00Z',
                     'mortality_count' => -5,
                     'cull_count' => -2,
                 ], [
@@ -604,8 +604,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
             'headers' => [
                 buildHeaderPayload($period->id, $user->id, [
                     'date' => $tooEarly,
-                    'created_at_client' => $tooEarly . 'T06:00:00Z',
-                    'updated_at_client' => $tooEarly . 'T06:00:00Z',
+                    'created_at_client' => $tooEarly.'T06:00:00Z',
+                    'updated_at_client' => $tooEarly.'T06:00:00Z',
                 ]),
             ],
         ];
@@ -614,5 +614,108 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['headers.0.date']);
+    });
+
+    it('returns 422 when business_status is APPROVED or REJECTED', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        assignUserToPeriodCoop($user, $period);
+
+        foreach (['APPROVED', 'REJECTED'] as $status) {
+            $payload = [
+                'headers' => [
+                    buildHeaderPayload($period->id, $user->id, [
+                        'business_status' => $status,
+                    ]),
+                ],
+            ];
+
+            $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+            $response->assertStatus(422)
+                ->assertJsonValidationErrors(['headers.0.business_status']);
+        }
+    });
+
+    it('allows resubmit SUBMITTED after server REJECTED and clears rejection fields', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create([
+            'status' => 'active',
+            'start_date' => now()->subMonths(1)->format('Y-m-d'),
+        ]);
+        assignUserToPeriodCoop($user, $period);
+        $manager = User::factory()->create(['role' => 'manager']);
+
+        $activityDay = now()->subDays(3)->format('Y-m-d');
+
+        $existingHeader = DailyActivityHeader::factory()->rejected()->create([
+            'period_id' => $period->id,
+            'user_id' => $user->id,
+            'date' => $activityDay,
+            'approved_by' => $manager->id,
+        ]);
+
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id, [
+                    'id' => $existingHeader->id,
+                    'date' => $activityDay,
+                    'business_status' => 'SUBMITTED',
+                    'mortality_count' => 3,
+                    'updated_at_client' => now()->toIso8601String(),
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        $response->assertOk()
+            ->assertJsonPath('data.sync_results.0.status', 'SYNCED');
+
+        $this->assertDatabaseHas('daily_activity_headers', [
+            'id' => $existingHeader->id,
+            'business_status' => 'SUBMITTED',
+            'rejection_reason' => null,
+            'approved_by' => null,
+            'mortality_count' => 3,
+        ]);
+    });
+
+    it('returns INVALID_STATUS when pushing DRAFT while server is SUBMITTED', function () {
+        $user = postAuthUser();
+        $period = ProductionPeriod::factory()->create([
+            'status' => 'active',
+            'start_date' => now()->subMonths(1)->format('Y-m-d'),
+        ]);
+        assignUserToPeriodCoop($user, $period);
+
+        $activityDay = now()->subDays(2)->format('Y-m-d');
+
+        $existingHeader = DailyActivityHeader::factory()->submitted()->create([
+            'period_id' => $period->id,
+            'user_id' => $user->id,
+            'date' => $activityDay,
+        ]);
+
+        $payload = [
+            'headers' => [
+                buildHeaderPayload($period->id, $user->id, [
+                    'id' => $existingHeader->id,
+                    'date' => $activityDay,
+                    'business_status' => 'DRAFT',
+                    'updated_at_client' => now()->toIso8601String(),
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sync/daily-activities', $payload);
+
+        $response->assertOk()
+            ->assertJsonPath('data.sync_results.0.status', 'INVALID_STATUS');
+
+        $this->assertDatabaseHas('daily_activity_headers', [
+            'id' => $existingHeader->id,
+            'business_status' => 'SUBMITTED',
+        ]);
     });
 });

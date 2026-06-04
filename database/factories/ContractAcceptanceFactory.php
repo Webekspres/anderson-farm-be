@@ -17,7 +17,7 @@ class ContractAcceptanceFactory extends Factory
             'id' => Str::uuid()->toString(),
             'server_id' => $this->faker->unique()->numberBetween(1, 9999999999),
             'contract_id' => ContractAbk::factory(),
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->state(['role' => 'abk']),
             'accepted_at' => $now,
             'device_id' => Str::random(16),
             'current_loan_accumulated' => $this->faker->randomFloat(2, 0, 1000000),

@@ -1,21 +1,23 @@
 <?php
 
 use App\Http\Controllers\Api\CheckController;
+use App\Http\Controllers\Api\V1\ActivityLogSyncController;
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BopExportController;
 use App\Http\Controllers\Api\V1\ChecklistTaskController;
-use App\Http\Controllers\Api\V1\PeriodChecklistTaskController;
 use App\Http\Controllers\Api\V1\ContractAbkController;
 use App\Http\Controllers\Api\V1\CoopController;
 use App\Http\Controllers\Api\V1\CoopDocumentController;
 use App\Http\Controllers\Api\V1\CoopEquipmentController;
 use App\Http\Controllers\Api\V1\CoopFloorController;
 use App\Http\Controllers\Api\V1\CoopUserAssignmentController;
+use App\Http\Controllers\Api\V1\DailyActivityApprovalController;
 use App\Http\Controllers\Api\V1\DailyActivitySyncController;
 use App\Http\Controllers\Api\V1\EducationArticleController;
 use App\Http\Controllers\Api\V1\EducationSyncController;
 use App\Http\Controllers\Api\V1\EquipmentTypeController;
+use App\Http\Controllers\Api\V1\EquipmentTypeFormConfigController;
 use App\Http\Controllers\Api\V1\FarmController;
 use App\Http\Controllers\Api\V1\FcmTokenController;
 use App\Http\Controllers\Api\V1\FinanceSyncController;
@@ -26,23 +28,24 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OvkExportController;
 use App\Http\Controllers\Api\V1\OvkItemController;
 use App\Http\Controllers\Api\V1\PeriodActionController;
+use App\Http\Controllers\Api\V1\PeriodChecklistTaskController;
 use App\Http\Controllers\Api\V1\PeriodController;
 use App\Http\Controllers\Api\V1\PeriodDocumentController;
 use App\Http\Controllers\Api\V1\PeriodFormAssignmentController;
 use App\Http\Controllers\Api\V1\PeriodInvestorController;
 use App\Http\Controllers\Api\V1\PeriodSyncController;
 use App\Http\Controllers\Api\V1\PriceReferenceController;
-use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReportTemplateController;
 use App\Http\Controllers\Api\V1\RhppActionController;
 use App\Http\Controllers\Api\V1\RhppDocumentController;
 use App\Http\Controllers\Api\V1\RhppSyncController;
+use App\Http\Controllers\Api\V1\SalaryExportController;
+use App\Http\Controllers\Api\V1\SalaryImportController;
 use App\Http\Controllers\Api\V1\SyncCoopFormAssignmentController;
-use App\Http\Controllers\Api\V1\EquipmentTypeFormConfigController;
+use App\Http\Controllers\Api\V1\SystemController;
 use App\Http\Controllers\Api\V1\TransactionCategoryController;
 use App\Http\Controllers\Api\V1\UploadController;
 use App\Http\Controllers\Api\V1\UserController;
-use App\Http\Controllers\Api\V1\UserPasswordController;
 use Illuminate\Support\Facades\Route;
 
 // Laravel otomatis menambahkan prefix '/api' di depan route ini
@@ -51,6 +54,10 @@ Route::get('/check', [CheckController::class, 'index']);
 Route::prefix('v1')->group(function () {
 
     Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])
+        ->middleware('throttle:10,1');
+
+    Route::get('/system/check-version', [SystemController::class, 'checkVersion']);
 
     // Rute Terlindungi (Wajib Bawa Token)
     Route::middleware('auth:sanctum')->group(function () {
@@ -59,41 +66,47 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/fcm-token', FcmTokenController::class);
 
-        Route::apiResource('users', UserController::class);
-
-        // User Password Management
-        Route::post('/users/{user}/reset-password', [UserPasswordController::class, 'resetByAdmin']);
-
-        // Profile
-        Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
+        Route::apiResource('users', UserController::class)->except(['update']);
+        Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');
 
         // Coop endpoints
-        Route::apiResource('coops', CoopController::class);
+        Route::apiResource('coops', CoopController::class)->except(['update']);
+        Route::patch('coops/{coop}', [CoopController::class, 'update'])->name('coops.update');
 
-        Route::apiResource('coop-floors', CoopFloorController::class);
+        Route::apiResource('coop-floors', CoopFloorController::class)->except(['update']);
+        Route::patch('coop-floors/{coop_floor}', [CoopFloorController::class, 'update'])->name('coop-floors.update');
 
         // EquipmentType endpoints
-        Route::apiResource('equipment-types', EquipmentTypeController::class);
+        Route::apiResource('equipment-types', EquipmentTypeController::class)->except(['update']);
+        Route::patch('equipment-types/{equipment_type}', [EquipmentTypeController::class, 'update'])->name('equipment-types.update');
         Route::get('/equipment-types/{equipment_type}/form-configs', [EquipmentTypeFormConfigController::class, 'getFormConfigs']);
         Route::post('/equipment-types/{equipment_type}/form-configs', [EquipmentTypeFormConfigController::class, 'syncFormConfigs']);
 
-        Route::apiResource('areas', AreaController::class);
+        Route::apiResource('areas', AreaController::class)->except(['update']);
+        Route::patch('areas/{area}', [AreaController::class, 'update'])->name('areas.update');
 
         // ReportTemplate CRUD
-        Route::apiResource('report-templates', ReportTemplateController::class);
+        Route::apiResource('report-templates', ReportTemplateController::class)->except(['update']);
+        Route::patch('report-templates/{report_template}', [ReportTemplateController::class, 'update'])->name('report-templates.update');
         // Farm CRUD
-        Route::apiResource('farms', FarmController::class);
+        Route::apiResource('farms', FarmController::class)->except(['update']);
+        Route::patch('farms/{farm}', [FarmController::class, 'update'])->name('farms.update');
 
         // TransactionCategory CRUD
-        Route::apiResource('transaction-categories', TransactionCategoryController::class);
+        Route::apiResource('transaction-categories', TransactionCategoryController::class)->except(['update']);
+        Route::patch('transaction-categories/{transaction_category}', [TransactionCategoryController::class, 'update'])->name('transaction-categories.update');
         // OvkItem CRUD
-        Route::apiResource('ovk-items', OvkItemController::class);
+        Route::apiResource('ovk-items', OvkItemController::class)->except(['update']);
+        Route::patch('ovk-items/{ovk_item}', [OvkItemController::class, 'update'])->name('ovk-items.update');
         // EducationArticle CRUD
-        Route::apiResource('education-articles', EducationArticleController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('education-articles', EducationArticleController::class)->only(['store', 'destroy']);
+        Route::patch('education-articles/{education_article}', [EducationArticleController::class, 'update'])->name('education-articles.update');
         // PriceReference CRUD
-        Route::apiResource('price-references', PriceReferenceController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('price-references', PriceReferenceController::class)->only(['store', 'destroy']);
+        Route::patch('price-references/{price_reference}', [PriceReferenceController::class, 'update'])->name('price-references.update');
         // FormConfig CRUD
-        Route::apiResource('form-configs', FormConfigController::class);
+        Route::apiResource('form-configs', FormConfigController::class)->except(['update']);
+        Route::patch('form-configs/{form_config}', [FormConfigController::class, 'update'])->name('form-configs.update');
 
         // Upload endpoints
         Route::post('/uploads', [UploadController::class, 'store']);
@@ -140,6 +153,8 @@ Route::prefix('v1')->group(function () {
         // Export endpoints
         Route::get('/export/ovk-usages', [OvkExportController::class, 'show']);
         Route::get('/export/bop-details', [BopExportController::class, 'show']);
+        Route::get('/export/template-salary', [SalaryExportController::class, 'show']);
+        Route::post('/import/salary', [SalaryImportController::class, 'store']);
 
         // Sync endpoints (Offline-First)
         Route::prefix('sync')->group(function () {
@@ -154,11 +169,18 @@ Route::prefix('v1')->group(function () {
             Route::get('/maintenances', [MaintenanceSyncController::class, 'index']);
             Route::post('/maintenances', [MaintenanceSyncController::class, 'store']);
             Route::get('/rhpps', [RhppSyncController::class, 'index']);
+            Route::post('/activity-logs', [ActivityLogSyncController::class, 'store']);
         });
 
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);
         Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
+        Route::prefix('approvals')->group(function () {
+            Route::get('/daily-activities', [DailyActivityApprovalController::class, 'index']);
+            Route::get('/daily-activities/{daily_activity}', [DailyActivityApprovalController::class, 'show']);
+            Route::post('/daily-activities/{daily_activity}', [DailyActivityApprovalController::class, 'store']);
+        });
 
         Route::get('/contracts/{contract}', [ContractAbkController::class, 'show']);
         Route::post('/contracts/{contract}', [ContractAbkController::class, 'accept']); // Method POST untuk menyetujui

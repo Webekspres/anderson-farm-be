@@ -14,7 +14,6 @@ class TransactionCategoryFactory extends Factory
         static $usedNames = [];
         $names = [
             'Penjualan Telur',
-            'Gaji Pegawai',
             'Pakan Ayam',
             'Obat & Vaksin',
             'Peralatan',
@@ -22,7 +21,7 @@ class TransactionCategoryFactory extends Factory
             'Listrik',
             'Air',
             'Pendapatan Lain',
-            'Biaya Operasional'
+            'Biaya Operasional',
         ];
         $availableNames = array_diff($names, $usedNames);
         if (empty($availableNames)) {
@@ -31,6 +30,7 @@ class TransactionCategoryFactory extends Factory
             $name = $this->faker->randomElement($availableNames);
             $usedNames[] = $name;
         }
+
         return [
             'id' => $this->faker->uuid(),
             'server_id' => $this->faker->unique()->numberBetween(1, 9999999),

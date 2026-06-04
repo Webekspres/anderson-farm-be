@@ -2,8 +2,6 @@
 alwaysApply: true
 ---
 
-# Anderson Farm Global Development Rules
-
 ## 1. Standar Kode & Keterbacaan
 
 - Gunakan PHP 8.4 dan fitur Laravel 13 terbaru.

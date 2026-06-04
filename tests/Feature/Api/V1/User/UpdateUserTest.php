@@ -65,3 +65,10 @@ it('gagal update tanpa token (401)', function () {
     $response = $this->patchJson('/api/v1/users/'.$this->user1->id, ['name' => 'X']);
     $response->assertStatus(401);
 });
+
+it('menolak update user dengan method PUT (405)', function () {
+    Sanctum::actingAs($this->admin, ['*']);
+
+    $this->putJson('/api/v1/users/'.$this->user1->id, ['name' => 'Via PUT'])
+        ->assertMethodNotAllowed();
+});

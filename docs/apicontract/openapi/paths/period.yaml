@@ -29,7 +29,7 @@ periods:
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
         $ref: "../components/response.yaml#/ForbiddenError"
-  put:
+  patch:
     tags: [Setup - Period]
     summary: Edit periode ternak
     description: |

@@ -43,7 +43,7 @@ it('can create form config', function () {
 it('can show form config', function () {
     $ENDPOINT = '/api/v1/form-configs';
     $formConfig = FormConfig::factory()->create();
-    $response = $this->getJson($ENDPOINT . '/' . $formConfig->id);
+    $response = $this->getJson($ENDPOINT.'/'.$formConfig->id);
     $response->assertOk()
         ->assertJsonStructure([
             'success',
@@ -56,7 +56,7 @@ it('can update form config', function () {
     $ENDPOINT = '/api/v1/form-configs';
     $formConfig = FormConfig::factory()->create();
     $payload = ['key_name' => 'updated_key_name'];
-    $response = $this->putJson($ENDPOINT . '/' . $formConfig->id, $payload);
+    $response = $this->patchJson($ENDPOINT.'/'.$formConfig->id, $payload);
     $response->assertOk()
         ->assertJsonStructure([
             'success',
@@ -68,7 +68,7 @@ it('can update form config', function () {
 it('can delete form config', function () {
     $ENDPOINT = '/api/v1/form-configs';
     $formConfig = FormConfig::factory()->create();
-    $response = $this->deleteJson($ENDPOINT . '/' . $formConfig->id);
+    $response = $this->deleteJson($ENDPOINT.'/'.$formConfig->id);
     $response->assertOk()
         ->assertJsonStructure([
             'success',

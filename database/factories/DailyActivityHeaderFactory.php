@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 use App\Models\ProductionPeriod;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class DailyActivityHeaderFactory extends Factory
 {
@@ -13,8 +13,8 @@ class DailyActivityHeaderFactory extends Factory
     {
         return [
             'id' => Str::uuid()->toString(),
-            'period_id' => \App\Models\ProductionPeriod::inRandomOrder()->first()?->id ?? \App\Models\ProductionPeriod::factory(),
-            'user_id' => \App\Models\User::inRandomOrder()->first()?->id ?? \App\Models\User::factory(),
+            'period_id' => ProductionPeriod::inRandomOrder()->first()?->id ?? ProductionPeriod::factory(),
+            'user_id' => User::inRandomOrder()->first()?->id ?? User::factory(),
             'date' => $this->faker->dateTimeBetween('-30 days', 'now'),
             'age_days' => $this->faker->numberBetween(1, 35),
             'mortality_count' => $this->faker->numberBetween(0, 10),
@@ -25,5 +25,33 @@ class DailyActivityHeaderFactory extends Factory
             'created_at_client' => now(),
             'updated_at_client' => now(),
         ];
+    }
+
+    public function submitted(): static
+    {
+        return $this->state(fn () => [
+            'business_status' => 'SUBMITTED',
+            'sync_status' => 'SYNCED',
+            'updated_at_server' => now(),
+        ]);
+    }
+
+    public function rejected(): static
+    {
+        return $this->state(fn () => [
+            'business_status' => 'REJECTED',
+            'rejection_reason' => 'Data kematian tidak sesuai bukti foto.',
+            'sync_status' => 'SYNCED',
+            'updated_at_server' => now(),
+        ]);
+    }
+
+    public function approved(): static
+    {
+        return $this->state(fn () => [
+            'business_status' => 'APPROVED',
+            'sync_status' => 'SYNCED',
+            'updated_at_server' => now(),
+        ]);
     }
 }

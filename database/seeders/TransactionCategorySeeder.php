@@ -4,12 +4,27 @@ namespace Database\Seeders;
 
 use App\Models\TransactionCategory;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class TransactionCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        TransactionCategory::factory()->count(10)->create();
+        $now = now();
+
+        TransactionCategory::query()->updateOrCreate(
+            ['name' => 'Gaji Pegawai'],
+            [
+                'type' => 'EXPENSE',
+                'is_active' => true,
+                'sync_status' => 'SYNCED',
+                'created_at_client' => $now,
+                'updated_at_server' => $now,
+                'updated_at_client' => $now,
+                'updated_at_server' => $now,
+                'deleted_at' => null,
+            ],
+        );
+
+        TransactionCategory::factory()->count(9)->create();
     }
 }

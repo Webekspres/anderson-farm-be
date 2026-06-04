@@ -2,6 +2,7 @@
 
 namespace App\Services\Api;
 
+use App\Enums\BusinessStatus;
 use App\Models\CoopUserAssignment;
 use App\Models\DailyActivityHeader;
 use App\Models\ProductionPeriod;
@@ -13,13 +14,10 @@ use Illuminate\Support\Facades\DB;
 class PeriodActionService
 {
     /**
-     * Status yang dianggap "menggantung" (belum final) untuk Daily Activity.
-     */
-    private const PENDING_ACTIVITY_STATUSES = ['DRAFT', 'SUBMITTED', 'NEEDS_REVIEW'];
-
-    /**
      * Status yang dianggap "menggantung" untuk Transaksi Keuangan.
      * PENDING_APPROVAL setara dengan SUBMITTED di konteks transaksi.
+     *
+     * @var list<string>
      */
     private const PENDING_TRANSACTION_STATUSES = ['DRAFT', 'SUBMITTED', 'NEEDS_REVIEW'];
 
@@ -33,7 +31,7 @@ class PeriodActionService
         // ── Gate 1: Temukan periode ──
         $period = ProductionPeriod::with('floor.coop')->find($periodId);
 
-        if (!$period) {
+        if (! $period) {
             $this->abort(404, 'Periode tidak ditemukan.');
         }
 
@@ -45,13 +43,13 @@ class PeriodActionService
         // ── Gate 3: Assignment Check untuk role PIC ──
         // Admin dan Manager memiliki akses global
         if ($user->role === 'pic') {
-            $coopId     = $period->floor?->coop_id;
+            $coopId = $period->floor?->coop_id;
             $isAssigned = CoopUserAssignment::where('user_id', $user->id)
                 ->where('coop_id', $coopId)
                 ->whereNull('deleted_at')
                 ->exists();
 
-            if (!$isAssigned) {
+            if (! $isAssigned) {
                 $this->abort(403, 'Anda tidak memiliki akses ke kandang pada periode ini.');
             }
         }
@@ -63,7 +61,7 @@ class PeriodActionService
 
         // ── Gate 5: Pre-Flight — Cek Daily Activity yang masih menggantung ──
         $hasPendingActivities = DailyActivityHeader::where('period_id', $periodId)
-            ->whereIn('business_status', self::PENDING_ACTIVITY_STATUSES)
+            ->whereIn('business_status', BusinessStatus::pendingValues())
             ->exists();
 
         if ($hasPendingActivities) {
@@ -88,8 +86,8 @@ class PeriodActionService
         // ── Execution: Semua gate lolos → Lock periode dalam DB transaction ──
         return DB::transaction(function () use ($period, $data): ProductionPeriod {
             $period->update([
-                'status'         => 'completed',
-                'closed_at'      => now(),
+                'status' => 'completed',
+                'closed_at' => now(),
                 'closing_reason' => $data['closing_reason'],
             ]);
 
@@ -106,7 +104,7 @@ class PeriodActionService
             response()->json([
                 'success' => false,
                 'message' => $message,
-                'data'    => null,
+                'data' => null,
             ], $statusCode)
         );
     }

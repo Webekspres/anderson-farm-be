@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests\Api\V1\Sync;
 
+use App\Enums\BusinessStatus;
 use App\Models\ProductionPeriod;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class SyncPostDailyActivityRequest extends FormRequest
@@ -29,7 +31,7 @@ class SyncPostDailyActivityRequest extends FormRequest
             'headers.*.mortality_count' => ['integer', 'min:0'],
             'headers.*.cull_count' => ['integer', 'min:0'],
             'headers.*.average_weight' => ['nullable', 'numeric', 'min:0'],
-            'headers.*.business_status' => ['required', 'string'],
+            'headers.*.business_status' => ['required', 'string', Rule::in(BusinessStatus::syncableValues())],
             'headers.*.created_at_client' => ['required', 'date'],
             'headers.*.updated_at_client' => ['required', 'date'],
 
