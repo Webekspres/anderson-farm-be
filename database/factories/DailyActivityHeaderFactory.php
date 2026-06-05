@@ -19,6 +19,7 @@ class DailyActivityHeaderFactory extends Factory
             'age_days' => $this->faker->numberBetween(1, 35),
             'mortality_count' => $this->faker->numberBetween(0, 10),
             'cull_count' => $this->faker->numberBetween(0, 5),
+            'feed_consumption_kg' => $this->faker->randomFloat(2, 50, 500),
             'average_weight' => $this->faker->randomFloat(2, 0.1, 2.5),
             'business_status' => 'DRAFT',
             'sync_status' => 'LOCAL_SAVED',

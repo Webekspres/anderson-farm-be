@@ -30,6 +30,7 @@ class SyncPostDailyActivityRequest extends FormRequest
             'headers.*.age_days' => ['required', 'integer', 'min:0'],
             'headers.*.mortality_count' => ['integer', 'min:0'],
             'headers.*.cull_count' => ['integer', 'min:0'],
+            'headers.*.feed_consumption_kg' => ['numeric', 'min:0'],
             'headers.*.average_weight' => ['nullable', 'numeric', 'min:0'],
             'headers.*.business_status' => ['required', 'string', Rule::in(BusinessStatus::syncableValues())],
             'headers.*.created_at_client' => ['required', 'date'],

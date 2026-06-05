@@ -8,33 +8,33 @@
 
 ## Konvensi
 
-| Simbol | Keterangan |
-|--------|------------|
-| `[id]` | Dynamic route parameter |
-| `📴` | Offline-first (baca SQLite dulu, sync bila online) |
-| `🌐` | Online-only (wajib koneksi) |
-| `👷` | Requires login — ABK / PIC (operasional lapangan) |
-| `👤` | Requires login — semua role |
-| `🔑` | Requires login — Manager / Admin |
-| `💰` | Requires login — Finance / Admin |
-| `📊` | Requires login — Investor (view-only) |
-| `✅` | Status: Done — layar berfungsi penuh |
-| `🔶` | Status: Partial — UI ada, data masih mock / belum terhubung |
-| `🔴` | Status: Placeholder — file ada tapi hanya stub kosong |
-| `📋` | Status: Planned — ada di spec, belum ada file layar |
-| `[FASE 2]` | Di luar scope saat ini |
+| Simbol     | Keterangan                                                  |
+| ---------- | ----------------------------------------------------------- |
+| `[id]`     | Dynamic route parameter                                     |
+| `📴`       | Offline-first (baca SQLite dulu, sync bila online)          |
+| `🌐`       | Online-only (wajib koneksi)                                 |
+| `👷`       | Requires login — ABK / PIC (operasional lapangan)           |
+| `👤`       | Requires login — semua role                                 |
+| `🔑`       | Requires login — Manager / Admin                            |
+| `💰`       | Requires login — Finance / Admin                            |
+| `📊`       | Requires login — Investor (view-only)                       |
+| `✅`       | Status: Done — layar berfungsi penuh                        |
+| `🔶`       | Status: Partial — UI ada, data masih mock / belum terhubung |
+| `🔴`       | Status: Placeholder — file ada tapi hanya stub kosong       |
+| `📋`       | Status: Planned — ada di spec, belum ada file layar         |
+| `[FASE 2]` | Di luar scope saat ini                                      |
 
 ---
 
 ## Ringkasan Status
 
-| Status | Jumlah |
-|--------|--------|
-| ✅ Done | 15 |
-| 🔶 Partial | 8 |
-| 🔴 Placeholder | 1 |
-| 📋 Planned | 21 |
-| **Total** | **45** |
+| Status         | Jumlah |
+| -------------- | ------ |
+| ✅ Done        | 15     |
+| 🔶 Partial     | 8      |
+| 🔴 Placeholder | 1      |
+| 📋 Planned     | 21     |
+| **Total**      | **45** |
 
 ---
 
@@ -475,10 +475,18 @@ Sync Services:
 ## 16. Portal Investor 📊 🌐
 
 ```
-/investor/dashboard            → Dashboard Investor (Read-Only)        📋
-├── Rekap ROI per periode
-├── Status RHPP (PUBLISHED / DRAFT)
-├── Persentase bagi hasil yang diterima
+/investor/dashboard
+├── 📊 RINGKASAN INVESTASI AKTIF (Multi-Lantai)
+│   ├── Nama Kandang & Lantai (e.g., Kandang A - Lantai 1)
+│   ├── Umur Ayam Aktif: X Hari (Countdown Panen: Y Hari Lagi)
+│   ├── Populasi Ayam Hidup: X Ekor (Deplesi: X%) -> [Sinyal Kesehatan Kandang]
+│   ├── Persentase Bagi Hasil: X% (Sesuai Kontrak PeriodInvestor)
+│   └── Realisasi BOP Berjalan: Rp X.XXX.XXX
+│
+├── 📜 RIWAYAT SIKLUS & KEUANGAN (Closed Period)
+│   ├── Status Laporan Akhir: RHPP (PUBLISHED / DRAFT)
+│   ├── Rekap Realisasi ROI Final: Rp X.XXX.XXX
+│   └── Status Transfer Payout: (PAID / PENDING)
 └── API: GET /api/v1/investor/dashboard
 ```
 
@@ -512,4 +520,3 @@ Sync Services:
 ```
 
 ---
-

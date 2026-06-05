@@ -25,6 +25,11 @@ DailyActivityHeaderBase:
     cull_count:
       type: integer
       default: 0
+    feed_consumption_kg:
+      type: number
+      format: float
+      default: 0
+      description: Konsumsi pakan harian dalam kilogram.
     average_weight:
       type: number
       format: float

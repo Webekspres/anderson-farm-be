@@ -49,6 +49,7 @@ describe('GET /api/v1/sync/daily-activities', function () {
 
         // Buat child relations untuk header pertama agar kita bisa cek eager loading
         $firstHeader = $headers->first();
+        $firstHeader->update(['feed_consumption_kg' => 210.75]);
         DailyDynamicLog::factory()->create(['header_id' => $firstHeader->id]);
         HarvestEntry::factory()->create(['header_id' => $firstHeader->id]);
         OvkUsage::factory()->create(['header_id' => $firstHeader->id]);
@@ -72,6 +73,7 @@ describe('GET /api/v1/sync/daily-activities', function () {
                     'period_id',
                     'date',
                     'mortality_count',
+                    'feed_consumption_kg',
                     'business_status',
                     'dynamic_logs',
                     'harvests',
@@ -86,6 +88,7 @@ describe('GET /api/v1/sync/daily-activities', function () {
 
         // Pastikan child relations ter-eager load pada header pertama
         $headerData = collect($response->json('data'))->firstWhere('id', $firstHeader->id);
+        expect($headerData['feed_consumption_kg'])->toEqual(210.75);
         expect($headerData['dynamic_logs'])->toHaveCount(1);
         expect($headerData['harvests'])->toHaveCount(1);
         expect($headerData['ovk_usages'])->toHaveCount(1);

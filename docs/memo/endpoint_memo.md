@@ -97,8 +97,8 @@ _Operasi CRUD untuk tabel referensi sistem. Update resource memakai `PATCH`._
 | `/api/v1/uploads`                |  `POST`  | **Storage Endpoint.** Unggah _file_ fisik (PDF/JPG) secara _multipart_. Mengembalikan _response_ berupa `file_url`. |   ✅   |
 | `/api/v1/uploads`                | `DELETE` | Menghapus _file_ (_orphaned file_) jika _user_ batal klik simpan di aplikasi.                                       |   ✅   |
 | `/api/v1/export/rhpp`            |  `GET`   | _Generate_ Excel/PDF performa teknis & laba rugi final per periode.                                                 |   📋   |
-| `/api/v1/export/harvests`        |  `GET`   | _Generate_ Excel rekapitulasi panen parsial/bertahap (HarvestEntry).                                                |   📋   |
-| `/api/v1/export/evaluations`     |  `GET`   | _Generate_ Excel evaluasi performa teknis (BW, FCR, Deplesi).                                                       |   📋   |
+| `/api/v1/export/harvests`        |  `GET`   | _Generate_ Excel rekapitulasi panen parsial/bertahap (HarvestEntry).                                                |   ✅   |
+| `/api/v1/export/evaluations`     |  `GET`   | _Generate_ Excel evaluasi performa teknis (BW, FCR, Deplesi).                                                       |   ✅   |
 | `/api/v1/export/ovk-usages`      |  `GET`   | Rekap detail pemakaian obat, vaksin, dan kimia.                                                                     |   ✅   |
 | `/api/v1/export/bop-details`     |  `GET`   | Excel rincian Biaya Operasional Kandang per periode untuk audit keuangan.                                           |   ✅   |
 | `/api/v1/export/template-salary` |  `GET`   | Template Excel gaji ABK per periode aktif (Finance/Admin).                                                          |   ✅   |

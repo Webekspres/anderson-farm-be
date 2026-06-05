@@ -31,6 +31,7 @@ function buildHeaderPayload(
         'age_days' => 15,
         'mortality_count' => 5,
         'cull_count' => 1,
+        'feed_consumption_kg' => 125.5,
         'average_weight' => 1.2,
         'business_status' => 'DRAFT',
         'created_at_client' => '2026-04-24T06:00:00Z',
@@ -148,6 +149,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
         $this->assertDatabaseHas('daily_activity_headers', [
             'id' => $headerId,
             'sync_status' => 'SYNCED',
+            'feed_consumption_kg' => 125.5,
         ]);
         $this->assertDatabaseCount('daily_dynamic_logs', 1);
         $this->assertDatabaseCount('harvest_entries', 1);
@@ -545,7 +547,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
         ]);
     });
 
-    it('returns 422 when mortality, culls, or OVK quantity are negative', function () {
+    it('returns 422 when mortality, culls, feed consumption, or OVK quantity are negative', function () {
         $user = postAuthUser();
         $period = ProductionPeriod::factory()->create([
             'status' => 'active',
@@ -564,6 +566,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
                     'updated_at_client' => $day.'T06:00:00Z',
                     'mortality_count' => -5,
                     'cull_count' => -2,
+                    'feed_consumption_kg' => -1,
                 ], [
                     'ovk_usages' => [
                         [
@@ -585,6 +588,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
             ->assertJsonValidationErrors([
                 'headers.0.mortality_count',
                 'headers.0.cull_count',
+                'headers.0.feed_consumption_kg',
                 'headers.0.ovk_usages.0.quantity',
             ]);
     });

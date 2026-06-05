@@ -23,7 +23,7 @@ _Sore hari, ABK kembali ke mes, terhubung ke WiFi, lalu menekan tombol "Kirim Da
 
 1. **Query Lokal:** Sebelum mengirim API, aplikasi _mobile_ menyapu database SQLite-nya sendiri dengan _query_:
    `SELECT * FROM daily_activity_headers WHERE sync_status IN ('PENDING_SYNC', 'CONFLICT');`
-2. **Perakitan Payload:** HP menemukan `uuid-header-999`. Ia lalu merakit JSON super besar (Header beserta seluruh relasi anaknya: OVK, Kematian, Foto, dll).
+2. **Perakitan Payload:** HP menemukan `uuid-header-999`. Ia lalu merakit JSON super besar (Header beserta seluruh relasi anaknya: OVK, Kematian, Konsumsi Pakan (`feed_consumption_kg` dalam kg), Foto, dll).
 3. **Pengiriman:** HP memanggil `POST /api/v1/sync/daily-activities` dengan membawa JSON tersebut.
 
 ### 🔴 FASE 4: Server Memproses (Wipe & Replace)

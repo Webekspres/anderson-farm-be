@@ -206,6 +206,7 @@ describe('Approval integration with sync', function () {
                 'age_days' => 10,
                 'mortality_count' => 2,
                 'cull_count' => 0,
+                'feed_consumption_kg' => 80,
                 'average_weight' => 1.1,
                 'business_status' => 'SUBMITTED',
                 'created_at_client' => now()->subDays(2)->toIso8601String(),
@@ -233,6 +234,7 @@ describe('Approval integration with sync', function () {
 
         expect($approvedItem)->not->toBeNull()
             ->and($approvedItem['business_status'])->toBe('APPROVED')
-            ->and($approvedItem['approved_by'])->toBe($manager->id);
+            ->and($approvedItem['approved_by'])->toBe($manager->id)
+            ->and($approvedItem['feed_consumption_kg'])->toEqual(80);
     });
 });

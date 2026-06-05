@@ -20,6 +20,7 @@ class DailyActivityHeaderResource extends JsonResource
             'age_days' => $this->age_days,
             'mortality_count' => $this->mortality_count,
             'cull_count' => $this->cull_count,
+            'feed_consumption_kg' => $this->feed_consumption_kg !== null ? (float) $this->feed_consumption_kg : 0,
             'average_weight' => $this->average_weight,
             'business_status' => $this->business_status,
             'approved_by' => $this->approved_by,
@@ -31,7 +32,7 @@ class DailyActivityHeaderResource extends JsonResource
             'updated_at_server' => $this->updated_at_server?->toIso8601String(),
             'deleted_at' => $this->deleted_at?->toIso8601String(),
             'sync_metadata' => $this->sync_metadata,
-            
+
             // Optional loaded relationships
             'dynamic_logs' => DailyDynamicLogResource::collection($this->whenLoaded('dynamicLogs')),
             'harvests' => HarvestEntryResource::collection($this->whenLoaded('harvests')),

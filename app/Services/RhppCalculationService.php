@@ -94,21 +94,11 @@ class RhppCalculationService
     }
 
     /**
-     * Calculate total feed consumption in kilograms.
+     * Calculate total feed consumption in kilograms from daily activity headers.
      */
     private function calculateFeedConsumption(ProductionPeriod $period): float
     {
-        $feedConsumption = 0;
-
-        foreach ($period->dailyActivityHeaders as $header) {
-            foreach ($header->ovkUsages as $usage) {
-                if ($usage->ovkItem && $usage->ovkItem->category === 'pakan') {
-                    $feedConsumption += $usage->quantity_used ?? 0;
-                }
-            }
-        }
-
-        return $feedConsumption;
+        return (float) $period->dailyActivityHeaders->sum('feed_consumption_kg');
     }
 
     /**

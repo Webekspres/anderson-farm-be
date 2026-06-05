@@ -326,6 +326,7 @@ model Coop {
     farm             Farm                 @relation(fields: [farm_id], references: [id])
     coop_assignments CoopUserAssignment[]
     transactions     Transaction[]
+    transactions     Transaction[]
 
     @@index([farm_id])
     @@map("coops")
@@ -824,13 +825,14 @@ model DailyActivityHeader {
     form_schema_version Int     @default(1) // Versi master form saat data ini diisi
 
     // Business fields (Data Umum Harian)
-    period_id       String
-    user_id         String
-    date            DateTime
-    age_days        Int
-    mortality_count Int      @default(0) // Deplesi mati total hari itu
-    cull_count      Int      @default(0) // Deplesi afkir total hari itu
-    average_weight  Float?
+    period_id           String
+    user_id             String
+    date                DateTime
+    age_days            Int
+    mortality_count     Int      @default(0) // Deplesi mati total hari itu
+    cull_count          Int      @default(0) // Deplesi afkir total hari itu
+    feed_consumption_kg Float?
+    average_weight      Float?
 
     // ---------------------------------------------------
     // [BARU] Layer Workflow & Approval
@@ -1155,6 +1157,8 @@ model Transaction {
     harvest            HarvestEntry?       @relation(fields: [harvest_id], references: [id])
     salary             EmployeeSalary?     @relation("SalaryTransactions", fields: [salary_id], references: [id])
     approver           User?               @relation("TransactionApprover", fields: [approved_by], references: [id])
+    coop               Coop?               @relation(fields: [coopId], references: [id])
+    coopId             String?
 
     @@index([period_id])
     @@index([coop_id])

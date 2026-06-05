@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('age_days');
             $table->integer('mortality_count')->default(0);
             $table->integer('cull_count')->default(0);
+            $table->double('feed_consumption_kg')->default(0);
             $table->double('average_weight')->nullable();
 
             $table->string('business_status')->default('DRAFT');
@@ -35,7 +36,7 @@ return new class extends Migration
             $table->text('sync_metadata')->nullable();
 
             $table->unique(['period_id', 'date']);
-            
+
             $table->foreign('period_id')->references('id')->on('production_periods')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');

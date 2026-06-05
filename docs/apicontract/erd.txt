@@ -751,9 +751,10 @@ model DailyActivityHeader {
   user_id         String
   date            DateTime
   age_days        Int
-  mortality_count Int      @default(0) // Deplesi mati total hari itu
-  cull_count      Int      @default(0) // Deplesi afkir total hari itu
-  average_weight  Float?
+  mortality_count     Int      @default(0) // Deplesi mati total hari itu
+  cull_count          Int      @default(0) // Deplesi afkir total hari itu
+  feed_consumption_kg Float?
+  average_weight      Float?
 
   // ---------------------------------------------------
   // [BARU] Layer Workflow & Approval

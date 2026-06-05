@@ -128,6 +128,7 @@ class DailyActivitySyncService
                 'age_days' => $headerPayload['age_days'],
                 'mortality_count' => $headerPayload['mortality_count'] ?? 0,
                 'cull_count' => $headerPayload['cull_count'] ?? 0,
+                'feed_consumption_kg' => $headerPayload['feed_consumption_kg'] ?? 0,
                 'average_weight' => $headerPayload['average_weight'] ?? null,
                 'business_status' => $resolvedStatus,
                 'approved_by' => $clearApprovalFields ? null : $existingHeader?->approved_by,

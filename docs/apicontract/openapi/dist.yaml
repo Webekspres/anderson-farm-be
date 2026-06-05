@@ -2667,6 +2667,9 @@ paths:
                         format: date
                       mortality_count:
                         type: integer
+                      feed_consumption_kg:
+                        type: number
+                        format: float
                       dynamic_logs:
                         type: array
                         items:

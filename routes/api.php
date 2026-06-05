@@ -18,10 +18,12 @@ use App\Http\Controllers\Api\V1\EducationArticleController;
 use App\Http\Controllers\Api\V1\EducationSyncController;
 use App\Http\Controllers\Api\V1\EquipmentTypeController;
 use App\Http\Controllers\Api\V1\EquipmentTypeFormConfigController;
+use App\Http\Controllers\Api\V1\EvaluationExportController;
 use App\Http\Controllers\Api\V1\FarmController;
 use App\Http\Controllers\Api\V1\FcmTokenController;
 use App\Http\Controllers\Api\V1\FinanceSyncController;
 use App\Http\Controllers\Api\V1\FormConfigController;
+use App\Http\Controllers\Api\V1\HarvestExportController;
 use App\Http\Controllers\Api\V1\MaintenanceSyncController;
 use App\Http\Controllers\Api\V1\MasterDataSyncController;
 use App\Http\Controllers\Api\V1\NotificationController;
@@ -153,6 +155,8 @@ Route::prefix('v1')->group(function () {
         // Export endpoints
         Route::get('/export/ovk-usages', [OvkExportController::class, 'show']);
         Route::get('/export/bop-details', [BopExportController::class, 'show']);
+        Route::get('/export/harvests', [HarvestExportController::class, 'show']);
+        Route::get('/export/evaluations', [EvaluationExportController::class, 'show']);
         Route::get('/export/template-salary', [SalaryExportController::class, 'show']);
         Route::post('/import/salary', [SalaryImportController::class, 'store']);
 
