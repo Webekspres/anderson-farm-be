@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\CoopFloor;
 use App\Models\ProductionPeriod;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,10 +21,10 @@ class ProductionPeriodFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
-            'floor_id' => fn() => \App\Models\CoopFloor::factory(),
-            'pic_id' => fn() => \App\Models\User::factory(),
+            'floor_id' => fn () => CoopFloor::factory(),
+            'pic_id' => fn () => User::factory(),
             'period_code' => $this->faker->unique()->bothify('PERIOD-####'),
             'start_date' => $this->faker->dateTimeBetween('-4 months', 'now'),
             'end_date' => $this->faker->optional()->dateTimeBetween('-4 months', 'now'),

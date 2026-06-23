@@ -14,7 +14,7 @@ class CoopFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
             'farm_id' => Farm::factory(),
             'name' => 'Kdg '.$this->faker->city(),

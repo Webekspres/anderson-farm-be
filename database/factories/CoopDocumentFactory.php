@@ -20,7 +20,7 @@ class CoopDocumentFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
             'floor_id' => CoopFloor::factory(),
             'name' => $this->faker->sentence(3),

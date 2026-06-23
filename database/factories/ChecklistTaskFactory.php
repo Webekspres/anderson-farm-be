@@ -2,12 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\ChecklistTask;
 use App\Models\ProductionPeriod;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ChecklistTask>
+ * @extends Factory<ChecklistTask>
  */
 class ChecklistTaskFactory extends Factory
 {
@@ -22,7 +23,7 @@ class ChecklistTaskFactory extends Factory
 
         return [
             'id' => Str::uuid()->toString(),
-            'server_id' => fake()->unique()->numberBetween(1, 9999999),
+            'server_id' => fake()->unique()->numberBetween(1, 2147483646),
             'version' => 1,
             'period_id' => ProductionPeriod::factory(),
             'task_name' => fake()->randomElement(['Cuci Terpal', 'Cek Suhu Heater', 'Tabur Sekam', 'Catat Kondisi DOC']),

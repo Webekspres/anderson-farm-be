@@ -26,7 +26,7 @@ class OvkItemFactory extends Factory
             'Kalsium',
             'Mineral Mix',
             'Obat Luka',
-            'Vaksin Marek'
+            'Vaksin Marek',
         ];
         $units = ['ml', 'gram', 'botol', 'sachet', 'tablet', 'kg'];
         static $usedNames = [];
@@ -37,9 +37,10 @@ class OvkItemFactory extends Factory
             $name = $this->faker->randomElement($availableNames);
             $usedNames[] = $name;
         }
+
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
             'name' => $name,
             'type' => $this->faker->randomElement(['OBAT', 'VAKSIN', 'KIMIA']),

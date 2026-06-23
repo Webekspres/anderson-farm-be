@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\EquipmentType;
 use App\Models\EquipmentTypeFormConfig;
+use App\Models\FormConfig;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,10 +21,10 @@ class EquipmentTypeFormConfigFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
-            'equipment_type_id' => fn() => \App\Models\EquipmentType::factory(),
-            'form_config_id' => fn() => \App\Models\FormConfig::factory(),
+            'equipment_type_id' => fn () => EquipmentType::factory(),
+            'form_config_id' => fn () => FormConfig::factory(),
             'display_order' => $this->faker->numberBetween(1, 10),
             'sync_status' => 'PENDING_SYNC',
             'created_at_client' => now(),

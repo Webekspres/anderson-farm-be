@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Coop;
 use App\Models\CoopUserAssignment;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,12 +20,13 @@ class CoopUserAssignmentFactory extends Factory
     public function definition(): array
     {
         $dateRange = '-1 year';
+
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
-            'user_id' => \App\Models\User::factory(),
-            'coop_id' => \App\Models\Coop::factory(),
+            'user_id' => User::factory(),
+            'coop_id' => Coop::factory(),
             'assigned_at' => $this->faker->dateTimeBetween($dateRange, 'now'),
             'role_in_coop' => $this->faker->randomElement(['MANAGER', 'PIC', 'ABK', null]),
             'sync_status' => 'PENDING_SYNC',

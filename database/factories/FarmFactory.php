@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Farm;
 use App\Models\Area;
+use App\Models\Farm;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class FarmFactory extends Factory
@@ -14,10 +14,10 @@ class FarmFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
             'area_id' => Area::factory(),
-            'name' => 'Farm ' . $this->faker->city(),
+            'name' => 'Farm '.$this->faker->city(),
             'address' => $this->faker->address(),
             'is_active' => $this->faker->boolean(90),
             'sync_status' => $this->faker->randomElement(['LOCAL_SAVED', 'PENDING_SYNC', 'SYNCED', 'SYNC_FAILED', 'CONFLICT']),

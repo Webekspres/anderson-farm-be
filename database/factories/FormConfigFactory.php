@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\FormConfig;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 class FormConfigFactory extends Factory
 {
@@ -14,7 +13,7 @@ class FormConfigFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
             'category' => $this->faker->randomElement(['EQUIPMENT', 'HBE']),
             'key_name' => $this->faker->unique()->regexify('([a-z_]{5,15})'),
@@ -24,7 +23,7 @@ class FormConfigFactory extends Factory
                 'required' => $this->faker->boolean(),
                 'min' => $this->faker->numberBetween(0, 10),
                 'max' => $this->faker->numberBetween(10, 100),
-                'unit' => $this->faker->randomElement(['Celcius', 'Kg', 'L', 'Unit'])
+                'unit' => $this->faker->randomElement(['Celcius', 'Kg', 'L', 'Unit']),
             ],
             'sync_status' => 'PENDING_SYNC',
             'created_at_client' => $this->faker->dateTime,

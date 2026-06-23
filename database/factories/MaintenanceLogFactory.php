@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\CoopFloor;
 use App\Models\MaintenanceLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class MaintenanceLogFactory extends Factory
@@ -13,10 +15,10 @@ class MaintenanceLogFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
-            'floor_id' => \App\Models\CoopFloor::factory(),
-            'reported_by' => \App\Models\User::factory(),
+            'floor_id' => CoopFloor::factory(),
+            'reported_by' => User::factory(),
             'date' => $this->faker->dateTime(),
             'description' => $this->faker->paragraph(),
             'status' => $this->faker->randomElement(['REPORTED', 'IN_PROGRESS', 'RESOLVED']),

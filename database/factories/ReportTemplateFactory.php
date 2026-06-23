@@ -19,7 +19,7 @@ class ReportTemplateFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
             'name' => $this->faker->sentence(3),
             'report_type' => $this->faker->randomElement(['DAILY', 'WEEKLY', 'MONTHLY']),

@@ -13,7 +13,7 @@ class CoopFormAssignmentFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'coop_equipment_id' => $this->faker->uuid(),
             'form_config_id' => $this->faker->uuid(),
             'display_order' => $this->faker->numberBetween(1, 10),

@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\CoopEquipment;
+use App\Models\CoopFloor;
+use App\Models\EquipmentType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,10 +21,10 @@ class CoopEquipmentFactory extends Factory
     {
         return [
             'id' => $this->faker->uuid(),
-            'server_id' => $this->faker->unique()->numberBetween(1, 9999999),
+            'server_id' => $this->faker->unique()->numberBetween(1, 2147483646),
             'version' => 1,
-            'floor_id' => fn() => \App\Models\CoopFloor::factory(),
-            'equipment_type_id' => fn() => \App\Models\EquipmentType::factory(),
+            'floor_id' => fn () => CoopFloor::factory(),
+            'equipment_type_id' => fn () => EquipmentType::factory(),
             'unit_code' => $this->faker->optional()->bothify('UNIT-####'),
             'installed_at' => $this->faker->optional()->dateTime(),
             'sync_status' => 'PENDING_SYNC',
