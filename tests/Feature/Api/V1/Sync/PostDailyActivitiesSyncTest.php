@@ -17,25 +17,45 @@ function postAuthUser(): User
     return User::factory()->create();
 }
 
+function syncActivityDay(int $daysAgo = 2): string
+{
+    return now()->subDays($daysAgo)->format('Y-m-d');
+}
+
+function syncClientTimestamp(string $activityDay): string
+{
+    return $activityDay.'T06:00:00Z';
+}
+
+function createSyncPeriod(array $overrides = []): ProductionPeriod
+{
+    return ProductionPeriod::factory()->create(array_merge([
+        'start_date' => now()->subMonths(6)->format('Y-m-d'),
+    ], $overrides));
+}
+
 function buildHeaderPayload(
     string $periodId,
     string $userId,
     ?array $overrides = [],
     ?array $children = [],
 ): array {
+    $activityDay = $overrides['date'] ?? syncActivityDay();
+    $clientTimestamp = $overrides['created_at_client'] ?? syncClientTimestamp($activityDay);
+
     return array_merge([
         'id' => Str::uuid()->toString(),
         'period_id' => $periodId,
         'user_id' => $userId,
-        'date' => '2026-04-24',
+        'date' => $activityDay,
         'age_days' => 15,
         'mortality_count' => 5,
         'cull_count' => 1,
         'feed_consumption_kg' => 125.5,
         'average_weight' => 1.2,
         'business_status' => 'DRAFT',
-        'created_at_client' => '2026-04-24T06:00:00Z',
-        'updated_at_client' => '2026-04-24T06:00:00Z',
+        'created_at_client' => $clientTimestamp,
+        'updated_at_client' => $overrides['updated_at_client'] ?? $clientTimestamp,
         'dynamic_logs' => [],
         'harvests' => [],
         'ovk_usages' => [],
@@ -57,13 +77,14 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('successfully upserts a header with all child relations (Happy Path)', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        $period = createSyncPeriod(['status' => 'active']);
         assignUserToPeriodCoop($user, $period);
         $formConfig = FormConfig::factory()->create();
         $ovkItem = OvkItem::factory()->create();
         $task = ChecklistTask::factory()->create();
 
         $headerId = Str::uuid()->toString();
+        $clientTimestamp = syncClientTimestamp(syncActivityDay());
 
         $payload = [
             'headers' => [
@@ -75,8 +96,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                             'id' => Str::uuid()->toString(),
                             'form_config_id' => $formConfig->id,
                             'value' => '4',
-                            'created_at_client' => '2026-04-24T06:00:00Z',
-                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                            'created_at_client' => $clientTimestamp,
+                            'updated_at_client' => $clientTimestamp,
                         ],
                     ],
                     'harvests' => [
@@ -89,8 +110,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                             'price_per_kg' => 20000,
                             'total_revenue' => 8010000,
                             'delivery_order_no' => 'DO-001',
-                            'created_at_client' => '2026-04-24T06:00:00Z',
-                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                            'created_at_client' => $clientTimestamp,
+                            'updated_at_client' => $clientTimestamp,
                         ],
                     ],
                     'ovk_usages' => [
@@ -99,8 +120,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                             'ovk_item_id' => $ovkItem->id,
                             'quantity' => 2.5,
                             'notes' => 'Vaksin ND',
-                            'created_at_client' => '2026-04-24T06:00:00Z',
-                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                            'created_at_client' => $clientTimestamp,
+                            'updated_at_client' => $clientTimestamp,
                         ],
                     ],
                     'photos' => [
@@ -110,8 +131,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                             'photo_url' => 'https://cdn.example.com/photo.jpg',
                             'photo_type' => 'mortality',
                             'description' => 'Ayam mati pagi',
-                            'created_at_client' => '2026-04-24T06:00:00Z',
-                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                            'created_at_client' => $clientTimestamp,
+                            'updated_at_client' => $clientTimestamp,
                         ],
                     ],
                     'checklist_logs' => [
@@ -121,8 +142,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                             'boolean_value' => true,
                             'text_value' => null,
                             'notes' => 'Sudah dicek',
-                            'created_at_client' => '2026-04-24T06:00:00Z',
-                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                            'created_at_client' => $clientTimestamp,
+                            'updated_at_client' => $clientTimestamp,
                         ],
                     ],
                 ]),
@@ -160,15 +181,16 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('detects conflict when server data is newer than client data', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        $period = createSyncPeriod(['status' => 'active']);
         assignUserToPeriodCoop($user, $period);
 
         // Buat header di database dengan updated_at_server yang LEBIH BARU dari updated_at_client payload
+        $activityDay = syncActivityDay(10);
         $existingHeader = DailyActivityHeader::factory()->create([
             'period_id' => $period->id,
             'user_id' => $user->id,
-            'date' => '2026-03-15',
-            'updated_at_server' => '2026-04-25T12:00:00Z', // Server punya data besok
+            'date' => $activityDay,
+            'updated_at_server' => now()->addDay()->toIso8601String(),
             'sync_status' => 'SYNCED',
         ]);
 
@@ -176,7 +198,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
             'headers' => [
                 buildHeaderPayload($period->id, $user->id, [
                     'id' => $existingHeader->id,
-                    'updated_at_client' => '2026-04-24T06:00:00Z', // Klien punya data kemarin
+                    'date' => $activityDay,
+                    'updated_at_client' => syncClientTimestamp(syncActivityDay(15)),
                 ]),
             ],
         ];
@@ -196,7 +219,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('flags PERIOD_CLOSED when period is not active', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'closed']);
+        $period = createSyncPeriod(['status' => 'closed']);
         assignUserToPeriodCoop($user, $period);
 
         $payload = [
@@ -225,7 +248,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('returns 422 when required child fields are missing', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        $period = createSyncPeriod(['status' => 'active']);
         assignUserToPeriodCoop($user, $period);
 
         $payload = [
@@ -245,25 +268,28 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('performs wipe and replace on re-sync (existing children are replaced)', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        $period = createSyncPeriod(['status' => 'active']);
         assignUserToPeriodCoop($user, $period);
         $formConfig = FormConfig::factory()->create();
 
         $headerId = Str::uuid()->toString();
+        $activityDay = syncActivityDay();
+        $clientTimestamp = syncClientTimestamp($activityDay);
 
         // Sync pertama — 2 dynamic logs
         $firstPayload = [
             'headers' => [
                 buildHeaderPayload($period->id, $user->id, [
                     'id' => $headerId,
+                    'date' => $activityDay,
                 ], [
                     'dynamic_logs' => [
                         [
                             'id' => Str::uuid()->toString(),
                             'form_config_id' => $formConfig->id,
                             'value' => 'old_value_1',
-                            'created_at_client' => '2026-04-24T06:00:00Z',
-                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                            'created_at_client' => $clientTimestamp,
+                            'updated_at_client' => $clientTimestamp,
                         ],
                     ],
                 ]),
@@ -281,7 +307,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
                 buildHeaderPayload($period->id, $user->id, [
                     'id' => $headerId,
                     'updated_at_client' => $newClientTime,
-                    'date' => '2026-04-24',
+                    'date' => $activityDay,
                 ], [
                     'dynamic_logs' => [
                         [
@@ -317,15 +343,16 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('rejects header if another header already exists for the same date and period but different UUID', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        $period = createSyncPeriod(['status' => 'active']);
         assignUserToPeriodCoop($user, $period);
 
         $uuidA = Str::uuid()->toString();
+        $activityDay = syncActivityDay();
         DailyActivityHeader::factory()->create([
             'id' => $uuidA,
             'period_id' => $period->id,
             'user_id' => $user->id,
-            'date' => '2026-04-24',
+            'date' => $activityDay,
             'updated_at_server' => now(),
             'sync_status' => 'SYNCED',
         ]);
@@ -335,6 +362,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
             'headers' => [
                 buildHeaderPayload($period->id, $user->id, [
                     'id' => $uuidB,
+                    'date' => $activityDay,
                 ]),
             ],
         ];
@@ -354,7 +382,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('returns 422 if the daily activity date is in the future', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        $period = createSyncPeriod(['status' => 'active']);
         assignUserToPeriodCoop($user, $period);
 
         $future = now()->addDays(2)->format('Y-m-d');
@@ -376,7 +404,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('returns FORBIDDEN or 403 if the user is not assigned to the period\'s coop', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        $period = createSyncPeriod(['status' => 'active']);
 
         $payload = [
             'headers' => [
@@ -401,10 +429,11 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('rolls back the entire header transaction if a child payload has an invalid foreign key', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        $period = createSyncPeriod(['status' => 'active']);
         assignUserToPeriodCoop($user, $period);
 
         $headerId = Str::uuid()->toString();
+        $clientTimestamp = syncClientTimestamp(syncActivityDay());
         $payload = [
             'headers' => [
                 buildHeaderPayload($period->id, $user->id, [
@@ -416,8 +445,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                             'ovk_item_id' => Str::uuid()->toString(),
                             'quantity' => 1,
                             'notes' => null,
-                            'created_at_client' => '2026-04-24T06:00:00Z',
-                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                            'created_at_client' => $clientTimestamp,
+                            'updated_at_client' => $clientTimestamp,
                         ],
                     ],
                 ]),
@@ -436,7 +465,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('applies partial success on bulk POST without rolling back successful headers when one conflicts', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create([
+        $period = createSyncPeriod([
             'status' => 'active',
             'start_date' => now()->subMonths(3)->format('Y-m-d'),
         ]);
@@ -508,7 +537,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('rejects modification when business_status on server is APPROVED', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create([
+        $period = createSyncPeriod([
             'status' => 'active',
             'start_date' => now()->subMonths(2)->format('Y-m-d'),
         ]);
@@ -549,7 +578,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('returns 422 when mortality, culls, feed consumption, or OVK quantity are negative', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create([
+        $period = createSyncPeriod([
             'status' => 'active',
             'start_date' => now()->subMonths(1)->format('Y-m-d'),
         ]);
@@ -574,8 +603,8 @@ describe('POST /api/v1/sync/daily-activities', function () {
                             'ovk_item_id' => $ovkItem->id,
                             'quantity' => -10,
                             'notes' => null,
-                            'created_at_client' => '2026-04-24T06:00:00Z',
-                            'updated_at_client' => '2026-04-24T06:00:00Z',
+                            'created_at_client' => syncClientTimestamp($day),
+                            'updated_at_client' => syncClientTimestamp($day),
                         ],
                     ],
                 ]),
@@ -596,7 +625,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
     it('returns 422 when daily activity date is before the period start_date', function () {
         $user = postAuthUser();
         $periodStart = now()->subDays(10)->format('Y-m-d');
-        $period = ProductionPeriod::factory()->create([
+        $period = createSyncPeriod([
             'status' => 'active',
             'start_date' => $periodStart,
         ]);
@@ -622,7 +651,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('returns 422 when business_status is APPROVED or REJECTED', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create(['status' => 'active']);
+        $period = createSyncPeriod(['status' => 'active']);
         assignUserToPeriodCoop($user, $period);
 
         foreach (['APPROVED', 'REJECTED'] as $status) {
@@ -643,7 +672,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('allows resubmit SUBMITTED after server REJECTED and clears rejection fields', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create([
+        $period = createSyncPeriod([
             'status' => 'active',
             'start_date' => now()->subMonths(1)->format('Y-m-d'),
         ]);
@@ -687,7 +716,7 @@ describe('POST /api/v1/sync/daily-activities', function () {
 
     it('returns INVALID_STATUS when pushing DRAFT while server is SUBMITTED', function () {
         $user = postAuthUser();
-        $period = ProductionPeriod::factory()->create([
+        $period = createSyncPeriod([
             'status' => 'active',
             'start_date' => now()->subMonths(1)->format('Y-m-d'),
         ]);
