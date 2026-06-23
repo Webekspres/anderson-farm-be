@@ -1,0 +1,66 @@
+maintenances:
+  get:
+    tags: [Sync - Maintenances]
+    summary: Pull Riwayat Kerusakan & Perbaikan
+    description: Menarik semua log maintenance yang terkait dengan lantai di kandang yang ditugaskan ke user.
+    security:
+      - sanctum: []
+    parameters:
+      - name: last_sync_timestamp
+        in: query
+        required: false
+        schema: { type: string, format: date-time }
+    responses:
+      "200":
+        description: Berhasil ditarik.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                current_server_timestamp: { type: string, format: date-time }
+                data:
+                  type: object
+                  properties:
+                    maintenance_logs:
+                      type: array
+                      items: { $ref: "../../components/sync/maintenance.yaml#/MaintenanceLog" }
+  post:
+    tags: [Sync - Maintenances]
+    summary: Push Pelaporan & Update Status Perbaikan
+    description: Mengirim laporan kerusakan baru (ABK/PIC) atau memperbarui status perbaikan (Hanya PIC/Manager).
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              sync_timestamp: { type: string, format: date-time }
+              maintenances:
+                type: array
+                items: { $ref: "../../components/sync/maintenance.yaml#/MaintenanceSyncPayload" }
+    responses:
+      "200":
+        description: Hasil sinkronisasi push.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                server_timestamp: { type: string, format: date-time }
+                data:
+                  type: object
+                  properties:
+                    sync_results:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          status: { type: string, enum: [SUCCESS, CONFLICT, FAILED, FORBIDDEN] }
+                          server_id: { type: integer, nullable: true }

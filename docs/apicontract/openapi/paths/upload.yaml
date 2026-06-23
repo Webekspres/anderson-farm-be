@@ -47,7 +47,7 @@ uploads:
         description: Path file di server yang ingin dihapus (didapat dari response saat upload).
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "400":
         $ref: "../components/response.yaml#/ValidationError"
       "401":

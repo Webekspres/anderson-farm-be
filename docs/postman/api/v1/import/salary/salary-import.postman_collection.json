@@ -1,0 +1,83 @@
+{
+	"info": {
+		"_postman_id": "d8e3f9a5-0b2c-4d4e-9f6a-123456789abc",
+		"name": "Anderson Farm — Import Salary",
+		"description": "POST /api/v1/import/salary\n\nVariabel (environment atau collection):\n- `baseUrl` — contoh: http://localhost:8000\n- `bearerToken` — Bearer token dari login (role Finance atau Admin)\n\nBody: multipart/form-data, field `file` = Excel template gaji (.xlsx).\n\nImport: pilih **Merge** jika collection Anderson Farm API sudah ada.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "api",
+			"item": [
+				{
+					"name": "v1",
+					"item": [
+						{
+							"name": "import",
+							"item": [
+								{
+									"name": "salary",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{bearerToken}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "file",
+													"type": "file",
+													"src": [],
+													"description": "Excel template gaji (xlsx/xls/csv, max 5MB). Kolom wajib: Period Code, Employee Username, Total Gaji."
+												}
+											]
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/import/salary",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"import",
+												"salary"
+											]
+										},
+										"description": "Import data gaji ABK dari Excel (all-or-nothing).\n\n**Validasi file:** `file` wajib, mimes xlsx/xls/csv, max 5120 KB.\n\n**Auth:** Bearer `{{bearerToken}}`. Hanya **finance** atau **admin**.\n\n**Sukses (200):** `{ success: true, message: \"...\", data: null }` — upsert `EmployeeSalary` (payment_status `paid`) + `Transaction` jurnal.\n\n**Gagal isi file (422):** `{ success: false, message: \"...\", data: { errors: [\"Baris N: ...\", ...] } }` — tidak ada perubahan DB.\n\n**Error lain:** 401 guest, 403 role tidak diizinkan, 422 validasi Form Request (file kosong/mime salah)."
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "bearerToken",
+			"value": ""
+		}
+	]
+}

@@ -1,0 +1,83 @@
+{
+	"info": {
+		"_postman_id": "b9e4d3f2-6c7a-4f8b-0123-456789abcdef",
+		"name": "Anderson Farm — Export BOP Details",
+		"description": "GET /api/v1/export/bop-details\n\nVariabel environment:\n- `base_url` — contoh: http://localhost:8000\n- `token` — Bearer token dari login (collection login Anda)\n- `period_id` — UUID dari tabel production_periods\n\nUnduh file: gunakan **Send and Download** di Postman.\n\nImport: pilih **Merge** jika collection Anderson Farm API sudah ada.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "api",
+			"item": [
+				{
+					"name": "v1",
+					"item": [
+						{
+							"name": "export",
+							"item": [
+								{
+									"name": "bop-details",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{token}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/api/v1/export/bop-details?period_id={{period_id}}",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"export",
+												"bop-details"
+											],
+											"query": [
+												{
+													"key": "period_id",
+													"value": "{{period_id}}",
+													"description": "UUID production_periods.id (wajib)"
+												}
+											]
+										},
+										"description": "Mengunduh laporan BOP (Biaya Operasional Kandang) per periode.\n\n**Excel:** sheet `Detail BOP` + `Summary BOP`.\n\n**Auth:** Bearer token. Admin bebas akses; manager via area/farm; role lain via coop_user_assignments.\n\n**Respons sukses:** file .xlsx `BOP_DETAILS_{period_code}.xlsx` — gunakan Send and Download.\n\n**Error:**\n- 401 — token tidak valid\n- 403 — tidak punya akses kandang/periode\n- 404 — periode tidak ditemukan\n- 422 — period_id bukan UUID"
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "period_id",
+			"value": ""
+		}
+	]
+}

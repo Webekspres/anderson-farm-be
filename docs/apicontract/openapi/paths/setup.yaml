@@ -37,7 +37,67 @@ coop-equipments:
       - $ref: "../openapi.yaml#/components/parameters/ResourceId"
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
+coop-user-assignments:
+  post:
+    tags: [Setup - Coop User Assignment]
+    summary: Tugaskan pekerja ke kandang (Bulk Sync)
+    description: |
+      Melakukan bulk assignment pekerja ke kandang tertentu secara atomic dalam satu transaksi.
+
+      **Karakteristik:**
+      - **REPLACE Operation**: Menghapus semua assignment lama dan mengganti dengan list baru (bukan append/merge)
+      - Validasi: user_id harus valid dan terdaftar di sistem
+      - Setiap user dapat memiliki role spesifik di kandang (misal: kepala_kandang, abk, supervisor)
+
+      **Use Case:**
+      - Rotasi pekerja di kandang
+      - Update role pekerja di kandang
+      - Penghapusan/pemberhentian pekerja dari kandang (tidak ada di list baru)
+    security:
+      - sanctum: []
+    parameters:
+      - name: coop
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID dari kandang (coop)
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/setup.yaml#/SyncCoopUserAssignmentRequest"
+          example:
+            assignments:
+              - user_id: "550e8400-e29b-41d4-a716-446655440000"
+                role_in_coop: "kepala_kandang"
+              - user_id: "550e8400-e29b-41d4-a716-446655440001"
+                role_in_coop: "abk"
+              - user_id: "550e8400-e29b-41d4-a716-446655440002"
+                role_in_coop: null
+    responses:
+      "200":
+        description: Pekerja berhasil ditugaskan ke kandang
+        content:
+          application/json:
+            schema:
+              $ref: "../components/setup.yaml#/SyncCoopUserAssignmentResponse"
+            example:
+              success: true
+              message: "Pekerja berhasil ditugaskan ke kandang"
+              data: null
+      "400":
+        $ref: "../components/response.yaml#/ValidationError"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":

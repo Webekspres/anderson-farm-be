@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             // Primary Key & Unique Integer
             $table->uuid('id')->primary();
-            $table->bigInteger('server_id')->unsigned()->unique();
+            $table->bigInteger('server_id')->unsigned()->nullable()->unique();
             $table->integer('version')->default(1);
 
             // Business Fields

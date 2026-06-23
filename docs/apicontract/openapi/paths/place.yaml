@@ -82,7 +82,7 @@ coops:
               errors: {}
 
 coopSingle:
-  put:
+  patch:
     tags: [Master]
     summary: Edit kandang
     description: Edit bangunan fisik kandang.
@@ -474,11 +474,11 @@ areas:
         $ref: "../components/response.yaml#/ForbiddenError"
 
 areaSingle:
-  # Parameter ini berlaku untuk semua method (PUT, DELETE) di path ini
+  # Parameter ini berlaku untuk semua method (PATCH, DELETE) di path ini
   parameters:
     - $ref: "../openapi.yaml#/components/parameters/ResourceId"
 
-  put:
+  patch:
     tags: [Master]
     summary: Edit area
     description: Edit data wilayah operasional secara keseluruhan.

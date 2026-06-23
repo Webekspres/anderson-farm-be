@@ -28,7 +28,7 @@ report-templates:
 single-report-templates:
   parameters:
     - $ref: "../openapi.yaml#/components/parameters/ResourceId"
-  put:
+  patch:
     tags: [Master - Report Template]
     summary: Edit Template Laporan
     description: Mengubah data template auto-teks laporan WhatsApp.
@@ -63,7 +63,7 @@ single-report-templates:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
@@ -100,7 +100,7 @@ ovk-items:
 single-ovk-items:
   parameters:
     - $ref: "../openapi.yaml#/components/parameters/ResourceId"
-  put:
+  patch:
     tags: [Master - OVK Item]
     summary: Edit OVK Item
     description: Mengubah data obat, vaksin, atau bahan kimia.
@@ -135,7 +135,7 @@ single-ovk-items:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
@@ -172,7 +172,7 @@ transaction-categories:
 single-transaction-categories:
   parameters:
     - $ref: "../openapi.yaml#/components/parameters/ResourceId"
-  put:
+  patch:
     tags: [Master - Transaction Category]
     summary: Edit Kategori Transaksi
     description: Mengubah data kategori arus kas.
@@ -207,7 +207,7 @@ single-transaction-categories:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
@@ -244,7 +244,7 @@ form-configs:
 single-form-configs:
   parameters:
     - $ref: "../openapi.yaml#/components/parameters/ResourceId"
-  put:
+  patch:
     tags: [Master - Form Config]
     summary: Edit Form Config
     description: Mengubah struktur JSON pertanyaan/konfigurasi UI.
@@ -279,7 +279,7 @@ single-form-configs:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
@@ -317,7 +317,7 @@ equipment-types:
 single-equipment-types:
   parameters:
     - $ref: "../openapi.yaml#/components/parameters/ResourceId"
-  put:
+  patch:
     tags: [Master - Equipment]
     summary: Edit Tipe Alat
     description: Mengubah data referensi merk alat kandang.
@@ -352,7 +352,7 @@ single-equipment-types:
       - sanctum: []
     responses:
       "200":
-        $ref: "../components/general.yaml#/GeneralResponse"
+        $ref: "../components/response.yaml#/GeneralResponse"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":

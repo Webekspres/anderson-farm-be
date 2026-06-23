@@ -67,3 +67,40 @@ CoopFormAssignmentResponse:
       allOf:
         - $ref: "#/CoopFormAssignmentRequest"
         - $ref: "../components/general.yaml#/OfflineMetadataResponse"
+
+# --- COOP USER ASSIGNMENT SCHEMAS (Bulk Sync) ---
+SyncCoopUserAssignmentRequest:
+  type: object
+  required: [assignments]
+  properties:
+    assignments:
+      type: array
+      description: Daftar pekerja yang akan ditugaskan ke kandang (replace, bukan append)
+      items:
+        type: object
+        required: [user_id]
+        properties:
+          user_id:
+            type: string
+            format: uuid
+            description: UUID pekerja yang akan ditugaskan (harus valid di users table)
+            example: "550e8400-e29b-41d4-a716-446655440000"
+          role_in_coop:
+            type: [string, "null"]
+            description: Role pekerja di kandang ini (kepala_kandang, abk, supervisor, dll). Nullable.
+            example: "kepala_kandang"
+            enum: [kepala_kandang, abk, supervisor, null]
+
+SyncCoopUserAssignmentResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "Pekerja berhasil ditugaskan ke kandang"
+    data:
+      type: "null"
+      nullable: true
+      description: Response data selalu null (operasi synchronous, tidak perlu return hasil detail)

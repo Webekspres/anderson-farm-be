@@ -29,7 +29,7 @@ periods:
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
         $ref: "../components/response.yaml#/ForbiddenError"
-  put:
+  patch:
     tags: [Setup - Period]
     summary: Edit periode ternak
     description: |
@@ -239,101 +239,161 @@ periods-documents:
 
 periods-rhpp-documents:
   post:
-    tags: [Setup - RHPP Document]
-    summary: Simpan dokumen RHPP final
-    description: |
-      Menyimpan dokumen RHPP (rekap final) untuk periode ternak tertentu.
-      Validasi:
-        - period_id harus valid (ada di production_periods)
-        - Backend akan mencari/membuat baris rhpps (1:1 dengan periode)
-        - file_url wajib diisi (URL file PDF RHPP)
-        - file_type wajib diisi (pdf, jpg, png)
-      Data akan disimpan ke tabel rhpp_documents (relasi via rhpp_id).
+    tags: [Operational - RHPP]
+    summary: Upload Dokumen RHPP Final & Input Laba
+    description: Menerima file PDF dokumen RHPP yang diunggah oleh Manager/Admin dari HP, beserta angka final laba bersih. Sistem akan otomatis membuatkan draf `Rhpp` jika belum ada.
     security:
       - sanctum: []
     parameters:
-      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+      - name: id
+        in: path
+        required: true
+        description: UUID dari ProductionPeriod
+        schema:
+          type: string
+          format: uuid
     requestBody:
       required: true
       content:
-        application/json:
+        multipart/form-data:
           schema:
-            $ref: "../components/period.yaml#/RhppDocumentRequest"
-    responses:
-      "201":
-        description: Dokumen RHPP berhasil disimpan
-        content:
-          application/json:
-            schema:
-              $ref: "../components/period.yaml#/RhppDocumentResponse"
-      "400":
-        $ref: "../components/response.yaml#/ValidationError"
-      "401":
-        $ref: "../components/response.yaml#/UnauthorizedError"
-      "403":
-        $ref: "../components/response.yaml#/ForbiddenError"
-
-periods-close:
-  post:
-    tags: [Bisnis]
-    summary: Tutup periode ternak
-    description: |
-      Mengubah status periode menjadi 'closed'.
-      Backend akan melakukan validasi otomatis:
-      - Memastikan tidak ada DailyActivity yang masih berstatus DRAFT.
-      - Memastikan semua transaksi keuangan sudah disetujui (APPROVED).
-    security:
-      - sanctum: []
-    parameters:
-      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: "../components/period.yaml#/PeriodCloseRequest"
+            type: object
+            required: [document, total_income, total_expense, net_profit]
+            properties:
+              document:
+                type: string
+                format: binary
+                description: File PDF hasil scan/export RHPP (Max 5MB).
+              total_income:
+                type: number
+                format: float
+              total_expense:
+                type: number
+                format: float
+              net_profit:
+                type: number
+                format: float
     responses:
       "200":
-        description: Periode berhasil ditutup.
+        description: Dokumen berhasil diunggah dan disimpan.
         content:
           application/json:
             schema:
-              $ref: "../components/period.yaml#/PeriodResponse"
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                message:
+                  { type: string, example: "Dokumen RHPP berhasil disimpan." }
+                data:
+                  type: object
+                  properties:
+                    rhpp_id: { type: string, format: uuid }
+                    document_id: { type: string, format: uuid }
+                    file_url: { type: string, format: uri }
+                    publish_status: { type: string, enum: [DRAFT] }
       "400":
-        $ref: "../components/response.yaml#/ValidationError"
-      "401":
-        $ref: "../components/response.yaml#/UnauthorizedError"
+        description: Bad Request (Periode belum ditutup).
       "403":
-        $ref: "../components/response.yaml#/ForbiddenError"
+        description: Forbidden (Role tidak diizinkan).
+      "422":
+        description: Validation Error (File bukan PDF atau kebesaran).
 
 rhpps-publish:
   post:
-    tags: [Bisnis]
-    summary: Publish RHPP
-    description: |
-      Finalisasi laporan keuangan (Ketok Palu).
-      Status RHPP akan berubah menjadi PUBLISHED.
-      Setelah dipublish, data keuangan periode tersebut tidak dapat diubah lagi.
+    tags: [Operational - RHPP]
+    summary: Publikasi RHPP & Kalkulasi Dividen
+    description: Mengeksekusi finalisasi RHPP. Mengubah status menjadi PUBLISHED dan secara otomatis menghitung `final_dividend_amount` untuk setiap investor berdasarkan persentase saham dan laba bersih.
     security:
       - sanctum: []
     parameters:
       - name: period_id
         in: path
         required: true
+        description: UUID dari ProductionPeriod
         schema:
           type: string
           format: uuid
-        description: ID periode yang terkait dengan RHPP tersebut.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [sync_timestamp]
+            properties:
+              sync_timestamp:
+                type: string
+                format: date-time
     responses:
       "200":
-        description: RHPP berhasil dipublish.
+        description: RHPP berhasil dipublikasi dan dividen telah dihitung.
         content:
           application/json:
             schema:
-              $ref: "../components/period.yaml#/RhppPublishResponse"
-      "401":
-        $ref: "../components/response.yaml#/UnauthorizedError"
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                message:
+                  { type: string, example: "Laporan RHPP resmi dipublikasi." }
+                data:
+                  type: object
+                  properties:
+                    id: { type: string, format: uuid }
+                    publish_status: { type: string, enum: [PUBLISHED] }
+                    net_profit: { type: number, format: float }
+      "400":
+        description: Bad Request (Sudah dipublish, atau belum ada dokumen PDF yang diunggah).
       "403":
-        $ref: "../components/response.yaml#/ForbiddenError"
+        description: Forbidden (Role tidak memiliki izin).
       "404":
-        $ref: "../components/response.yaml#/NotFoundError"
+        description: Not Found (Draft RHPP belum dibuat).
+
+close-period:
+  post:
+    tags: [Operational - Periods]
+    summary: Tutup Periode / Akhiri Siklus Ternak
+    description: Mengeksekusi penutupan periode (Lantai). Memvalidasi secara ketat bahwa tidak ada laporan harian atau transaksi keuangan yang masih menggantung (Draft/Submitted).
+    security:
+      - sanctum: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: UUID dari ProductionPeriod
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [closing_reason, sync_timestamp]
+            properties:
+              closing_reason:
+                type: string
+                description: "Alasan penutupan, contoh: 'Panen selesai, kandang kosong'"
+              sync_timestamp:
+                type: string
+                format: date-time
+    responses:
+      "200":
+        description: Periode berhasil ditutup.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                message: { type: string, example: "Periode berhasil ditutup." }
+                data:
+                  type: object
+                  properties:
+                    id: { type: string, format: uuid }
+                    status: { type: string, enum: [completed] }
+                    closed_at: { type: string, format: date-time }
+      "403":
+        description: Forbidden (Role tidak diizinkan atau bukan kandang tugasnya).
+      "422":
+        description: Unprocessable Entity (Masih ada data laporan/transaksi yang pending/draft).

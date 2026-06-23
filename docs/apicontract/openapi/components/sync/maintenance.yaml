@@ -1,0 +1,26 @@
+MaintenanceLog:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    floor_id: { type: string, format: uuid }
+    reported_by: { type: string, format: uuid, description: "ID User yang melapor" }
+    date: { type: string, format: date-time }
+    description: { type: string }
+    image_url: { type: string, format: uri, nullable: true }
+    image_path_local: { type: string, nullable: true }
+    status: { type: string, enum: [REPORTED, IN_PROGRESS, RESOLVED] }
+    created_at_client: { type: string, format: date-time }
+    updated_at_client: { type: string, format: date-time }
+    created_at_server: { type: string, format: date-time }
+
+MaintenanceSyncPayload:
+  type: object
+  required: [id, floor_id, description, status, created_at_client]
+  properties:
+    id: { type: string, format: uuid }
+    floor_id: { type: string, format: uuid }
+    description: { type: string }
+    status: { type: string, enum: [REPORTED, IN_PROGRESS, RESOLVED] }
+    image_path_local: { type: string, nullable: true }
+    created_at_client: { type: string, format: date-time }
+    updated_at_client: { type: string, format: date-time }

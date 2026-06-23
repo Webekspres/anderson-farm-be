@@ -3,21 +3,20 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
+use DevKandil\NotiFire\Traits\HasFcm;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasUuids, \Illuminate\Database\Eloquent\SoftDeletes;
+    use HasApiTokens, HasFactory, HasFcm, HasUuids, Notifiable, SoftDeletes;
 
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -29,6 +28,7 @@ class User extends Authenticatable
         'role',
         'device_id',
         'device_bound_at',
+        'fcm_token',
         'is_active',
         'version',
         'server_id',
@@ -53,6 +53,7 @@ class User extends Authenticatable
     {
         return 'password_hash';
     }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -69,6 +70,7 @@ class User extends Authenticatable
             'updated_at_client' => 'datetime',
             'updated_at_server' => 'datetime',
             'is_active' => 'boolean',
+            'server_id' => 'integer',
         ];
     }
 
@@ -81,5 +83,15 @@ class User extends Authenticatable
                 $user->server_id = random_int(1, 9999999);
             }
         });
+    }
+
+    public function dailyActivityHeaders()
+    {
+        return $this->hasMany(DailyActivityHeader::class, 'user_id');
+    }
+
+    public function approvedActivityHeaders()
+    {
+        return $this->hasMany(DailyActivityHeader::class, 'approved_by');
     }
 }

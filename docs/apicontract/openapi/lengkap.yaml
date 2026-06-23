@@ -1,0 +1,4112 @@
+openapi: 3.1.0
+info:
+  version: 1.0.0
+  title: Anderson Farm API
+  description: API sistem manajemen pertanian offline-first untuk Anderson Farm
+paths:
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login & Device Binding.
+      description: Login dan mengunci akun ke 1 perangkat (device binding.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: budi_abk1
+              password: RahasiaPassword123!
+              device_id: android-uuid-xxx-yyy
+      responses:
+        '200':
+          description: Login berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Login gagal (username/password/device salah)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Cek sesi aktif user
+      description: Cek sesi aktif & tarik hak akses (role & coop_assignments).
+      responses:
+        '200':
+          description: Data user aktif & hak akses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                id: user-uuid-1234
+                username: budi_abk1
+                name: Budi Santoso
+                role: abk
+                phone: '+628123456789'
+                email: budi@andersonfarm.id
+                device_id: android-uuid-xxx-yyy
+                coop_assignments:
+                  - coop_id: coop-uuid-1234
+                    coop_name: Kandang A1
+                  - coop_id: coop-uuid-5678
+                    coop_name: Kandang B2
+                is_active: true
+                created_at: '2024-01-01T12:00:00Z'
+                updated_at: '2024-01-10T12:00:00Z'
+        '401':
+          description: Tidak ada sesi aktif / token tidak valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Token tidak valid atau sesi sudah berakhir.
+                errors: {}
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout user
+      description: Menghapus (revoke) token dari server untuk mengakhiri sesi.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: Logout berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+        '401':
+          description: Unauthenticated (Token tidak valid atau sudah kadaluarsa)
+  /api/v1/auth/fcm-token:
+    post:
+      tags:
+        - Auth
+      summary: Simpan token FCM
+      description: Simpan token Firebase untuk menerima Push Notification pada perangkat yang sedang digunakan.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FcmTokenRequest'
+      responses:
+        '200':
+          description: Token berhasil disimpan
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+        '422':
+          description: Validasi gagal (misal token kosong atau format salah)
+  /api/v1/auth/forgot-password:
+    post:
+      tags:
+        - Auth
+      summary: Permintaan reset password (OTP/Link)
+      description: Endpoint publik untuk meminta OTP atau link reset password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+            example:
+              username: budi_abk1
+              via: email
+      responses:
+        '200':
+          description: 'Permintaan reset password berhasil, OTP/link dikirim'
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+              example:
+                success: true
+                message: OTP telah dikirim ke email Anda.
+                data: {}
+        '404':
+          description: User tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: User tidak ditemukan.
+                errors: {}
+        '422':
+          description: Validasi gagal (input tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Input tidak valid.
+                errors:
+                  username:
+                    - Username wajib diisi.
+  /api/v1/auth/reset-password:
+    post:
+      tags:
+        - Auth
+      summary: Submit password baru (dengan OTP)
+      description: Endpoint publik untuk submit password baru menggunakan OTP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+            example:
+              username: budi_abk1
+              otp: '123456'
+              new_password: PasswordBaru123!
+      responses:
+        '200':
+          description: Password berhasil direset
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+              example:
+                success: true
+                message: Password berhasil direset. Silakan login dengan password baru.
+                data: {}
+        '400':
+          description: OTP salah atau sudah kadaluarsa
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: OTP salah atau sudah kadaluarsa.
+                errors: {}
+        '422':
+          description: Validasi gagal (input tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Input tidak valid.
+                errors:
+                  new_password:
+                    - Password minimal 8 karakter.
+  /api/v1/users:
+    get:
+      tags:
+        - Users
+      summary: Daftar pengguna (paginasi)
+      description: Tarik daftar pekerja (paginasi).
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Pencarian username/nama/email
+      responses:
+        '200':
+          description: Daftar user dengan paginasi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+              example:
+                success: true
+                message: Daftar user berhasil diambil.
+                data:
+                  total: 2
+                  per_page: 10
+                  current_page: 1
+                  last_page: 1
+                  users:
+                    - id: user-uuid-1234
+                      username: budi_abk1
+                      name: Budi Santoso
+                      role: abk
+                      email: budi@andersonfarm.id
+                      phone: '+628123456789'
+                      is_active: true
+                      created_at: '2024-01-01T12:00:00Z'
+                      updated_at: '2024-01-10T12:00:00Z'
+                    - id: user-uuid-5678
+                      username: sari_manager
+                      name: Sari Dewi
+                      role: manager
+                      email: sari@andersonfarm.id
+                      phone: '+628987654321'
+                      is_active: true
+                      created_at: '2024-01-02T12:00:00Z'
+                      updated_at: '2024-01-11T12:00:00Z'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: The given data was invalid.
+                  errors:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+                    example:
+                      username:
+                        - The username has already been taken.
+              example:
+                success: false
+                message: Token tidak valid.
+                errors: {}
+    post:
+      tags:
+        - Users
+      summary: Buat pengguna baru
+      description: |
+        Buat pekerja baru. Endpoint ini hanya dapat diakses oleh user dengan role admin.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+            example:
+              username: budi_abk1
+              password: RahasiaPassword123!
+              name: Budi Santoso
+              email: budi@andersonfarm.id
+              phone: '+628123456789'
+              role: abk
+      responses:
+        '201':
+          description: User berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                id: user-uuid-1234
+                username: budi_abk1
+                name: Budi Santoso
+                role: abk
+                email: budi@andersonfarm.id
+                phone: '+628123456789'
+                is_active: true
+                created_at: '2024-01-01T12:00:00Z'
+                updated_at: '2024-01-10T12:00:00Z'
+        '400':
+          description: Username/email sudah terdaftar
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Username/email sudah terdaftar.
+                errors:
+                  username:
+                    - Username sudah digunakan.
+        '422':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Input tidak valid.
+                errors:
+                  password:
+                    - Password minimal 8 karakter.
+  '/api/v1/users/{id}':
+    put:
+      tags:
+        - Users
+      summary: Edit profil pekerja (full)
+      description: |
+        Edit seluruh data profil pekerja. Hanya dapat diakses oleh admin dan manager.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+            example:
+              username: budi_abk1
+              password: RahasiaPassword123!
+              name: Budi Santoso
+              email: budi@andersonfarm.id
+              phone: '+628123456789'
+              role: abk
+      responses:
+        '200':
+          description: Profil pekerja berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                id: user-uuid-1234
+                username: budi_abk1
+                name: Budi Santoso
+                role: abk
+                email: budi@andersonfarm.id
+                phone: '+628123456789'
+                is_active: true
+                created_at: '2024-01-01T12:00:00Z'
+                updated_at: '2024-01-10T12:00:00Z'
+        '400':
+          description: Username/email sudah terdaftar
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+        '403':
+          description: Forbidden (tidak punya akses)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+        '422':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+    patch:
+      tags:
+        - Users
+      summary: Edit parsial profil pekerja
+      description: |
+        Edit sebagian data profil pekerja, misal reset/unbind device_id pekerja jika HP hilang. Hanya dapat diakses oleh admin dan manager.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Nama lengkap user
+                  example: Budi Santoso
+                email:
+                  type: string
+                  format: email
+                  description: Email user (opsional)
+                  example: budi@andersonfarm.id
+                phone:
+                  type: string
+                  description: Nomor HP user (opsional)
+                  example: '+628123456789'
+                device_id:
+                  type: string
+                  description: 'UUID perangkat (opsional, untuk reset/unbind)'
+                  example: null
+            example:
+              name: Budi Santoso
+              device_id: null
+      responses:
+        '200':
+          description: Profil pekerja berhasil diupdate (parsial)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                id: user-uuid-1234
+                username: budi_abk1
+                name: Budi Santoso
+                role: abk
+                email: budi@andersonfarm.id
+                phone: '+628123456789'
+                is_active: true
+                created_at: '2024-01-01T12:00:00Z'
+                updated_at: '2024-01-10T12:00:00Z'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+        '403':
+          description: Forbidden (tidak punya akses)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+        '422':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+    delete:
+      tags:
+        - Users
+      summary: Hapus akun pekerja (soft-delete)
+      description: |
+        Hapus akun pekerja (soft-delete). Hanya dapat diakses oleh admin.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: Akun pekerja berhasil dihapus (soft-delete)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+              example:
+                success: true
+                message: Akun pekerja berhasil dihapus.
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+        '403':
+          description: Forbidden (tidak punya akses)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+  /api/v1/profile/change-password:
+    post:
+      tags:
+        - Users
+      summary: Ubah password mandiri
+      description: Ubah password mandiri bagi user yang sedang login.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - old_password
+                - new_password
+              properties:
+                old_password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: Password lama user
+                  example: RahasiaPassword123!
+                new_password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: Password baru user
+                  example: PasswordBaru456!
+            example:
+              old_password: RahasiaPassword123!
+              new_password: PasswordBaru456!
+      responses:
+        '200':
+          description: Password berhasil diubah
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+              example:
+                success: true
+                message: Password berhasil diubah. Silakan login ulang jika diperlukan.
+                data: {}
+        '400':
+          description: Password lama salah
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Password lama salah.
+                errors:
+                  old_password:
+                    - Password lama tidak sesuai.
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Token tidak valid.
+                errors: {}
+        '422':
+          description: Validasi gagal (input tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Input tidak valid.
+                errors:
+                  new_password:
+                    - Password minimal 8 karakter.
+  /api/v1/areas:
+    post:
+      tags:
+        - Master
+      summary: Tambah area
+      description: Tambah wilayah operasional (Regional/Wilayah).
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AreaRequest'
+      responses:
+        '201':
+          description: Area berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaResponse'
+        '400':
+          description: Validasi gagal (input tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Input tidak valid.
+                errors:
+                  name:
+                    - Field ini wajib diisi.
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Token tidak valid atau kadaluarsa.
+                errors: {}
+        '403':
+          description: Forbidden (tidak punya akses role)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Anda tidak memiliki hak akses.
+                errors: {}
+  '/api/v1/areas/{id}':
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    put:
+      tags:
+        - Master
+      summary: Edit area
+      description: Edit data wilayah operasional secara keseluruhan.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AreaRequest'
+      responses:
+        '200':
+          description: Area berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaResponse'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+    delete:
+      tags:
+        - Master
+      summary: Hapus area
+      description: Hapus area (soft-delete).
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: Area berhasil dihapus (soft-delete)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/farms:
+    post:
+      tags:
+        - Master
+      summary: Tambah farm
+      description: Tambah farm di bawah area.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FarmRequest'
+            example:
+              id: farm-uuid-1234
+              area_id: area-uuid-5678
+              name: Farm Bandung Selatan
+              address: 'Jl. Raya Soreang No. 1, Bandung'
+              is_active: true
+              created_at_client: '2024-01-01T12:00:00Z'
+              updated_at_client: '2024-01-10T12:00:00Z'
+      responses:
+        '201':
+          description: Farm berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FarmResponse'
+              example:
+                success: true
+                data:
+                  id: farm-uuid-1234
+                  area_id: area-uuid-5678
+                  name: Farm Bandung Selatan
+                  address: 'Jl. Raya Soreang No. 1, Bandung'
+                  is_active: true
+                  created_at_client: '2024-01-01T12:00:00Z'
+                  updated_at_client: '2024-01-10T12:00:00Z'
+                  server_id: 1
+                  version: 1
+                  sync_status: SYNCED
+                  created_at_server: '2024-01-01T12:00:00Z'
+                  updated_at_server: '2024-01-10T12:00:00Z'
+                  deleted_at: null
+        '400':
+          description: Validasi gagal (input tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Input tidak valid.
+                errors:
+                  name:
+                    - Nama farm wajib diisi.
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Token tidak valid.
+                errors: {}
+        '403':
+          description: Forbidden (tidak punya akses)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Anda tidak punya akses.
+                errors: {}
+  '/api/v1/farms/{id}':
+    patch:
+      tags:
+        - Master
+      summary: Edit farm
+      description: Edit farm di bawah area.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FarmRequest'
+            example:
+              id: farm-uuid-1234
+              area_id: area-uuid-5678
+              name: Farm Bandung Selatan
+              address: 'Jl. Raya Soreang No. 1, Bandung'
+              is_active: true
+              created_at_client: '2024-01-01T12:00:00Z'
+              updated_at_client: '2024-01-10T12:00:00Z'
+      responses:
+        '200':
+          description: Farm berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FarmResponse'
+              example:
+                success: true
+                data:
+                  id: farm-uuid-1234
+                  area_id: area-uuid-5678
+                  name: Farm Bandung Selatan
+                  address: 'Jl. Raya Soreang No. 1, Bandung'
+                  is_active: true
+                  created_at_client: '2024-01-01T12:00:00Z'
+                  updated_at_client: '2024-01-10T12:00:00Z'
+                  server_id: 1
+                  version: 2
+                  sync_status: SYNCED
+                  created_at_server: '2024-01-01T12:00:00Z'
+                  updated_at_server: '2024-01-10T12:00:00Z'
+                  deleted_at: null
+        '400':
+          description: Validasi gagal (input tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Input tidak valid.
+                errors:
+                  name:
+                    - Nama farm wajib diisi.
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Token tidak valid.
+                errors: {}
+        '403':
+          description: Forbidden (tidak punya akses)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Anda tidak punya akses.
+                errors: {}
+        '404':
+          description: Farm tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Farm tidak ditemukan.
+                errors: {}
+    delete:
+      tags:
+        - Master
+      summary: Hapus farm
+      description: Hapus farm (soft-delete). Hanya dapat diakses oleh admin.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID farm yang akan dihapus
+      responses:
+        '200':
+          description: Farm berhasil dihapus (soft-delete)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+              example:
+                success: true
+                message: Farm berhasil dihapus.
+                data: {}
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Token tidak valid.
+                errors: {}
+        '403':
+          description: Forbidden (tidak punya akses)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Anda tidak punya akses.
+                errors: {}
+        '404':
+          description: Farm tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Farm tidak ditemukan.
+                errors: {}
+  /api/v1/coops:
+    post:
+      tags:
+        - Master
+      summary: Tambah kandang
+      description: Tambah bangunan fisik kandang.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoopRequest'
+            example:
+              id: coop-uuid-1234
+              farm_id: farm-uuid-5678
+              name: Kandang A1
+              capacity: 10000
+              floor: 1
+              coop_type: open_house
+              note: Kandang utama untuk starter
+              is_active: true
+              created_at_client: '2024-01-01T12:00:00Z'
+              updated_at_client: '2024-01-10T12:00:00Z'
+      responses:
+        '201':
+          description: Kandang berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoopResponse'
+              example:
+                success: true
+                data:
+                  id: coop-uuid-1234
+                  farm_id: farm-uuid-5678
+                  name: Kandang A1
+                  capacity: 10000
+                  floor: 1
+                  coop_type: open_house
+                  note: Kandang utama untuk starter
+                  is_active: true
+                  created_at_client: '2024-01-01T12:00:00Z'
+                  updated_at_client: '2024-01-10T12:00:00Z'
+                  server_id: 1
+                  version: 1
+                  sync_status: SYNCED
+                  created_at_server: '2024-01-01T12:00:00Z'
+                  updated_at_server: '2024-01-10T12:00:00Z'
+                  deleted_at: null
+        '400':
+          description: Validasi gagal (input tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Input tidak valid.
+                errors:
+                  name:
+                    - Nama kandang wajib diisi.
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Token tidak valid.
+                errors: {}
+        '403':
+          description: Forbidden (tidak punya akses)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Anda tidak punya akses.
+                errors: {}
+  '/api/v1/coops/{id}':
+    put:
+      tags:
+        - Master
+      summary: Edit kandang
+      description: Edit bangunan fisik kandang.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoopRequest'
+            example:
+              id: coop-uuid-1234
+              farm_id: farm-uuid-5678
+              name: Kandang A1
+              capacity: 10000
+              floor: 1
+              coop_type: open_house
+              note: Kandang utama untuk starter
+              is_active: true
+              created_at_client: '2024-01-01T12:00:00Z'
+              updated_at_client: '2024-01-10T12:00:00Z'
+      responses:
+        '200':
+          description: Kandang berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoopResponse'
+              example:
+                success: true
+                data:
+                  id: coop-uuid-1234
+                  farm_id: farm-uuid-5678
+                  name: Kandang A1
+                  capacity: 10000
+                  floor: 1
+                  coop_type: open_house
+                  note: Kandang utama untuk starter
+                  is_active: true
+                  created_at_client: '2024-01-01T12:00:00Z'
+                  updated_at_client: '2024-01-10T12:00:00Z'
+                  server_id: 1
+                  version: 2
+                  sync_status: SYNCED
+                  created_at_server: '2024-01-01T12:00:00Z'
+                  updated_at_server: '2024-01-10T12:00:00Z'
+                  deleted_at: null
+        '400':
+          description: Validasi gagal (input tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Input tidak valid.
+                errors:
+                  name:
+                    - Nama kandang wajib diisi.
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Token tidak valid.
+                errors: {}
+        '403':
+          description: Forbidden (tidak punya akses)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Anda tidak punya akses.
+                errors: {}
+        '404':
+          description: Kandang tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Kandang tidak ditemukan.
+                errors: {}
+    delete:
+      tags:
+        - Master
+      summary: Hapus kandang
+      description: Hapus kandang (soft-delete). Hanya dapat diakses oleh admin.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID kandang yang akan dihapus
+      responses:
+        '200':
+          description: Kandang berhasil dihapus (soft-delete)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+              example:
+                success: true
+                message: Kandang berhasil dihapus.
+                data: {}
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Token tidak valid.
+                errors: {}
+        '403':
+          description: Forbidden (tidak punya akses)
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Anda tidak punya akses.
+                errors: {}
+        '404':
+          description: Kandang tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Kandang tidak ditemukan.
+                errors: {}
+  /api/v1/form-configs:
+    post:
+      tags:
+        - Master - Form Config
+      summary: Tambah Form Config
+      description: Membuat struktur UI/pertanyaan baru untuk Master HBE atau Alat.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - category
+                    - key_name
+                    - config_value
+                  properties:
+                    category:
+                      type: string
+                      enum:
+                        - EQUIPMENT
+                        - HBE
+                      description: Kategori penggunaan form.
+                    key_name:
+                      type: string
+                      example: temp_sensor_1
+                      description: Kunci unik/slug untuk field ini di database.
+                    config_value:
+                      type: string
+                      example: '{"type": "number", "unit": "Celcius", "required": true}'
+                      description: Konfigurasi struktur UI dalam format JSON string.
+      responses:
+        '201':
+          description: Form Config berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1form-configs/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/form-configs/{id}':
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    put:
+      tags:
+        - Master - Form Config
+      summary: Edit Form Config
+      description: Mengubah struktur JSON pertanyaan/konfigurasi UI.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1api~1v1~1form-configs/post/requestBody/content/application~1json/schema'
+      responses:
+        '200':
+          description: Form Config berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1form-configs/post/responses/201/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+    delete:
+      tags:
+        - Master - Form Config
+      summary: Hapus Form Config
+      description: Menghapus (soft-delete) bank soal form dinamis.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/200'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/equipment-types:
+    post:
+      tags:
+        - Master - Equipment
+      summary: Tambah Tipe Alat
+      description: Mendaftarkan jenis atau merk alat fisik baru (misal Temptron).
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                      example: Kipas Exhaust 50 inch
+                    description:
+                      type:
+                        - string
+                        - 'null'
+                      example: Kipas angin utama untuk tipe kandang closed house.
+      responses:
+        '201':
+          description: Equipment Type berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1equipment-types/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/equipment-types/{id}':
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    put:
+      tags:
+        - Master - Equipment
+      summary: Edit Tipe Alat
+      description: Mengubah data referensi merk alat kandang.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1api~1v1~1equipment-types/post/requestBody/content/application~1json/schema'
+      responses:
+        '200':
+          description: Equipment Type berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1equipment-types/post/responses/201/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+    delete:
+      tags:
+        - Master - Equipment
+      summary: Hapus Tipe Alat
+      description: Menghapus (soft-delete) referensi merk alat.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/200'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/transaction-categories:
+    post:
+      tags:
+        - Master - Transaction Category
+      summary: Tambah Kategori Transaksi
+      description: 'Mendaftarkan kategori arus kas baru (misal: Pemasukan Panen, Biaya Pakan).'
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - name
+                    - type
+                  properties:
+                    name:
+                      type: string
+                      example: Pemasukan Panen
+                      description: Nama kategori transaksi
+                    type:
+                      type: string
+                      enum:
+                        - INCOME
+                        - EXPENSE
+                      example: INCOME
+                      description: Jenis transaksi (INCOME/EXPENSE)
+                    is_active:
+                      type: boolean
+                      default: true
+                      example: true
+      responses:
+        '201':
+          description: Kategori berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1transaction-categories/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/transaction-categories/{id}':
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    put:
+      tags:
+        - Master - Transaction Category
+      summary: Edit Kategori Transaksi
+      description: Mengubah data kategori arus kas.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1api~1v1~1transaction-categories/post/requestBody/content/application~1json/schema'
+      responses:
+        '200':
+          description: Kategori berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1transaction-categories/post/responses/201/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+    delete:
+      tags:
+        - Master - Transaction Category
+      summary: Hapus Kategori Transaksi
+      description: Menghapus (soft-delete) kategori arus kas.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/200'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/ovk-items:
+    post:
+      tags:
+        - Master - OVK Item
+      summary: Tambah OVK Item
+      description: 'Mendaftarkan obat, vaksin, atau bahan kimia baru.'
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - name
+                    - type
+                    - unit
+                  properties:
+                    name:
+                      type: string
+                      example: Vita Stress
+                      description: 'Nama obat, vaksin, atau bahan kimia'
+                    type:
+                      type: string
+                      enum:
+                        - OBAT
+                        - VAKSIN
+                        - KIMIA
+                      example: OBAT
+                      description: Jenis item (OBAT/VAKSIN/KIMIA)
+                    unit:
+                      type: string
+                      example: gram
+                      description: 'Satuan pengukuran (gram, botol, sachet, dll)'
+                    description:
+                      type:
+                        - string
+                        - 'null'
+                      example: Vitamin untuk mengurangi stres ayam.
+                      description: Keterangan tambahan
+                    is_active:
+                      type: boolean
+                      default: true
+                      example: true
+      responses:
+        '201':
+          description: OVK Item berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1ovk-items/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/ovk-items/{id}':
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    put:
+      tags:
+        - Master - OVK Item
+      summary: Edit OVK Item
+      description: 'Mengubah data obat, vaksin, atau bahan kimia.'
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1api~1v1~1ovk-items/post/requestBody/content/application~1json/schema'
+      responses:
+        '200':
+          description: OVK Item berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1ovk-items/post/responses/201/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+    delete:
+      tags:
+        - Master - OVK Item
+      summary: Hapus OVK Item
+      description: 'Menghapus (soft-delete) obat, vaksin, atau bahan kimia.'
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/200'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/education-articles:
+    post:
+      tags:
+        - Master - Education Article
+      summary: Tambah Artikel Edukasi
+      description: Mendaftarkan artikel panduan/edukasi baru.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                      example: Panduan Vaksinasi Ayam Broiler
+                      description: Judul artikel edukasi
+                    excerpt:
+                      type: ["string", "null"]
+                      example: Vaksinasi yang tepat dapat menurunkan angka mortalitas hingga...
+                      description: Ringkasan singkat artikel
+                    link_url:
+                      type: ["string", "null"]
+                      example: 'https://andersonfarm.id/artikel/panduan-vaksinasi'
+                      description: Link URL eksternal artikel (jika ada)
+                    image_url:
+                      type: ["string", "null"]
+                      example: 'https://andersonfarm.id/images/vaksin.jpg'
+                      description: URL gambar thumbnail artikel
+                    image_path_local:
+                      type: ["string", "null"]
+                      example: storage/articles/vaksin.jpg
+                      description: Path gambar di server lokal
+      responses:
+        '201':
+          description: Artikel edukasi berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1education-articles/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+  '/api/v1/education-articles/{id}':
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    put:
+      tags:
+        - Master - Education Article
+      summary: Edit Artikel Edukasi
+      description: Mengubah data artikel panduan/edukasi.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1api~1v1~1education-articles/post/requestBody/content/application~1json/schema'
+      responses:
+        '200':
+          description: Artikel edukasi berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1education-articles/post/responses/201/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+    delete:
+      tags:
+        - Master - Education Article
+      summary: Hapus Artikel Edukasi
+      description: Menghapus (soft-delete) artikel panduan/edukasi.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/200'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/price-references:
+    post:
+      tags:
+        - Master - Price Reference
+      summary: Tambah Referensi Harga
+      description: Mendaftarkan referensi harga komoditas baru.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                      example: Harga Ayam Broiler Hidup
+                      description: Nama komoditas referensi harga
+                    highlight_price:
+                      type: ["number", "null"]
+                      format: float
+                      example: 18500
+                      description: Harga acuan/highlight saat ini
+                    link_url:
+                      type: ["string", "null"]
+                      example: 'https://hargapangan.id/ayam'
+                      description: Link ke sumber harga (jika ada)
+                    image_url:
+                      type: ["string", "null"]
+                      example: 'https://andersonfarm.id/images/harga-ayam.jpg'
+                      description: URL gambar representasi komoditas
+                    image_path_local:
+                      type: ["string", "null"]
+                      example: storage/references/harga-ayam.jpg
+                      description: Path gambar di server lokal
+      responses:
+        '201':
+          description: Referensi harga berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1price-references/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+  '/api/v1/price-references/{id}':
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    put:
+      tags:
+        - Master - Price Reference
+      summary: Edit Referensi Harga
+      description: Mengubah data referensi harga komoditas.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1api~1v1~1price-references/post/requestBody/content/application~1json/schema'
+      responses:
+        '200':
+          description: Referensi harga berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1price-references/post/responses/201/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+    delete:
+      tags:
+        - Master - Price Reference
+      summary: Hapus Referensi Harga
+      description: Menghapus (soft-delete) referensi harga komoditas.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/200'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/report-templates:
+    post:
+      tags:
+        - Master - Report Template
+      summary: Tambah Template Laporan
+      description: Mendaftarkan template auto-teks laporan WhatsApp baru.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - name
+                    - report_type
+                    - content_placeholder
+                  properties:
+                    name:
+                      type: string
+                      example: Laporan Panen Mingguan
+                      description: Nama template laporan
+                    report_type:
+                      type: string
+                      example: WHATSAPP
+                      description: 'Jenis laporan atau media (misal: WHATSAPP, EMAIL, dsb)'
+                    content_placeholder:
+                      type: string
+                      example: 'Halo {{nama_farm}}, hasil panen minggu ini ...'
+                      description: Teks template dengan variabel placeholder
+      responses:
+        '201':
+          description: Template laporan berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1report-templates/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/report-templates/{id}':
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    put:
+      tags:
+        - Master - Report Template
+      summary: Edit Template Laporan
+      description: Mengubah data template auto-teks laporan WhatsApp.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1api~1v1~1report-templates/post/requestBody/content/application~1json/schema'
+      responses:
+        '200':
+          description: Template laporan berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1report-templates/post/responses/201/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+    delete:
+      tags:
+        - Master - Report Template
+      summary: Hapus Template Laporan
+      description: Menghapus (soft-delete) template auto-teks laporan WhatsApp.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/200'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  '/api/v1/coops/{id}/documents':
+    post:
+      tags:
+        - Setup - Coop Document
+      summary: Simpan dokumen SOP kandang
+      description: Menyimpan dokumen SOP/Panduan fisik kandang (upload atau URL).
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - name
+                    - file_type
+                  properties:
+                    name:
+                      type: string
+                      example: SOP Biosecurity
+                      description: Nama dokumen
+                    file_path_local:
+                      type:
+                        - string
+                        - 'null'
+                      example: /files/sop-biosecurity.pdf
+                      description: Path file di server (jika ada)
+                    file_url:
+                      type:
+                        - string
+                        - 'null'
+                      example: 'https://andersonfarm.id/files/sop-biosecurity.pdf'
+                      description: URL file (jika ada)
+                    file_type:
+                      type: string
+                      example: pdf
+                      description: 'Jenis file (pdf, jpg, png, dll)'
+      responses:
+        '201':
+          description: Dokumen berhasil disimpan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1coops~1%7Bid%7D~1documents/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  '/api/v1/coops/{id}/form-assignments':
+    post:
+      tags:
+        - Setup - Coop Form Assignment
+      summary: Aktifkan form dinamis ke alat fisik kandang
+      description: |
+        Mengaitkan form_config (bank soal) ke alat fisik (coop_equipment) di kandang tertentu.
+        Payload WAJIB menyertakan coop_equipment_id (alat fisik) dan form_config_id (bank soal).
+        Validasi: coop_equipment_id dan form_config_id harus valid.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - coop_equipment_id
+                    - form_config_id
+                  properties:
+                    coop_equipment_id:
+                      type: string
+                      format: uuid
+                      example: coop-equipment-uuid
+                      description: ID alat fisik kandang (harus valid di coop_equipments)
+                    form_config_id:
+                      type: string
+                      format: uuid
+                      example: form-config-uuid
+                      description: 'ID form config (bank soal, harus valid di form_configs)'
+      responses:
+        '201':
+          description: Form berhasil diassign ke alat fisik
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1coops~1%7Bid%7D~1form-assignments/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/coops/{id}/equipments':
+    post:
+      tags:
+        - Setup - Coop Equipment
+      summary: Registrasi alat fisik ke kandang
+      description: |
+        Menambahkan alat fisik (Heater, Sensor, dll) ke kandang tertentu. Sistem akan mengikat coop_id dengan equipment_type_id dan unit_code (serial number alat).
+        Validasi: equipment_type_id dan coop_id harus valid.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - equipment_type_id
+                  properties:
+                    equipment_type_id:
+                      type: string
+                      format: uuid
+                      example: equipment-type-uuid
+                      description: ID tipe/merk alat (harus valid di master equipment_types)
+                    unit_code:
+                      type:
+                        - string
+                        - 'null'
+                      example: SN-123456
+                      description: Serial number/unit code alat (opsional)
+                    installed_at:
+                      type:
+                        - string
+                        - 'null'
+                      format: date-time
+                      example: '2026-04-10T10:00:00Z'
+                      description: Tanggal alat dipasang (opsional)
+      responses:
+        '201':
+          description: Alat fisik berhasil diregistrasi ke kandang
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1coops~1%7Bid%7D~1equipments/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+    delete:
+      tags:
+        - Setup - Coop Equipment
+      summary: Cabut alat fisik dari kandang
+      description: |
+        Melakukan soft delete (update deleted_at) pada alat fisik yang dicabut dari kandang. Backend WAJIB menonaktifkan/menghapus data anak di coop_form_assignments yang terikat dengan alat ini.
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/200'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/periods:
+    post:
+      tags:
+        - Setup - Period
+      summary: Inisiasi periode ternak
+      description: |
+        Membuat kerangka Periode Ternak baru (production_periods).
+        Validasi:
+          - coop_id harus valid dan belum memiliki periode aktif lain.
+          - pic_id harus user dengan role PIC.
+        Satu kandang (coop_id) tidak boleh memiliki lebih dari satu periode dengan status active.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - coop_id
+                    - pic_id
+                    - period_code
+                    - start_date
+                    - initial_stock
+                  properties:
+                    coop_id:
+                      type: string
+                      format: uuid
+                      example: coop-uuid
+                      description: 'ID kandang (harus valid, tidak boleh punya periode aktif lain)'
+                    pic_id:
+                      type: string
+                      format: uuid
+                      example: user-uuid
+                      description: ID PIC (user dengan role PIC)
+                    period_code:
+                      type: string
+                      example: PER-2026-001
+                      description: Kode unik periode
+                    start_date:
+                      type: string
+                      format: date-time
+                      example: '2026-04-10T10:00:00Z'
+                      description: Tanggal mulai periode
+                    end_date:
+                      type:
+                        - string
+                        - 'null'
+                      format: date-time
+                      example: null
+                      description: Tanggal selesai periode (opsional)
+                    initial_stock:
+                      type: integer
+                      example: 10000
+                      description: Populasi awal DOC
+                    closing_reason:
+                      type:
+                        - string
+                        - 'null'
+                      example: null
+                      description: Alasan penutupan periode (opsional)
+                    status:
+                      type: string
+                      enum:
+                        - active
+                        - closed
+                      example: active
+                      description: Status periode
+      responses:
+        '201':
+          description: Periode ternak berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1periods/put/responses/200/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+    put:
+      tags:
+        - Setup - Period
+      summary: Edit periode ternak
+      description: |
+        Mengedit metadata periode ternak (misal: initial_stock, start_date).
+        Endpoint ini harus dikunci jika umur ayam sudah melebihi hari tertentu (tidak bisa diedit jika sudah berjalan lama).
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                - type: object
+                  required:
+                    - period_code
+                  properties:
+                    period_code:
+                      type: string
+                      example: PER-2026-001
+                    start_date:
+                      type: string
+                      format: date-time
+                      example: '2026-04-10T10:00:00Z'
+                    end_date:
+                      type:
+                        - string
+                        - 'null'
+                      format: date-time
+                      example: null
+                    initial_stock:
+                      type: integer
+                      example: 10000
+                    closing_reason:
+                      type:
+                        - string
+                        - 'null'
+                      example: null
+      responses:
+        '200':
+          description: Periode ternak berhasil diupdate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1periods/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/periods/{id}/investors':
+    post:
+      tags:
+        - Setup - Period Investor
+      summary: Assign investor ke periode
+      description: |
+        Menentukan siapa saja yang menanam modal dan berapa jatah kue (laba) mereka.
+        Menerima array atau satu per satu ID investor beserta profit_share_percentage.
+        Validasi:
+          - user_id harus user dengan role investor.
+          - Total profit_share_percentage untuk periode ini tidak boleh melebihi 100%.
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required:
+                  - user_id
+                  - profit_share_percentage
+                properties:
+                    user_id:
+                      type: string
+                      format: uuid
+                      example: user-uuid-investor
+                      description: ID user investor (role harus investor)
+                    profit_share_percentage:
+                      type: number
+                      format: float
+                      example: 20.5
+                      description: 'Persentase bagi hasil investor (0-100, total semua investor ≤ 100)'
+                    initial_investment:
+                      type: number
+                      format: float
+                      example: 10000000
+                      description: Modal awal yang disetor (opsional)
+      responses:
+        '201':
+          description: Investor berhasil diassign ke periode
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [user_id, profit_share_percentage]
+                      properties:
+                        user_id:
+                          type: string
+                          format: uuid
+                          example: "user-uuid-investor"
+                          description: ID user investor (role harus investor)
+                        profit_share_percentage:
+                          type: number
+                          format: float
+                          example: 20.5
+                          description: Persentase bagi hasil investor (0-100, total semua investor ≤ 100)
+                        initial_investment:
+                          type: number
+                          format: float
+                          example: 10000000
+                          description: Modal awal yang disetor (opsional)
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/periods/{id}/checklist-tasks':
+    post:
+      tags:
+        - Setup - Checklist Task
+      summary: Generate checklist tugas periode
+      description: |
+        Membuat daftar tugas harian (SOP/To-Do List) untuk periode tertentu.
+        Payload berupa array of objects (nama tugas, tipe, deskripsi opsional).
+        Validasi:
+          - period_id harus valid (ada di production_periods)
+          - task_name wajib diisi, unik per periode
+          - task_type wajib BOOLEAN atau TEXT
+        Data akan disimpan ke tabel checklist_tasks dan diikat ke ID periode.
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required:
+                  - task_name
+                  - task_type
+                properties:
+                  task_name:
+                    type: string
+                    example: Periksa klorin air minum
+                    description: Nama tugas (unik per periode)
+                  task_type:
+                    description: 'Jenis tugas (BOOLEAN = centang, TEXT = isian)'
+                    type: string
+                    enum:
+                      - BOOLEAN
+                      - TEXT
+                  description:
+                    type: string
+                    example: Cek kadar klorin pada air minum ayam setiap pagi.
+                    description: Deskripsi tugas (opsional)
+                  is_active:
+                    type: boolean
+                    default: true
+                    description: |
+                      Status aktif tugas (default: true)
+      responses:
+        '201':
+          description: Checklist tugas berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/paths/~1api~1v1~1periods~1%7Bid%7D~1checklist-tasks/post/requestBody/content/application~1json/schema/items'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/periods/{id}/form-assignments':
+    post:
+      tags:
+        - Setup - Form Assignment
+      summary: Assign form HBE ke periode
+      description: |
+        Menugaskan pertanyaan teknis HBE (dari master form_configs) ke periode tertentu.
+        Payload berupa array of objects (form_config_id, display_order, is_active).
+        Validasi:
+          - period_id harus valid (ada di production_periods)
+          - form_config_id harus valid (ada di form_configs)
+          - display_order wajib unik per periode
+        Data akan disimpan ke tabel period_form_assignments.
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required:
+                  - form_config_id
+                  - display_order
+                properties:
+                  form_config_id:
+                    type: string
+                    format: uuid
+                    example: form-config-uuid
+                    description: ID form_config (pertanyaan HBE dari master)
+                  display_order:
+                    type: integer
+                    example: 1
+                    description: Urutan tampilan pertanyaan di aplikasi
+                  is_active:
+                    type: boolean
+                    default: true
+                    description: |
+                      Status aktif assignment (default: true)
+      responses:
+        '201':
+          description: Form assignment berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/paths/~1api~1v1~1periods~1%7Bid%7D~1form-assignments/post/requestBody/content/application~1json/schema/items'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/periods/{id}/contracts':
+    post:
+      tags:
+        - Setup - Contract
+      summary: Simpan kontrak bagi hasil periode
+      description: |
+        Menyimpan dokumen kontrak (PDF/URL) bagi hasil untuk periode ternak tertentu.
+        Validasi:
+          - period_id harus valid (ada di production_periods)
+          - uploaded_by harus user Manager yang valid
+          - title wajib diisi
+          - file_url wajib diisi (URL file PDF kontrak)
+        Data akan disimpan ke tabel contract_abks.
+        Kontrak ini wajib ada sebelum ABK bisa melakukan persetujuan digital.
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - file_url
+                - uploaded_by
+              properties:
+                title:
+                  type: string
+                  example: Kontrak Bagi Hasil Periode April 2026
+                  description: Judul kontrak (wajib diisi)
+                file_url:
+                  type: string
+                  format: uri
+                  example: 'https://andersonfarm.id/contracts/2026-04-01.pdf'
+                  description: URL file PDF kontrak (wajib diisi)
+                file_path_local:
+                  type: string
+                  example: /storage/contracts/2026-04-01.pdf
+                  description: 'Path file lokal (opsional, untuk tracking server)'
+                uploaded_by:
+                  type: string
+                  format: uuid
+                  example: user-uuid-manager
+                  description: ID user Manager yang mengunggah kontrak
+      responses:
+        '201':
+          description: Kontrak berhasil disimpan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1periods~1%7Bid%7D~1contracts/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/periods/{id}/documents':
+    post:
+      tags:
+        - Setup - Period Document
+      summary: Simpan dokumen periode
+      description: |
+        Menyimpan dokumen operasional (jadwal, OVK, ARV, dll) untuk periode ternak tertentu.
+        Validasi:
+          - period_id harus valid (ada di production_periods)
+          - uploaded_by harus user yang valid
+          - title wajib diisi
+          - document_type wajib diisi (OVK, ARV, OTHER)
+          - file_url wajib diisi (URL file dokumen)
+        Data akan disimpan ke tabel period_documents.
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - document_type
+                - file_url
+                - uploaded_by
+              properties:
+                title:
+                  type: string
+                  example: Jadwal OVK Minggu 1
+                  description: Judul dokumen (wajib diisi)
+                document_type:
+                  type: string
+                  example: OVK
+                  description: 'Jenis dokumen (OVK, ARV, OTHER)'
+                file_url:
+                  type: string
+                  format: uri
+                  example: 'https://andersonfarm.id/docs/ovk-2026-04.pdf'
+                  description: URL file dokumen (wajib diisi)
+                file_path_local:
+                  type: string
+                  example: /storage/docs/ovk-2026-04.pdf
+                  description: Path file lokal (opsional)
+                uploaded_by:
+                  type: string
+                  format: uuid
+                  example: user-uuid
+                  description: ID user yang mengunggah dokumen
+      responses:
+        '201':
+          description: Dokumen periode berhasil disimpan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1periods~1%7Bid%7D~1documents/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/periods/{id}/rhpp-documents':
+    post:
+      tags:
+        - Setup - RHPP Document
+      summary: Simpan dokumen RHPP final
+      description: |
+        Menyimpan dokumen RHPP (rekap final) untuk periode ternak tertentu.
+        Validasi:
+          - period_id harus valid (ada di production_periods)
+          - Backend akan mencari/membuat baris rhpps (1:1 dengan periode)
+          - file_url wajib diisi (URL file PDF RHPP)
+          - file_type wajib diisi (pdf, jpg, png)
+        Data akan disimpan ke tabel rhpp_documents (relasi via rhpp_id).
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - file_url
+                - file_type
+              properties:
+                name:
+                  type: string
+                  example: RHPP Final April 2026
+                  description: Nama file RHPP (opsional)
+                file_url:
+                  type: string
+                  format: uri
+                  example: 'https://andersonfarm.id/rhpp/2026-04-final.pdf'
+                  description: URL file RHPP (wajib diisi)
+                file_path_local:
+                  type: string
+                  example: /storage/rhpp/2026-04-final.pdf
+                  description: Path file lokal (opsional)
+                file_type:
+                  type: string
+                  example: pdf
+                  description: 'Tipe file (pdf, jpg, png)'
+      responses:
+        '201':
+          description: Dokumen RHPP berhasil disimpan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - $ref: '#/paths/~1api~1v1~1periods~1%7Bid%7D~1rhpp-documents/post/requestBody/content/application~1json/schema'
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  /api/v1/uploads:
+    post:
+      tags:
+        - Files
+      summary: Upload file fisik
+      description: |
+        Unggah file fisik (PDF/JPG/PNG) secara multipart.
+        Mengembalikan URL dan Path Lokal yang nantinya akan disisipkan sebagai JSON ke endpoint setup/master data (seperti contracts, documents, atau photos).
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - folder
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File fisik yang akan diunggah (Max 5MB).
+                folder:
+                  type: string
+                  enum:
+                    - contracts
+                    - documents
+                    - rhpp
+                    - photos
+                    - sop
+                  description: Kategori direktori penyimpanan agar file server rapi.
+                  example: contracts
+      responses:
+        '201':
+          description: File berhasil diunggah
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: File berhasil diunggah.
+                  data:
+                    type: object
+                    properties:
+                      file_url:
+                        type: string
+                        format: uri
+                        description: URL publik/signed untuk mengakses file (Bisa disimpan di database mobile).
+                        example: 'https://api.andersonfarm.com/storage/contracts/doc-123.pdf'
+                      file_path_local:
+                        type: string
+                        description: Path internal server untuk keperluan delete atau pemindahan file.
+                        example: contracts/doc-123.pdf
+                      file_type:
+                        type: string
+                        description: Ekstensi file yang terdeteksi.
+                        example: pdf
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '413':
+          description: Ukuran file melebihi batas maksimum
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Ukuran file terlalu besar. Maksimum 5MB.
+                errors:
+                  file:
+                    - File size exceeds the 5MB limit.
+    delete:
+      tags:
+        - Files
+      summary: Hapus file fisik
+      description: |
+        Menghapus file fisik dari storage server (S3/Local).
+        Digunakan untuk menghapus file orphaned jika user sudah berhasil upload namun batal menekan tombol simpan/submit di form utama.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: file_path_local
+          required: true
+          schema:
+            type: string
+            example: contracts/doc-123.pdf
+          description: Path file di server yang ingin dihapus (didapat dari response saat upload).
+      responses:
+        '200':
+          description: Operasi berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '404':
+          description: Resource tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1users/get/responses/401/content/application~1json/schema'
+              example:
+                success: false
+                message: Data tidak ditemukan di sistem.
+                errors: {}
+  /api/v1/export/harvests:
+    get:
+      tags:
+        - Files
+      summary: Export Excel rekap panen
+      description: |
+        Menghasilkan file Excel (.xlsx) yang berisi rekapitulasi seluruh data panen (HarvestEntry)
+        berdasarkan periode tertentu.
+        Data mencakup Rit, Pembeli, Jumlah Ekor, Berat Total, Harga, dan Total Pendapatan.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: period_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID periode ternak yang datanya ingin diekspor.
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+          description: Filter tanggal awal (opsional).
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+          description: Filter tanggal akhir (opsional).
+      responses:
+        '200':
+          description: File Excel berhasil dibuat dan dikirim sebagai stream.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '404':
+          description: Data panen untuk periode tersebut tidak ditemukan.
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/export/evaluations:
+    get:
+      tags:
+        - Files
+      summary: Export Excel evaluasi teknis
+      description: |
+        Menghasilkan file Excel (.xlsx) yang berisi rekap evaluasi teknis harian berdasarkan periode tertentu.
+        Data mencakup tanggal, parameter evaluasi, nilai, dan catatan evaluasi.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: period_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID periode ternak yang datanya ingin diekspor.
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+          description: Filter tanggal awal (opsional).
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+          description: Filter tanggal akhir (opsional).
+      responses:
+        '200':
+          description: File Excel evaluasi teknis berhasil dibuat dan dikirim sebagai stream.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '404':
+          description: Data evaluasi teknis untuk periode tersebut tidak ditemukan.
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/export/template-salary:
+    get:
+      tags:
+        - Files
+      summary: Download template import gaji
+      description: |
+        Mengunduh file template Excel (.xlsx) kosong untuk persiapan import data gaji ABK.
+        File ini berisi header kolom yang harus diisi sebelum proses import gaji massal.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: File template Excel berhasil dikirim sebagai stream.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+  /api/v1/import/salary:
+    post:
+      tags:
+        - Files
+      summary: Import data gaji ABK
+      description: |
+        Unggah data tagihan upah ABK secara massal menggunakan file Excel (.xlsx / .csv).
+        Sistem akan melakukan validasi:
+        - Apakah period_id valid dan aktif.
+        - Apakah employee_id (user_id) di dalam Excel benar-benar memiliki role ABK.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - period_id
+                - file
+              properties:
+                period_id:
+                  type: string
+                  format: uuid
+                  description: ID periode ternak tujuan import gaji.
+                  example: period-uuid-123
+                file:
+                  type: string
+                  format: binary
+                  description: File Excel (.xlsx) berisi kolom employee_id dan salary_amount.
+      responses:
+        '201':
+          description: Data gaji berhasil diimpor ke sistem.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Berhasil mengimpor 10 data gaji ABK.
+                  data:
+                    type: object
+                    properties:
+                      total_imported:
+                        type: integer
+                        example: 10
+                      period_id:
+                        type: string
+                        format: uuid
+                        example: period-uuid-123
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '422':
+          description: Gagal validasi isi file Excel (misal format angka salah atau user tidak ditemukan).
+  /api/v1/export/rhpp:
+    get:
+      tags:
+        - Files
+      summary: Export Excel/PDF RHPP
+      description: |
+        Menghasilkan file Excel (.xlsx) atau PDF (.pdf) yang berisi perhitungan detail RHPP untuk periode ternak tertentu sebelum difinalisasi.
+        Data mencakup rekapitulasi biaya, pendapatan, dan perhitungan RHPP berdasarkan data produksi dan keuangan yang ada di periode tersebut.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: period_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID periode ternak yang datanya ingin diekspor.
+        - in: query
+          name: file_type
+          required: true
+          schema:
+            type: string
+            enum:
+              - xlsx
+              - pdf
+          description: Jenis file yang ingin dihasilkan (Excel atau PDF).
+      responses:
+        '200':
+          description: File RHPP berhasil dibuat dan dikirim sebagai stream.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '404':
+          description: Data untuk periode tersebut tidak ditemukan atau perhitungan RHPP belum tersedia.
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  '/api/v1/periods/{id}/close':
+    post:
+      tags:
+        - Bisnis
+      summary: Tutup periode ternak
+      description: |
+        Mengubah status periode menjadi 'closed'.
+        Backend akan melakukan validasi otomatis:
+        - Memastikan tidak ada DailyActivity yang masih berstatus DRAFT.
+        - Memastikan semua transaksi keuangan sudah disetujui (APPROVED).
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - closing_reason
+                - closed_at
+              properties:
+                closing_reason:
+                  type: string
+                  example: Panen selesai sesuai target populasi.
+                  description: Alasan atau catatan penutupan periode.
+                closed_at:
+                  type: string
+                  format: date-time
+                  example: '2026-05-15T15:00:00Z'
+                  description: Tanggal dan waktu resmi penutupan.
+      responses:
+        '200':
+          description: Periode berhasil ditutup.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1periods/put/responses/200/content/application~1json/schema'
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+  '/api/v1/rhpps/{period_id}/publish':
+    post:
+      tags:
+        - Bisnis
+      summary: Publish RHPP
+      description: |
+        Finalisasi laporan keuangan (Ketok Palu).
+        Status RHPP akan berubah menjadi PUBLISHED.
+        Setelah dipublish, data keuangan periode tersebut tidak dapat diubah lagi.
+      security:
+        - sanctum: []
+      parameters:
+        - name: period_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID periode yang terkait dengan RHPP tersebut.
+      responses:
+        '200':
+          description: RHPP berhasil dipublish.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: RHPP telah berhasil dipublikasikan dan dikunci.
+                  data:
+                    type: object
+                    properties:
+                      period_id:
+                        type: string
+                        format: uuid
+                      publish_status:
+                        type: string
+                        enum:
+                          - PUBLISHED
+                        example: PUBLISHED
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '403':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/403'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/investor/dashboard:
+    get:
+      tags:
+        - Bisnis
+      summary: Portal dashboard investor
+      description: Rekap ROI super ringan tanpa SQLite.
+      responses:
+        '200':
+          description: Data dashboard investor berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+  /api/v1/system/check-version:
+    get:
+      tags:
+        - System
+      summary: Cek versi aplikasi
+      description: |
+        Endpoint yang dipanggil saat Splash Screen aplikasi mobile.
+        Digunakan untuk mengecek apakah aplikasi perlu diperbarui (Soft Update) atau wajib diperbarui (Force Update).
+        Tidak memerlukan autentikasi (token) karena dipanggil sebelum user login.
+      security: []
+      parameters:
+        - in: query
+          name: app_version
+          required: true
+          schema:
+            type: string
+          description: Versi aplikasi mobile yang sedang berjalan saat ini (misal "1.0.5").
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum:
+              - android
+              - ios
+          description: Sistem operasi perangkat agar server bisa memberikan download_url yang tepat.
+      responses:
+        '200':
+          description: Berhasil mendapatkan info versi.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      latest_version:
+                        type: string
+                        example: 1.2.0
+                        description: Versi terbaru aplikasi di server.
+                      is_update_required:
+                        type: boolean
+                        example: true
+                        description: True jika versi app_version user lebih rendah dari latest_version.
+                      is_force_update:
+                        type: boolean
+                        example: true
+                        description: True jika user WAJIB update (tidak bisa skip/tutup modal). Biasanya karena ada perubahan skema database lokal (offline-first).
+                      download_url:
+                        type: string
+                        format: uri
+                        example: 'https://play.google.com/store/apps/details?id=com.andersonfarm.app'
+                        description: Link menuju Play Store / App Store atau link file APK langsung.
+                      release_notes:
+                        type: string
+                        example: Perbaikan fitur sinkronisasi RHPP dan penambahan modul absensi.
+                        description: Catatan pembaruan untuk ditampilkan di layar Splash.
+        '400':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/400'
+  /api/v1/notifications:
+    get:
+      tags:
+        - System - Notifications
+      summary: Daftar notifikasi user
+      description: |
+        Menarik riwayat pesan masuk (Inbox) milik user yang sedang login.
+        Mendukung paginasi untuk efisiensi sinkronisasi.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: Berhasil mengambil daftar notifikasi.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/paths/~1api~1v1~1notifications~1%7Bid%7D~1read/patch/responses/200/content/application~1json/schema'
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 1
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+  '/api/v1/notifications/{id}/read':
+    patch:
+      tags:
+        - System - Notifications
+      summary: Tandai notifikasi dibaca
+      description: |
+        Mengubah status 'read_at' pada notifikasi spesifik.
+        Menggunakan PATCH karena hanya melakukan update parsial pada satu kolom.
+      security:
+        - sanctum: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Notifikasi berhasil ditandai sebagai dibaca.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    allOf:
+                      - type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                      - type: object
+                        properties:
+                          title:
+                            type: string
+                            example: Tugas Terlewat!
+                            description: Judul notifikasi.
+                          message:
+                            type: string
+                            example: Anda belum mengisi laporan harian untuk Kandang Arwana 1.
+                            description: Isi pesan notifikasi.
+                          type:
+                            type: string
+                            enum:
+                              - INFO
+                              - WARNING
+                              - ANNOUNCEMENT
+                              - SYSTEM
+                            example: WARNING
+                            description: Kategori notifikasi untuk menentukan icon di aplikasi mobile.
+                          read_at:
+                            type:
+                              - string
+                              - 'null'
+                            format: date-time
+                            example: null
+                            description: Timestamp kapan notifikasi dibaca (null jika belum dibaca).
+                      - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+        '404':
+          $ref: '#/paths/~1api~1v1~1uploads/delete/responses/404'
+  /api/v1/sync/master-data:
+    get:
+      tags:
+        - Sync
+      summary: Sync master data offline
+      description: |
+        Mengunduh seluruh cache referensi dasar (Master Data) untuk operasional offline.
+        Data yang dikirimkan mencakup hierarchy kandang, konfigurasi form, dan master item.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: last_sync_at
+          schema:
+            type: string
+            format: date-time
+          description: 'Timestamp sinkronisasi terakhir. Jika diisi, server hanya mengirim data yang diperbarui (updated_at_server > last_sync_at).'
+      responses:
+        '200':
+          description: Berhasil menarik data sinkronisasi master.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    description: Objek berisi kumpulan array data referensi.
+                    properties:
+                      areas:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AreaResponse'
+                      farms:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FarmResponse'
+                      coops:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CoopResponse'
+                      coop_documents:
+                        type: array
+                        items:
+                          $ref: '#/paths/~1api~1v1~1coops~1%7Bid%7D~1documents/post/responses/201/content/application~1json/schema'
+                      ovk_items:
+                        type: array
+                        items:
+                          $ref: '#/paths/~1api~1v1~1ovk-items/post/responses/201/content/application~1json/schema'
+                      equipment_types:
+                        type: array
+                        items:
+                          $ref: '#/paths/~1api~1v1~1equipment-types/post/responses/201/content/application~1json/schema'
+                      form_configs:
+                        type: array
+                        items:
+                          $ref: '#/paths/~1api~1v1~1form-configs/post/responses/201/content/application~1json/schema'
+                      transaction_categories:
+                        type: array
+                        items:
+                          $ref: '#/paths/~1api~1v1~1transaction-categories/post/responses/201/content/application~1json/schema'
+                      report_templates:
+                        type: array
+                        items:
+                          $ref: '#/paths/~1api~1v1~1report-templates/post/responses/201/content/application~1json/schema'
+                  server_time:
+                    type: string
+                    format: date-time
+                    description: Waktu server saat ini (digunakan mobile sebagai 'last_sync_at' berikutnya).
+        '401':
+          $ref: '#/paths/~1api~1v1~1areas/post/responses/401'
+  /api/v1/sync/periods:
+    get:
+      tags:
+        - Sync
+      summary: Sync data periode ternak
+      description: Menarik detail periode aktif.
+      responses:
+        '200':
+          description: Daftar periode berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+    post:
+      tags:
+        - Sync
+      summary: Kirim persetujuan digital periode
+      description: Mengirim jejak persetujuan digital ContractAcceptance dari ABK.
+      responses:
+        '201':
+          description: Persetujuan berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+  /api/v1/sync/daily-activities:
+    get:
+      tags:
+        - Sync - Activities
+      summary: Delta Sync (Pull) Laporan Harian
+      description: Mengambil data aktivitas harian yang diperbarui di server sejak sinkronisasi terakhir.
+      security:
+        - sanctum: []
+      parameters:
+        - name: period_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: last_sync_timestamp
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Diambil dari tabel sync_trackers lokal.
+      responses:
+        '200':
+          description: Daftar aktivitas harian terbaru berhasil ditarik.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  current_server_timestamp:
+                    type: string
+                    format: date-time
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/paths/~1api~1v1~1sync~1daily-activities/post/requestBody/content/application~1json/schema/properties/activities/items'
+                        - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+    post:
+      tags:
+        - Sync - Activities
+      summary: Bulk Sync (Push) Laporan Harian
+      description: Mengirim data aktivitas harian yang dibuat secara offline ke server.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sync_timestamp
+                - activities
+              properties:
+                sync_timestamp:
+                  type: string
+                  format: date-time
+                activities:
+                  type: array
+                  items:
+                    allOf:
+                      - $ref: '#/components/schemas/FarmRequest/allOf/0'
+                      - type: object
+                        required:
+                          - period_id
+                          - user_id
+                          - date
+                          - age_days
+                        properties:
+                          period_id:
+                            type: string
+                            format: uuid
+                          user_id:
+                            type: string
+                            format: uuid
+                          date:
+                            type: string
+                            format: date-time
+                            example: '2026-04-24T00:00:00Z'
+                          age_days:
+                            type: integer
+                            example: 14
+                          mortality_count:
+                            type: integer
+                            default: 0
+                          cull_count:
+                            type: integer
+                            default: 0
+                          average_weight:
+                            type: ["number", "null"]
+                            format: float
+                          business_status:
+                            type: string
+                            enum:
+                              - DRAFT
+                              - SUBMITTED
+                              - APPROVED
+                              - REJECTED
+                              - NEEDS_REVIEW
+                            default: DRAFT
+                          rejection_reason:
+                            type: ["string", "null"]
+                      - type: object
+                        properties:
+                          dynamic_logs:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  format: uuid
+                                form_config_id:
+                                  type: string
+                                  format: uuid
+                                value:
+                                  type: string
+                                created_at_client:
+                                  type: string
+                                  format: date-time
+                          dailyChecklistLogs:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  format: uuid
+                                task_id:
+                                  type: string
+                                  format: uuid
+                                boolean_value:
+                                  type: ["boolean", "null"]
+                                text_value:
+                                  type: ["string", "null"]
+                                notes:
+                                  type: ["string", "null"]
+                                created_at_client:
+                                  type: string
+                                  format: date-time
+                          ovk_usages:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  format: uuid
+                                ovk_item_id:
+                                  type: string
+                                  format: uuid
+                                quantity:
+                                  type: number
+                                  format: float
+                                notes:
+                                  type: ["string", "null"]
+                                created_at_client:
+                                  type: string
+                                  format: date-time
+      responses:
+        '201':
+          description: Sinkronisasi berhasil diproses.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  server_timestamp:
+                    type: string
+                    format: date-time
+                  data:
+                    type: object
+                    properties:
+                      sync_results:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              description: UUID Client
+                            status:
+                              type: string
+                              enum:
+                                - SUCCESS
+                                - CONFLICT
+                                - ERROR
+                            server_id:
+                              type: ["string", "null"]
+  /api/v1/sync/finances:
+    get:
+      tags:
+        - Sync
+      summary: Sync data keuangan
+      description: Sinkronisasi arus kas dan status pembayaran gaji.
+      responses:
+        '200':
+          description: Data keuangan berhasil disinkronkan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+    post:
+      tags:
+        - Sync
+      summary: Kirim data keuangan
+      description: 'Push transaksi pembelian, operasional, dan pembayaran gaji.'
+      responses:
+        '201':
+          description: Data keuangan berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+  /api/v1/sync/maintenances:
+    get:
+      tags:
+        - Sync
+      summary: Sync data maintenance
+      description: Sinkronisasi perbaikan fisik bangunan kandang (MaintenanceLog).
+      responses:
+        '200':
+          description: Data maintenance berhasil disinkronkan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+    post:
+      tags:
+        - Sync
+      summary: Kirim data maintenance
+      description: Push data perbaikan fisik bangunan kandang.
+      responses:
+        '201':
+          description: Data maintenance berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+  /api/v1/sync/rhpps:
+    get:
+      tags:
+        - Sync
+      summary: Sync data RHPP
+      description: Unduh rekap laba bersih akhir dan dokumen PDF-nya untuk dilihat ABK/PIC.
+      responses:
+        '200':
+          description: Data RHPP berhasil ditarik.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Operation successful
+                  data:
+                    type: object
+                    description: Field tambahan jika diperlukan di masa depan. Bisa berupa objek atau null.
+  /api/v1/sync/education:
+    get:
+      tags:
+        - Sync
+      summary: Sync data edukasi offline
+      description: Unduh artikel edukasi & referensi harga secara offline.
+      responses:
+        '200':
+          description: Data edukasi berhasil ditarik.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+  /api/v1/sync/activity-logs:
+    post:
+      tags:
+        - Sync
+      summary: Kirim audit trail aktivitas user
+      description: Push rekam jejak (audit trail) tombol aplikasi yang diklik user.
+      responses:
+        '201':
+          description: Log aktivitas berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1api~1v1~1sync~1rhpps/get/responses/200/content/application~1json/schema'
+components:
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Nomor halaman (pagination berbasis page/limit)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    PerPageParam:
+      name: per_page
+      in: query
+      description: Jumlah data per halaman (pagination berbasis page/limit)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+      example: 10
+    CursorParam:
+      name: cursor
+      in: query
+      description: 'Cursor untuk pagination berbasis cursor. Jika tidak diisi, akan mulai dari awal.'
+      required: false
+      schema:
+        type: string
+      example: cursor-uuid-1234
+    LimitParam:
+      name: limit
+      in: query
+      description: Jumlah data per page (pagination berbasis cursor)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+      example: 10
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID dari resource yang dituju.
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+        - device_id
+      properties:
+        username:
+          type: string
+          minLength: 4
+        password:
+          type: string
+          format: password
+          minLength: 8
+        device_id:
+          type: string
+          description: UUID unik perangkat yang digunakan login
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        token:
+          type: string
+          description: JWT token untuk autentikasi selanjutnya
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        data:
+          $ref: '#/components/schemas/UserResponse'
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID unik user (UUID atau numeric)
+          example: user-uuid-1234
+        username:
+          type: string
+          example: budi_abk1
+        name:
+          type: string
+          description: Nama lengkap user
+          example: Budi Santoso
+        role:
+          type: string
+          enum:
+            - admin
+            - finance
+            - manager
+            - pic
+            - abk
+            - investor
+        phone:
+          type: string
+          description: Nomor HP user
+          example: '+628123456789'
+        email:
+          type: string
+          format: email
+          example: budi@andersonfarm.id
+        device_id:
+          type: string
+          description: UUID perangkat yang terdaftar (jika sudah binding)
+          example: android-uuid-xxx-yyy
+        coop_assignments:
+          type: array
+          description: Daftar kandang yang diassign ke user (jika ada)
+          items:
+            type: object
+            properties:
+              coop_id:
+                type: string
+                description: ID kandang
+                example: coop-uuid-1234
+              coop_name:
+                type: string
+                description: Nama kandang
+                example: Kandang A1
+        is_active:
+          type: boolean
+          description: Status aktif user
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: '2024-01-01T12:00:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2024-01-10T12:00:00Z'
+    FcmTokenRequest:
+      type: object
+      required:
+        - fcm_token
+      properties:
+        fcm_token:
+          type: string
+          description: Token unik yang dihasilkan oleh Firebase Cloud Messaging di perangkat.
+          example: fcm_token_xyz_123...
+        device_name:
+          type: string
+          description: Nama opsional perangkat untuk identifikasi log.
+          example: Samsung S24 - Android 14
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - username
+        - via
+      properties:
+        username:
+          type: string
+          description: Username user yang ingin reset password
+          example: budi_abk1
+        via:
+          type: string
+          description: Media pengiriman OTP/link (email/wa)
+          enum:
+            - email
+            - wa
+          example: email
+    ResetPasswordRequest:
+      type: object
+      required:
+        - username
+        - otp
+        - new_password
+      properties:
+        username:
+          type: string
+          description: Username user
+          example: budi_abk1
+        otp:
+          type: string
+          description: Kode OTP yang diterima user
+          example: '123456'
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+          description: Password baru user
+          example: PasswordBaru123!
+    UserCreateRequest:
+      type: object
+      required:
+        - username
+        - password
+        - name
+        - role
+      properties:
+        username:
+          type: string
+          minLength: 4
+          description: Username unik user
+          example: budi_abk1
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: Password user (akan di-hash)
+          example: RahasiaPassword123!
+        name:
+          type: string
+          description: Nama lengkap user
+          example: Budi Santoso
+        email:
+          type: string
+          format: email
+          description: Email user (opsional)
+          example: budi@andersonfarm.id
+        phone:
+          type: string
+          description: Nomor HP user (opsional)
+          example: '+628123456789'
+        role:
+          $ref: '#/components/schemas/UserResponse/properties/role'
+    FarmBase:
+      type: object
+      required:
+        - area_id
+        - name
+        - address
+      properties:
+        area_id:
+          type: string
+          format: uuid
+          description: ID Area induk farm ini.
+        name:
+          type: string
+          example: Farm Bandung Selatan
+        address:
+          type: string
+          example: 'Jl. Raya Soreang No. 1, Bandung'
+        is_active:
+          type: boolean
+          default: true
+          example: true
+    FarmRequest:
+      allOf:
+        - type: object
+          required:
+            - id
+            - created_at_client
+            - updated_at_client
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: UUID lokal dari SQLite.
+            created_at_client:
+              type: string
+              format: date-time
+            updated_at_client:
+              type: string
+              format: date-time
+        - $ref: '#/components/schemas/FarmBase'
+    FarmResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          allOf:
+            - $ref: '#/components/schemas/FarmRequest'
+            - type: object
+              properties:
+                server_id:
+                  type: integer
+                  example: 1
+                version:
+                  type: integer
+                  default: 1
+                sync_status:
+                  type: string
+                  enum:
+                    - SYNCED
+                    - CONFLICT
+                created_at_server:
+                  type: string
+                  format: date-time
+                updated_at_server:
+                  type: string
+                  format: date-time
+                deleted_at:
+                  type:
+                    - string
+                    - 'null'
+                  format: date-time
+    UserListData:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: user-uuid-1234
+              username:
+                type: string
+                example: budi_abk1
+              name:
+                type: string
+                example: Budi Santoso
+              role:
+                $ref: '#/components/schemas/UserResponse/properties/role'
+              email:
+                type: string
+                format: email
+                example: budi@andersonfarm.id
+              phone:
+                type: string
+                example: '+628123456789'
+              is_active:
+                type: boolean
+                example: true
+              created_at:
+                type: string
+                format: date-time
+                example: '2024-01-01T12:00:00Z'
+              updated_at:
+                type: string
+                format: date-time
+                example: '2024-01-10T12:00:00Z'
+    UserListResponse:
+      type: object
+      description: Response daftar user dengan dukungan pagination page/limit atau cursor.
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Daftar user berhasil diambil.
+        data:
+          allOf:
+            - $ref: '#/components/schemas/UserListData'
+            - oneOf:
+                - type: object
+                  description: Metadata untuk pagination berbasis page/limit
+                  properties:
+                    total:
+                      type: integer
+                      example: 2
+                    per_page:
+                      type: integer
+                      example: 10
+                    current_page:
+                      type: integer
+                      example: 1
+                    last_page:
+                      type: integer
+                      example: 1
+                - type: object
+                  description: Metadata untuk pagination berbasis cursor
+                  properties:
+                    next_cursor:
+                      type:
+                        - string
+                        - 'null'
+                      example: cursor-uuid-1234
+                    prev_cursor:
+                      type:
+                        - string
+                        - 'null'
+                      example: null
+                    has_next:
+                      type: boolean
+                      example: true
+                    has_prev:
+                      type: boolean
+                      example: false
+    AreaBase:
+      type: object
+      required:
+        - name
+        - manager_id
+      properties:
+        name:
+          type: string
+          example: Area Jawa Barat
+        manager_id:
+          type: string
+          format: uuid
+          description: ID User dengan role Manager.
+    AreaRequest:
+      allOf:
+        - $ref: '#/components/schemas/FarmRequest/allOf/0'
+        - $ref: '#/components/schemas/AreaBase'
+    AreaResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          allOf:
+            - $ref: '#/components/schemas/AreaRequest'
+            - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+    CoopBase:
+      type: object
+      required:
+        - farm_id
+        - name
+        - capacity
+        - floor
+        - coop_type
+      properties:
+        farm_id:
+          type: string
+          format: uuid
+          description: ID Farm induk kandang ini.
+        name:
+          type: string
+          example: Kandang A1
+        capacity:
+          type: integer
+          example: 10000
+        floor:
+          type: integer
+          example: 1
+        coop_type:
+          type: string
+          enum:
+            - open_house
+            - closed_house
+        note:
+          oneOf:
+            - type: string
+            - type: 'null'
+          example: Kandang utama untuk starter
+        is_active:
+          type: boolean
+          default: true
+          example: true
+    CoopRequest:
+      allOf:
+        - $ref: '#/components/schemas/FarmRequest/allOf/0'
+        - $ref: '#/components/schemas/CoopBase'
+    CoopResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          allOf:
+            - $ref: '#/components/schemas/CoopRequest'
+            - $ref: '#/components/schemas/FarmResponse/properties/data/allOf/1'
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+    sanctum:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - ApiKey: []

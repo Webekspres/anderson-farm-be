@@ -1,0 +1,32 @@
+# ==========================================
+# EDUCATION & PRICE REFERENCES
+# ==========================================
+
+EducationArticle:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    server_id: { type: integer }
+    title: { type: string }
+    category: { type: string }
+    author_name: { type: string, nullable: true }
+    content_html: { type: string }
+    image_url: { type: string, format: uri, nullable: true }
+    image_path_local: { type: string, nullable: true }
+    created_at_server: { type: string, format: date-time }
+    updated_at_server: { type: string, format: date-time }
+    deleted_at: { type: string, format: date-time, nullable: true }
+
+PriceReference:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    server_id: { type: integer }
+    name: { type: string }
+    highlight_price: { type: number, format: float, nullable: true }
+    link_url: { type: string, format: uri, nullable: true }
+    image_url: { type: string, format: uri, nullable: true }
+    image_path_local: { type: string, nullable: true }
+    created_at_server: { type: string, format: date-time }
+    updated_at_server: { type: string, format: date-time }
+    deleted_at: { type: string, format: date-time, nullable: true }

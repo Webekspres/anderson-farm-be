@@ -1,0 +1,719 @@
+# ==========================================
+# RESPONSE WRAPPERS
+# ==========================================
+
+GeneralResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "Operasi berhasil"
+    data:
+      type: object
+      nullable: true
+
+ErrorResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: false
+    message:
+      type: string
+      example: "Terjadi kesalahan"
+    errors:
+      type: object
+      nullable: true
+
+ValidationErrorResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: false
+    message:
+      type: string
+      example: "Validasi gagal"
+    errors:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: string
+      example:
+        name: ["Nama wajib diisi"]
+        email: ["Email sudah terdaftar"]
+
+# ==========================================
+# AUTHENTICATION SCHEMAS
+# ==========================================
+
+LoginRequest:
+  type: object
+  required:
+    - username
+    - password
+    - device_id
+  properties:
+    username:
+      type: string
+      minLength: 4
+      description: Username atau email
+      example: "budi_abk1"
+    password:
+      type: string
+      format: password
+      minLength: 8
+      example: "Password123!"
+    device_id:
+      type: string
+      format: uuid
+      description: UUID unik perangkat Android
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+LoginResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    token:
+      type: string
+      description: Bearer token Sanctum
+      example: "2|AbCdEfGhIjKlMnOpQrStUvWxYz"
+    data:
+      $ref: "#/UserResponse"
+
+FcmTokenRequest:
+  type: object
+  required:
+    - fcm_token
+  properties:
+    fcm_token:
+      type: string
+      description: Token FCM dari Firebase
+      example: "dGVzdF90b2tlbl9mY21f"
+    device_name:
+      type: string
+      description: Nama opsional perangkat
+      example: "Samsung S24"
+
+ForgotPasswordRequest:
+  type: object
+  required:
+    - username
+    - via
+  properties:
+    username:
+      type: string
+      example: "budi_abk1"
+    via:
+      type: string
+      enum: [email, wa]
+      example: "email"
+
+ResetPasswordRequest:
+  type: object
+  required:
+    - username
+    - otp
+    - new_password
+  properties:
+    username:
+      type: string
+      example: "budi_abk1"
+    otp:
+      type: string
+      minLength: 6
+      example: "123456"
+    new_password:
+      type: string
+      format: password
+      minLength: 8
+      example: "NewPassword123!"
+
+# ==========================================
+# USER SCHEMAS
+# ==========================================
+
+UserResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Server ID user
+      example: "550e8400-e29b-41d4-a716-446655440001"
+    username:
+      type: string
+      example: "budi_abk1"
+    name:
+      type: string
+      example: "Budi Santoso"
+    role:
+      type: string
+      enum: [admin, manager, pic, abk]
+      example: "abk"
+    email:
+      type: string
+      format: email
+      example: "budi@andersonfarm.id"
+    phone:
+      type: string
+      example: "+628123456789"
+    device_id:
+      type: string
+      nullable: true
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    is_active:
+      type: boolean
+      example: true
+    created_at:
+      type: string
+      format: date-time
+      example: "2024-01-01T12:00:00Z"
+    updated_at:
+      type: string
+      format: date-time
+      example: "2024-01-10T12:00:00Z"
+
+UserCreateRequest:
+  type: object
+  required:
+    - username
+    - password
+    - name
+    - role
+  properties:
+    username:
+      type: string
+      minLength: 4
+      description: Username unik
+      example: "budi_abk1"
+    password:
+      type: string
+      format: password
+      minLength: 8
+      example: "Password123!"
+    name:
+      type: string
+      description: Nama lengkap
+      example: "Budi Santoso"
+    email:
+      type: string
+      format: email
+      nullable: true
+      example: "budi@andersonfarm.id"
+    phone:
+      type: string
+      nullable: true
+      example: "+628123456789"
+    role:
+      type: string
+      enum: [admin, manager, pic, abk]
+      example: "abk"
+
+UserUpdateRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      example: "Budi Santoso Baru"
+    email:
+      type: string
+      format: email
+      example: "budi_baru@andersonfarm.id"
+    phone:
+      type: string
+      example: "+628123456789"
+    role:
+      type: string
+      enum: [admin, manager, pic, abk]
+      example: "manager"
+    is_active:
+      type: boolean
+      example: true
+
+ChangePasswordRequest:
+  type: object
+  required:
+    - current_password
+    - new_password
+  properties:
+    current_password:
+      type: string
+      format: password
+      example: "OldPassword123!"
+    new_password:
+      type: string
+      format: password
+      minLength: 8
+      example: "NewPassword123!"
+
+# ==========================================
+# MASTER DATA SCHEMAS (Area, Farm, Coop)
+# ==========================================
+
+AreaRequest:
+  type: object
+  required:
+    - name
+    - manager_id
+  properties:
+    name:
+      type: string
+      description: Nama wilayah
+      example: "Area Jawa Barat"
+    manager_id:
+      type: string
+      format: uuid
+      description: ID user dengan role manager
+      example: "550e8400-e29b-41d4-a716-446655440002"
+    type:
+      type: string
+      enum: [KANDANG, KEBUN, LAHAN]
+      description: Tipe area
+      example: "KANDANG"
+    size_m2:
+      type: number
+      nullable: true
+      description: Luas area dalam m²
+      example: 5000
+
+AreaResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Server ID
+      example: "550e8400-e29b-41d4-a716-446655440100"
+    uuid:
+      type: string
+      format: uuid
+      description: Client ID
+      example: "550e8400-e29b-41d4-a716-446655440101"
+    name:
+      type: string
+      example: "Area Jawa Barat"
+    manager_id:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440002"
+    type:
+      type: string
+      example: "KANDANG"
+    size_m2:
+      type: number
+      nullable: true
+      example: 5000
+    sync_status:
+      type: string
+      enum: [PENDING, SYNCED, FAILED]
+      example: "SYNCED"
+    created_at_client:
+      type: string
+      format: date-time
+      example: "2024-01-01T12:00:00Z"
+    created_at_server:
+      type: string
+      format: date-time
+      example: "2024-01-01T13:00:00Z"
+    updated_at_client:
+      type: string
+      format: date-time
+      example: "2024-01-10T12:00:00Z"
+    updated_at_server:
+      type: string
+      format: date-time
+      example: "2024-01-10T13:00:00Z"
+    deleted_at:
+      type: string
+      format: date-time
+      nullable: true
+
+FarmRequest:
+  type: object
+  required:
+    - area_id
+    - name
+    - address
+  properties:
+    area_id:
+      type: string
+      format: uuid
+      description: ID area induk
+      example: "550e8400-e29b-41d4-a716-446655440100"
+    name:
+      type: string
+      description: Nama farm
+      example: "Farm Bandung Selatan"
+    address:
+      type: string
+      description: Alamat lengkap
+      example: "Jl. Raya Soreang No. 1, Bandung"
+    is_active:
+      type: boolean
+      example: true
+
+FarmResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Server ID
+    uuid:
+      type: string
+      format: uuid
+      description: Client ID
+    area_id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    address:
+      type: string
+    is_active:
+      type: boolean
+    created_at_server:
+      type: string
+      format: date-time
+    updated_at_server:
+      type: string
+      format: date-time
+
+CoopRequest:
+  type: object
+  required:
+    - farm_id
+    - name
+    - capacity
+    - floor
+    - coop_type
+  properties:
+    farm_id:
+      type: string
+      format: uuid
+      description: ID farm induk
+      example: "550e8400-e29b-41d4-a716-446655440200"
+    name:
+      type: string
+      description: Nama kandang
+      example: "Kandang A1"
+    capacity:
+      type: integer
+      minimum: 0
+      description: Kapasitas kandang (ekor)
+      example: 10000
+    floor:
+      type: integer
+      minimum: 1
+      description: Nomor lantai
+      example: 1
+    coop_type:
+      type: string
+      enum: [open_house, closed_house, tunnel]
+      description: Tipe kandang
+      example: "open_house"
+    note:
+      type: string
+      nullable: true
+      description: Catatan tambahan
+      example: "Kandang utama untuk starter"
+    is_active:
+      type: boolean
+      example: true
+
+CoopResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Server ID
+    uuid:
+      type: string
+      format: uuid
+      description: Client ID
+    farm_id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    capacity:
+      type: integer
+    floor:
+      type: integer
+    coop_type:
+      type: string
+    note:
+      type: string
+      nullable: true
+    is_active:
+      type: boolean
+    created_at_server:
+      type: string
+      format: date-time
+    updated_at_server:
+      type: string
+      format: date-time
+
+# ==========================================
+# EQUIPMENT & CONFIGURATION SCHEMAS
+# ==========================================
+
+EquipmentTypeRequest:
+  type: object
+  required:
+    - name
+  properties:
+    name:
+      type: string
+      description: Nama jenis alat
+      example: "Kipas"
+    brand:
+      type: string
+      nullable: true
+      description: Merek alat
+      example: "Panasonic"
+    unit:
+      type: string
+      nullable: true
+      description: Satuan alat
+      example: "Unit"
+
+EquipmentTypeResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    brand:
+      type: string
+      nullable: true
+    unit:
+      type: string
+      nullable: true
+    created_at_server:
+      type: string
+      format: date-time
+    updated_at_server:
+      type: string
+      format: date-time
+
+FormConfigRequest:
+  type: object
+  required:
+    - name
+    - form_type
+    - config
+  properties:
+    name:
+      type: string
+      description: Nama form
+      example: "HBE Standar"
+    form_type:
+      type: string
+      enum: [hbe, sensor, checklist]
+      description: Tipe form
+      example: "hbe"
+    config:
+      type: object
+      description: Konfigurasi JSON form
+      example:
+        fields:
+          - id: "field_1"
+            label: "Umur Ayam"
+            type: "number"
+            required: true
+
+FormConfigResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    form_type:
+      type: string
+    config:
+      type: object
+    created_at_server:
+      type: string
+      format: date-time
+    updated_at_server:
+      type: string
+      format: date-time
+
+# ==========================================
+# FINANCIAL SCHEMAS
+# ==========================================
+
+TransactionCategoryRequest:
+  type: object
+  required:
+    - name
+    - code
+    - type
+  properties:
+    name:
+      type: string
+      description: Nama kategori
+      example: "Pakan"
+    code:
+      type: string
+      description: Kode akun
+      example: "5110"
+    type:
+      type: string
+      enum: [INCOME, EXPENSE]
+      description: Jenis transaksi
+      example: "EXPENSE"
+
+TransactionCategoryResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    code:
+      type: string
+    type:
+      type: string
+    created_at_server:
+      type: string
+      format: date-time
+    updated_at_server:
+      type: string
+      format: date-time
+
+# ==========================================
+# PRODUCTION PERIOD SCHEMAS
+# ==========================================
+
+PeriodRequest:
+  type: object
+  required:
+    - coop_id
+    - start_date
+    - initial_stock
+  properties:
+    coop_id:
+      type: string
+      format: uuid
+      description: ID kandang
+      example: "550e8400-e29b-41d4-a716-446655440300"
+    start_date:
+      type: string
+      format: date
+      description: Tanggal mulai periode
+      example: "2024-01-01"
+    initial_stock:
+      type: integer
+      minimum: 0
+      description: Jumlah ayam awal
+      example: 10000
+    target_weight:
+      type: number
+      nullable: true
+      description: Target berat akhir (kg)
+      example: 2.0
+
+PeriodResponse:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    coop_id:
+      type: string
+      format: uuid
+    start_date:
+      type: string
+      format: date
+    end_date:
+      type: string
+      format: date
+      nullable: true
+    initial_stock:
+      type: integer
+    target_weight:
+      type: number
+      nullable: true
+    status:
+      type: string
+      enum: [active, closed]
+      example: "active"
+    created_at_server:
+      type: string
+      format: date-time
+    updated_at_server:
+      type: string
+      format: date-time
+
+PaginationMeta:
+  type: object
+  properties:
+    total:
+      type: integer
+      example: 100
+    per_page:
+      type: integer
+      example: 10
+    current_page:
+      type: integer
+      example: 1
+    last_page:
+      type: integer
+      example: 10
+
+CursorPaginationMeta:
+  type: object
+  properties:
+    next_cursor:
+      type: string
+      nullable: true
+      example: "cursor_abc123"
+    prev_cursor:
+      type: string
+      nullable: true
+      example: "cursor_xyz789"
+    has_next:
+      type: boolean
+      example: true
+    has_prev:
+      type: boolean
+      example: false
+
+# ==========================================
+# SYNC SCHEMAS
+# ==========================================
+
+SyncResult:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Client ID
+    status:
+      type: string
+      enum: [SUCCESS, FAILED, CONFLICT, PENDING]
+      description: Status sinkronisasi
+    server_id:
+      type: string
+      nullable: true
+      description: Server ID jika berhasil
+    error_message:
+      type: string
+      nullable: true
+      description: Pesan error jika gagal

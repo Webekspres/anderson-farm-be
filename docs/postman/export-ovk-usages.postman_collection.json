@@ -1,0 +1,83 @@
+{
+	"info": {
+		"_postman_id": "a8f3c2e1-4b5d-6e7f-9012-3456789abcde",
+		"name": "Anderson Farm API",
+		"description": "Export OVK Usages — GET /api/v1/export/ovk-usages\n\nVariabel environment:\n- `base_url` — http://localhost:8000\n- `token` — Bearer token dari login\n- `period_id` — UUID production_periods.id\n\nUnduh file: **Send and Download**.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "api",
+			"item": [
+				{
+					"name": "v1",
+					"item": [
+						{
+							"name": "export",
+							"item": [
+								{
+									"name": "ovk-usages",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{token}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/api/v1/export/ovk-usages?period_id={{period_id}}",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"export",
+												"ovk-usages"
+											],
+											"query": [
+												{
+													"key": "period_id",
+													"value": "{{period_id}}",
+													"description": "UUID production_periods.id (wajib)"
+												}
+											]
+										},
+										"description": "Mengunduh laporan audit pemakaian OVK per periode (Excel: sheet Detail & Summary).\n\n**Auth:** Bearer token (user harus punya assignment ke kandang periode).\n\n**Respons sukses:** file .xlsx (stream download).\n\n**Error:**\n- 401 — token tidak valid\n- 403 — tidak punya akses kandang\n- 404 — periode tidak ditemukan\n- 422 — period_id bukan UUID"
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "period_id",
+			"value": ""
+		}
+	]
+}

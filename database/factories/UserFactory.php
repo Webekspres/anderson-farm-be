@@ -25,10 +25,10 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'id'            => fake()->uuid(),
-            'server_id'     => fake()->unique()->numberBetween(1, 999999),
+            'id' => fake()->uuid(),
+            'server_id' => fake()->unique()->numberBetween(1, 9999999999),
             'username' => fake()->unique()->userName(),
-            'password_hash' => static::$password ??= Hash::make('password'),
+            'password_hash' => static::$password ??= Hash::make('password123'),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'phone_number' => fake()->phoneNumber(),
@@ -54,7 +54,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
     }

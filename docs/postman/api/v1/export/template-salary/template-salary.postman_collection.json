@@ -1,0 +1,72 @@
+{
+	"info": {
+		"_postman_id": "c7d2e8f4-9a1b-4c3d-8e5f-0123456789ab",
+		"name": "Anderson Farm — Export Template Salary",
+		"description": "GET /api/v1/export/template-salary\n\nVariabel (environment atau collection):\n- `baseUrl` — contoh: http://localhost:8000\n- `bearerToken` — Bearer token dari login (role Finance atau Admin)\n\nUnduh file: gunakan **Send and Download** di Postman.\n\nImport: pilih **Merge** jika collection Anderson Farm API sudah ada.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "api",
+			"item": [
+				{
+					"name": "v1",
+					"item": [
+						{
+							"name": "export",
+							"item": [
+								{
+									"name": "template-salary",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{bearerToken}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/export/template-salary",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"export",
+												"template-salary"
+											]
+										},
+										"description": "Mengunduh template Excel gaji ABK untuk semua periode produksi aktif.\n\n**Baris 1:** header tabel (Period Code … Total Gaji). **Baris 2+:** data.\n\n**Kolom (A–H):** Period Code, Employee Username, Coop ID, Floor ID, Coop Name, Floor Name, Employee Name, Total Gaji.\n\n**Baris data:** satu baris per kombinasi periode aktif + lantai + ABK yang ditugaskan di kandang (`CoopUserAssignment`). Nilai gaji dari `EmployeeSalary` atau 0.\n\n**Auth:** Bearer `{{bearerToken}}`. Hanya role **finance** atau **admin**.\n\n**Respons sukses:** file .xlsx `TEMPLATE_GAJI_ABK_{Y-m-d}.xlsx` — gunakan Send and Download.\n\n**Error:**\n- 401 — tidak terautentikasi\n- 403 — bukan Finance/Admin (ABK, Manager, PIC, dll.)"
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "bearerToken",
+			"value": ""
+		}
+	]
+}

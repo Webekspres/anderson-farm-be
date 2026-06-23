@@ -1,0 +1,30 @@
+# --- Sync Periods Detail ---
+periods:
+  get:
+    tags: [Sync - Periods]
+    summary: Pull Detail Periode Aktif
+    description: Menarik detail finansial, dokumen, dan kontrak untuk periode yang sedang berjalan.
+    security:
+      - sanctum: []
+    parameters:
+      - name: period_id
+        in: query
+        required: true
+        schema: { type: string, format: uuid }
+      - name: last_sync_timestamp
+        in: query
+        required: false
+        schema: { type: string, format: date-time }
+    responses:
+      "200":
+        description: Detail periode berhasil ditarik.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                data:
+                  {
+                    $ref: "../../components/sync/production-period.yaml#/ProductionPeriodDetail",
+                  }

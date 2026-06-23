@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
+
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Area extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'areas';
     protected $keyType = 'string';
@@ -41,8 +44,8 @@ class Area extends Model
         return $this->belongsTo(User::class, 'manager_id');
     }
 
-    public function farms()
-    {
-        return $this->hasMany(Farm::class, 'area_id');
-    }
+    // public function farms()
+    // {
+    //     return $this->hasMany(Farm::class, 'area_id');
+    // }
 }

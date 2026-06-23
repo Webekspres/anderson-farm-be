@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "sync-api": "dotenv -- bash -c 'redocly bundle docs/apicontract/openapi/openapi.yaml -o docs/apicontract/openapi/dist.yaml && postman api update-definition $POSTMAN_API_ID --definition docs/apicontract/openapi/dist.yaml'"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

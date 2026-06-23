@@ -1,3 +1,10 @@
+GeneralResponse:
+  description: Operasi berhasil
+  content:
+    application/json:
+      schema:
+        $ref: "./general.yaml#/GeneralResponse"
+
 ValidationError:
   description: Validasi gagal (input tidak valid)
   content:
@@ -43,7 +50,6 @@ NotFoundError:
         message: "Data tidak ditemukan di sistem."
         errors: {}
 
-    # --- RESPONSE SCHEMAS ---
 PaginationMetaPage:
   type: object
   description: Metadata untuk pagination berbasis page/limit

@@ -9,7 +9,9 @@ PHASE 1: THE WORKFLOW (Think Before Code)
 
 1. ANALYZE PRISMA: Read the Prisma schema carefully. Identify the table name (from `@@map`), primary keys (UUID vs AutoIncrement), nullability (`?`), unique constraints (`@unique`), and relationships.
 2. DRAFT PLAN: Outline the 5 files to be generated.
-3. EXECUTE: Generate the code ensuring zero errors, proper namespaces, and strict typing.
+3. Pastikan untuk pembuatan file menggunakan command terminal artisan, bukan manual buat file baru. Contoh: `php artisan make:model ModelName -m -f -s -r` untuk membuat Model, Migration, Factory, Seeder, dan Resource sekaligus.
+4. SELF-REVIEW: Review your plan for potential edge cases, DRY violations, or missing details. Adjust the plan if necessary.
+5. EXECUTE: Generate the code ensuring zero errors, proper namespaces, and strict typing.
 
 =========================================
 PHASE 2: PRISMA TO LARAVEL TRANSLATION RULES

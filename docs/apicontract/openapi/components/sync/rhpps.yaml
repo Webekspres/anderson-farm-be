@@ -1,0 +1,22 @@
+RhppSyncItem:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    period_id: { type: string, format: uuid }
+    total_income: { type: number, format: float }
+    total_expense: { type: number, format: float }
+    net_profit: { type: number, format: float }
+    publish_status: { type: string }
+    created_at_server: { type: string, format: date-time }
+    updated_at_server: { type: string, format: date-time }
+    deleted_at: { type: string, format: date-time, nullable: true }
+    documents:
+      type: array
+      items:
+        type: object
+        properties:
+          id: { type: string, format: uuid }
+          name: { type: string }
+          file_url: { type: string, format: uri, nullable: true }
+          file_path_local: { type: string, nullable: true }
+          file_type: { type: string }

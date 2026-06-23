@@ -1,0 +1,29 @@
+Transaction:
+  type: object
+  properties:
+    id: { type: string, format: uuid }
+    period_id: { type: string, format: uuid }
+    transaction_date: { type: string, format: date-time }
+    type: { type: string, enum: [INCOME, EXPENSE] }
+    amount: { type: number, format: float }
+    description: { type: string }
+    receipt_image_url: { type: string, format: uri, nullable: true }
+    receipt_image_path_local: { type: string, nullable: true }
+    business_status: { type: string, enum: [DRAFT, SUBMITTED, APPROVED, REJECTED] }
+    created_at_client: { type: string, format: date-time }
+    updated_at_client: { type: string, format: date-time }
+    created_at_server: { type: string, format: date-time }
+
+TransactionSyncPayload:
+  type: object
+  required: [id, period_id, transaction_date, type, amount, created_at_client]
+  properties:
+    id: { type: string, format: uuid }
+    period_id: { type: string, format: uuid }
+    transaction_date: { type: string, format: date-time }
+    type: { type: string, enum: [EXPENSE] }
+    amount: { type: number, format: float }
+    description: { type: string, nullable: true }
+    receipt_image_path_local: { type: string, nullable: true }
+    created_at_client: { type: string, format: date-time }
+    updated_at_client: { type: string, format: date-time }

@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Route::bind('form_config', function ($value) {
+            return \App\Models\FormConfig::where('id', $value)->firstOrFail();
+        });
     }
 }

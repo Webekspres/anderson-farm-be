@@ -1,0 +1,120 @@
+{
+	"info": {
+		"_postman_id": "d1a5f6e2-8b3c-4d9e-a012-567890abcdef",
+		"name": "Anderson Farm — Export Harvests",
+		"description": "GET /api/v1/export/harvests\n\nVariabel environment:\n- `base_url` — contoh: http://localhost:8000\n- `token` — Bearer token dari login (Finance, Manager, atau Admin)\n- `period_id` — UUID dari tabel production_periods\n\nUnduh file: gunakan **Send and Download** di Postman.\n\nImport: pilih **Merge** jika collection Anderson Farm API sudah ada.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "api",
+			"item": [
+				{
+					"name": "v1",
+					"item": [
+						{
+							"name": "export",
+							"item": [
+								{
+									"name": "harvests",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{token}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/api/v1/export/harvests?period_id={{period_id}}",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"export",
+												"harvests"
+											],
+											"query": [
+												{
+													"key": "period_id",
+													"value": "{{period_id}}",
+													"description": "UUID production_periods.id (wajib)"
+												}
+											]
+										},
+										"description": "Mengunduh rekapitulasi panen parsial/bertahap (HarvestEntry) per periode produksi.\n\n**Excel:** satu sheet `Rekap Panen`.\n\n**Kolom (A–J):** Tanggal Panen, Umur Ayam (Hari), Rit Ke-, Nama Pembeli / Bakul, No. Surat Jalan (DO), Jumlah (Ekor), Total Berat (Kg), Rata-rata Bobot (Kg), Harga per Kg (Rp), Total Nilai Omzet (Rp).\n\nData diambil dari `HarvestEntry` yang terhubung ke `DailyActivityHeader` dengan `period_id` sesuai query.\n\nBaris terakhir (jika ada data): **GRAND TOTAL** dengan formula SUM untuk Jumlah (Ekor), Total Berat (Kg), dan Total Nilai Omzet (Rp).\n\n**Auth:** Bearer token. Admin bebas akses; manager via area manager; role lain (termasuk Finance) via coop_user_assignments.\n\n**Respons sukses:** file .xlsx `HARVEST_{period_code}.xlsx` — gunakan Send and Download.\n\n**Error:**\n- 401 — token tidak valid\n- 403 — tidak punya akses kandang/periode\n- 404 — periode tidak ditemukan\n- 422 — period_id kosong atau bukan UUID"
+									},
+									"response": []
+								},
+								{
+									"name": "harvests (validation — tanpa period_id)",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{token}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/api/v1/export/harvests",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"export",
+												"harvests"
+											]
+										},
+										"description": "Contoh edge case: memanggil export tanpa query `period_id`.\n\n**Respons:** 422 Unprocessable Entity — `ID periode harus diisi.`"
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "period_id",
+			"value": ""
+		}
+	]
+}
