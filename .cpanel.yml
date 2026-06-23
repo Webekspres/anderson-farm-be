@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=public_html/anderson-farm.webekspres.web.id/
+    - /bin/cp -R images $DEPLOYPATH
