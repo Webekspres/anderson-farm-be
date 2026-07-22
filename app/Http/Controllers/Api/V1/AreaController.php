@@ -1,4 +1,5 @@
 <?php
+
 // app/Http/Controllers/Api/V1/AreaController.php
 
 namespace App\Http\Controllers\Api\V1;
@@ -19,7 +20,7 @@ class AreaController extends Controller
 
         // Filter by name (search)
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
         // Filter by type
         if ($request->filled('type')) {
@@ -72,7 +73,14 @@ class AreaController extends Controller
     public function store(StoreAreaRequest $request)
     {
         $data = $request->validated();
+        $data['manager_id'] ??= $request->user()->id;
+
+        // `type` / `size_m2` accepted by the form request for API compatibility,
+        // but are not persisted columns on `areas` yet.
+        unset($data['type'], $data['size_m2']);
+
         $area = Area::create($data);
+
         return response()->json([
             'success' => true,
             'message' => 'Area berhasil dibuat.',
@@ -85,6 +93,7 @@ class AreaController extends Controller
         $area = Area::findOrFail($id);
         $area->fill($request->validated());
         $area->save();
+
         return response()->json([
             'success' => true,
             'message' => 'Area berhasil diupdate.',
@@ -96,6 +105,7 @@ class AreaController extends Controller
     {
         $area = Area::findOrFail($id);
         $area->delete();
+
         return response()->json([
             'success' => true,
             'message' => 'Area berhasil dihapus.',

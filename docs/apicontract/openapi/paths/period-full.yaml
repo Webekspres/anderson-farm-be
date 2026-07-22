@@ -31,31 +31,6 @@ periods:
         description: Validasi gagal
 
 periodSingle:
-  get:
-    tags: [Periode Ternak]
-    summary: Ambil detail periode ternak
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-    responses:
-      "200":
-        description: Detail periode berhasil diambil
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                success:
-                  type: boolean
-                data:
-                  $ref: "../components/schemas.yaml#/PeriodResponse"
-      "404":
-        description: Periode tidak ditemukan
-
   patch:
     tags: [Periode Ternak]
     summary: Edit periode ternak

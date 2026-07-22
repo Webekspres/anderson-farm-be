@@ -695,6 +695,304 @@ CursorPaginationMeta:
       example: false
 
 # ==========================================
+# COOP FLOOR SCHEMAS
+# ==========================================
+
+CoopFloorRequest:
+  type: object
+  required:
+    - coop_id
+    - name
+    - capacity
+  properties:
+    coop_id:
+      type: string
+      format: uuid
+    name:
+      type: string
+      example: "Lantai 1"
+    capacity:
+      type: integer
+      minimum: 1
+      example: 10000
+
+CoopFloorUpdateRequest:
+  type: object
+  properties:
+    coop_id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    capacity:
+      type: integer
+      minimum: 1
+
+CoopFloor:
+  type: object
+  properties:
+    id:
+      type: integer
+      nullable: true
+      description: Server ID numerik.
+    uuid:
+      type: string
+      format: uuid
+    coop_id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    capacity:
+      type: integer
+    sync_status:
+      type: string
+    created_at_client:
+      type: string
+      format: date-time
+      nullable: true
+    created_at_server:
+      type: string
+      format: date-time
+      nullable: true
+    updated_at_client:
+      type: string
+      format: date-time
+      nullable: true
+    updated_at_server:
+      type: string
+      format: date-time
+      nullable: true
+    deleted_at:
+      type: string
+      format: date-time
+      nullable: true
+    coop:
+      type: object
+      nullable: true
+      properties:
+        id:
+          type: integer
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+        coop_type:
+          type: string
+
+CoopFloorResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+    data:
+      $ref: "#/CoopFloor"
+
+CoopFloorListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+    data:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/CoopFloor"
+        total:
+          type: integer
+        per_page:
+          type: integer
+        current_page:
+          type: integer
+        last_page:
+          type: integer
+        next_cursor:
+          type: string
+          nullable: true
+        prev_cursor:
+          type: string
+          nullable: true
+        has_next:
+          type: boolean
+        has_prev:
+          type: boolean
+
+# ==========================================
+# DAILY ACTIVITY APPROVAL SCHEMAS
+# ==========================================
+
+DailyActivityApprovalReviewRequest:
+  type: object
+  required:
+    - action
+  properties:
+    action:
+      type: string
+      enum: [approve, reject]
+    rejection_reason:
+      type: string
+      maxLength: 1000
+      description: Wajib diisi jika action adalah reject.
+
+DailyActivityHeader:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    server_id:
+      type: integer
+      nullable: true
+    version:
+      type: integer
+    form_schema_version:
+      type: string
+      nullable: true
+    period_id:
+      type: string
+      format: uuid
+    user_id:
+      type: string
+      format: uuid
+    date:
+      type: string
+      format: date-time
+      nullable: true
+    age_days:
+      type: integer
+      nullable: true
+    mortality_count:
+      type: integer
+      nullable: true
+    cull_count:
+      type: integer
+      nullable: true
+    feed_consumption_kg:
+      type: number
+    average_weight:
+      type: number
+      nullable: true
+    business_status:
+      type: string
+    approved_by:
+      type: string
+      format: uuid
+      nullable: true
+    rejection_reason:
+      type: string
+      nullable: true
+    sync_status:
+      type: string
+    created_at_client:
+      type: string
+      format: date-time
+      nullable: true
+    created_at_server:
+      type: string
+      format: date-time
+      nullable: true
+    updated_at_client:
+      type: string
+      format: date-time
+      nullable: true
+    updated_at_server:
+      type: string
+      format: date-time
+      nullable: true
+    deleted_at:
+      type: string
+      format: date-time
+      nullable: true
+
+DailyActivityApprovalListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+    data:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/DailyActivityHeader"
+        total:
+          type: integer
+        per_page:
+          type: integer
+        current_page:
+          type: integer
+        last_page:
+          type: integer
+
+DailyActivityApprovalResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+    data:
+      $ref: "#/DailyActivityHeader"
+
+# ==========================================
+# EQUIPMENT TYPE FORM CONFIG SCHEMAS
+# ==========================================
+
+EquipmentFormAssignment:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    category:
+      type: string
+    key_name:
+      type: string
+    ui_metadata:
+      type: object
+      additionalProperties: true
+
+SyncEquipmentFormConfigsRequest:
+  type: object
+  required:
+    - form_config_ids
+  properties:
+    form_config_ids:
+      type: array
+      minItems: 1
+      items:
+        type: string
+        format: uuid
+
+EquipmentFormConfigListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+    data:
+      type: array
+      items:
+        $ref: "#/EquipmentFormAssignment"
+
+# ==========================================
 # SYNC SCHEMAS
 # ==========================================
 

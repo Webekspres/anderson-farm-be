@@ -51,6 +51,23 @@ notifications:
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
 
+notifications-read-all:
+  patch:
+    tags: [System - Notifications]
+    summary: Tandai semua notifikasi dibaca
+    description: Mass update untuk menandai seluruh notifikasi unread milik user sesi aktif sebagai sudah dibaca.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        description: Semua notifikasi berhasil ditandai sebagai dibaca.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+
 notification-read:
   patch:
     tags: [System - Notifications]

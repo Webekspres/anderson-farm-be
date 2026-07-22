@@ -16,39 +16,81 @@ use App\Models\ProductionPeriod;
 use App\Models\ReportTemplate;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 class MasterDataSyncService
 {
     /**
+     * Roles that receive the full farm/coop/period hierarchy (not assignment-scoped).
+     *
+     * @var list<string>
+     */
+    private const FULL_HIERARCHY_ROLES = ['admin', 'manager', 'finance'];
+
+    /**
+     * Hierarchy keys always returned in full for the user's scope (no delta filter).
+     *
+     * @var list<string>
+     */
+    private const HIERARCHY_KEYS = [
+        'coop_user_assignments',
+        'coops',
+        'farms',
+        'areas',
+        'production_periods',
+    ];
+
+    /**
      * Mengkompilasi semua data master (hierarki & global) berdasarkan timestamp terakhir sinkronisasi.
+     *
+     * Hierarki selalu full-set untuk scope user agar Pilih Konteks tidak kosong setelah delta sync
+     * atau untuk role admin/manager/finance tanpa coop_user_assignments.
+     * Katalog global tetap mendukung delta via last_sync_timestamp.
      */
     public function compileMasterData(?string $lastSyncTimestamp, User $user): array
     {
-        // 1. Ekstraksi Hierarki Dasar (Tanpa filter timestamp untuk mendapatkan struktur lengkap)
-        $allCoopIds = CoopUserAssignment::where('user_id', $user->id)
-            ->pluck('coop_id')
-            ->toArray();
+        $useFullHierarchy = $this->receivesFullHierarchy($user);
 
-        $allFarmIds = empty($allCoopIds) ? [] : Coop::whereIn('id', $allCoopIds)
-            ->pluck('farm_id')
-            ->toArray();
+        if ($useFullHierarchy) {
+            $allCoopIds = Coop::query()->pluck('id')->all();
+            $allFarmIds = Farm::query()->pluck('id')->all();
+            $allAreaIds = Area::query()->pluck('id')->all();
+            $allFloorIds = CoopFloor::query()->pluck('id')->all();
+        } else {
+            $allCoopIds = CoopUserAssignment::query()
+                ->where('user_id', $user->id)
+                ->pluck('coop_id')
+                ->all();
 
-        $allAreaIds = empty($allFarmIds) ? [] : Farm::whereIn('id', $allFarmIds)
-            ->pluck('area_id')
-            ->toArray();
+            $allFarmIds = empty($allCoopIds)
+                ? []
+                : Coop::query()->whereIn('id', $allCoopIds)->pluck('farm_id')->all();
 
-        // Get all floors for the coops
-        $allFloorIds = empty($allCoopIds) ? [] : CoopFloor::whereIn('coop_id', $allCoopIds)
-            ->pluck('id')
-            ->toArray();
+            $allAreaIds = empty($allFarmIds)
+                ? []
+                : Farm::query()->whereIn('id', $allFarmIds)->pluck('area_id')->all();
 
-        // 2. Siapkan Query Dasar
+            $allFloorIds = empty($allCoopIds)
+                ? []
+                : CoopFloor::query()->whereIn('coop_id', $allCoopIds)->pluck('id')->all();
+        }
+
         $queries = [
-            'coop_user_assignments' => CoopUserAssignment::where('user_id', $user->id),
-            'coops' => Coop::whereIn('id', $allCoopIds),
-            'farms' => Farm::whereIn('id', $allFarmIds),
-            'areas' => Area::whereIn('id', $allAreaIds),
-            'production_periods' => ProductionPeriod::whereIn('floor_id', $allFloorIds),
+            'coop_user_assignments' => $useFullHierarchy
+                ? CoopUserAssignment::query()
+                : CoopUserAssignment::query()->where('user_id', $user->id),
+            'coops' => empty($allCoopIds)
+                ? Coop::query()->whereRaw('0 = 1')
+                : Coop::query()->whereIn('id', $allCoopIds),
+            'farms' => empty($allFarmIds)
+                ? Farm::query()->whereRaw('0 = 1')
+                : Farm::query()->whereIn('id', $allFarmIds),
+            'areas' => empty($allAreaIds)
+                ? Area::query()->whereRaw('0 = 1')
+                : Area::query()->whereIn('id', $allAreaIds),
+            'production_periods' => empty($allFloorIds)
+                ? ProductionPeriod::query()->whereRaw('0 = 1')
+                : ProductionPeriod::query()->whereIn('floor_id', $allFloorIds),
             'form_configs' => FormConfig::query(),
             'equipment_types' => EquipmentType::query(),
             'ovk_items' => OvkItem::query(),
@@ -57,24 +99,37 @@ class MasterDataSyncService
             'report_templates' => ReportTemplate::query(),
         ];
 
+        $parsedTimestamp = $lastSyncTimestamp
+            ? Carbon::parse($lastSyncTimestamp)->setTimezone(config('app.timezone'))
+            : null;
+
         $result = [];
 
-        // 3. Terapkan Filter Delta Sync & Soft Deletes
-        $parsedTimestamp = $lastSyncTimestamp ? Carbon::parse($lastSyncTimestamp)->setTimezone(config('app.timezone')) : null;
-
         foreach ($queries as $key => $query) {
-            if ($parsedTimestamp) {
-                $query->where('updated_at_server', '>', $parsedTimestamp);
+            $isHierarchy = in_array($key, self::HIERARCHY_KEYS, true);
 
-                // Cek apakah model menggunakan trait SoftDeletes
-                $model = $query->getModel();
-                if (in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses_recursive($model))) {
-                    $query->withTrashed();
-                }
+            if ($parsedTimestamp !== null && ! $isHierarchy) {
+                $this->applyDeltaFilter($query, $parsedTimestamp);
             }
+
             $result[$key] = $query->get();
         }
 
         return $result;
+    }
+
+    private function receivesFullHierarchy(User $user): bool
+    {
+        return in_array((string) $user->role, self::FULL_HIERARCHY_ROLES, true);
+    }
+
+    private function applyDeltaFilter(Builder $query, Carbon $parsedTimestamp): void
+    {
+        $query->where('updated_at_server', '>', $parsedTimestamp);
+
+        $model = $query->getModel();
+        if (in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses_recursive($model), true)) {
+            $query->withTrashed();
+        }
     }
 }

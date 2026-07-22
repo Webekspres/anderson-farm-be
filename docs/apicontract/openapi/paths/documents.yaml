@@ -1,4 +1,39 @@
 coop-documents:
+  get:
+    tags: [Setup - Coop Document]
+    summary: Daftar dokumen SOP kandang
+    description: Mengambil seluruh dokumen SOP/Panduan yang terdaftar pada kandang.
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID kandang (coop).
+    responses:
+      "200":
+        description: Daftar dokumen berhasil dimuat.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  type: array
+                  items:
+                    $ref: "../components/documents.yaml#/CoopDocumentResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
   post:
     tags: [Setup - Coop Document]
     summary: Simpan dokumen SOP kandang
@@ -24,5 +59,35 @@ coop-documents:
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
         $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
+coop-document-single:
+  delete:
+    tags: [Setup - Coop Document]
+    summary: Hapus dokumen SOP kandang
+    description: Soft delete dokumen SOP/Panduan dari kandang.
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID kandang (coop).
+      - in: path
+        name: document_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID dokumen yang akan dihapus.
+    responses:
+      "200":
+        $ref: "../components/response.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
       "404":
         $ref: "../components/response.yaml#/NotFoundError"
