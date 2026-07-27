@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Api\V1\Sync;
 
-use App\Models\CoopUserAssignment;
 use App\Models\ProductionPeriod;
+use App\Support\CoopAccess;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SyncGetDailyActivityRequest extends FormRequest
@@ -20,15 +20,12 @@ class SyncGetDailyActivityRequest extends FormRequest
             return true;
         }
 
-        $coopId = $period->floor?->coop_id;
-        if (! $coopId) {
+        $user = $this->user();
+        if (! $user) {
             return false;
         }
 
-        return CoopUserAssignment::query()
-            ->where('user_id', $this->user()->id)
-            ->where('coop_id', $coopId)
-            ->exists();
+        return CoopAccess::canAccessCoop($user, $period->floor?->coop_id);
     }
 
     public function rules(): array

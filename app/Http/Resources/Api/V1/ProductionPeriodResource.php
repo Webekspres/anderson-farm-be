@@ -16,6 +16,7 @@ class ProductionPeriodResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'floor_id' => $this->floor_id,
             'period_code' => $this->period_code,
             'status' => $this->status,
             'floor' => $this->whenLoaded('floor', fn () => [

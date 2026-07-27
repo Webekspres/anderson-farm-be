@@ -96,6 +96,9 @@ it('can fetch all master data for the assigned user (Happy Path)', function () {
     $response->assertJsonCount(2, 'data.form_configs');
     $response->assertJsonCount(2, 'data.equipment_types');
     $response->assertJsonCount(2, 'data.ovk_items');
+    $response->assertJsonPath('data.production_periods.0.floor_id', $this->floor->id);
+    $response->assertJsonPath('data.production_periods.0.floor.id', $this->floor->id);
+    $response->assertJsonPath('data.production_periods.0.floor.name', $this->floor->name);
 });
 
 it('returns empty hierarchy for abk without coop assignment', function () {

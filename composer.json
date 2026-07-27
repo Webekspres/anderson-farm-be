@@ -65,6 +65,15 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "seed:minimal": [
+            "@php artisan db:seed --class=Database\\Seeders\\MinimalDemoSeeder --no-interaction"
+        ],
+        "seed:full": [
+            "@php artisan db:seed --class=Database\\Seeders\\FullDemoSeeder --no-interaction"
+        ],
+        "seed:fresh": [
+            "@php artisan migrate:fresh --seed --no-interaction"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

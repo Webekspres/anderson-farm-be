@@ -90,7 +90,9 @@ class MasterDataSyncService
                 : Area::query()->whereIn('id', $allAreaIds),
             'production_periods' => empty($allFloorIds)
                 ? ProductionPeriod::query()->whereRaw('0 = 1')
-                : ProductionPeriod::query()->whereIn('floor_id', $allFloorIds),
+                : ProductionPeriod::query()
+                    ->whereIn('floor_id', $allFloorIds)
+                    ->with(['floor:id,coop_id,name']),
             'form_configs' => FormConfig::query(),
             'equipment_types' => EquipmentType::query(),
             'ovk_items' => OvkItem::query(),

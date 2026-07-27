@@ -166,8 +166,8 @@ describe('GET /api/v1/sync/daily-activities', function () {
     });
 
     it('returns 403 when the user is not assigned to the period coop (authorization leak)', function () {
-        $userA = createAuthUser();
-        $userB = createAuthUser();
+        $userA = User::factory()->create(['role' => 'abk']);
+        $userB = User::factory()->create(['role' => 'abk']);
 
         $periodA = ProductionPeriod::factory()->create();
         $periodB = ProductionPeriod::factory()->create();
@@ -178,6 +178,29 @@ describe('GET /api/v1/sync/daily-activities', function () {
 
         $response = $this->actingAs($userA)->getJson('/api/v1/sync/daily-activities?'.http_build_query([
             'period_id' => $periodB->id,
+        ]));
+
+        $response->assertForbidden();
+    });
+
+    it('allows admin manager and finance to pull daily activities without coop assignment', function (string $role) {
+        $privileged = User::factory()->create(['role' => $role]);
+        [$period] = createPeriodWithHeaders(1);
+
+        $response = $this->actingAs($privileged)->getJson('/api/v1/sync/daily-activities?'.http_build_query([
+            'period_id' => $period->id,
+        ]));
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data');
+    })->with(['admin', 'manager', 'finance']);
+
+    it('returns 403 for unassigned abk even when period exists', function () {
+        $abk = User::factory()->create(['role' => 'abk']);
+        [$period] = createPeriodWithHeaders(1);
+
+        $response = $this->actingAs($abk)->getJson('/api/v1/sync/daily-activities?'.http_build_query([
+            'period_id' => $period->id,
         ]));
 
         $response->assertForbidden();

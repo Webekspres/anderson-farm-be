@@ -35,7 +35,9 @@ class CoopUserAssignmentController extends Controller
     public function sync(SyncCoopUserAssignmentRequest $request, Coop $coop): JsonResponse
     {
         DB::transaction(function () use ($coop, $request) {
-            CoopUserAssignment::where('coop_id', $coop->id)->delete();
+            CoopUserAssignment::withTrashed()
+                ->where('coop_id', $coop->id)
+                ->forceDelete();
 
             $now = now();
             $assignments = $request->input('assignments', []);

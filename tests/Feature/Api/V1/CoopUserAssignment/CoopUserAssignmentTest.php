@@ -108,6 +108,44 @@ it('successfully clears assignments when empty array sent', function () {
     expect(CoopUserAssignment::count())->toBe(0);
 });
 
+it('replaces existing assignments without duplicate key errors', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+    $coop = Coop::factory()->create();
+    $pic = User::factory()->create(['role' => 'pic']);
+    $abk = User::factory()->create(['role' => 'abk']);
+
+    CoopUserAssignment::factory()->create([
+        'user_id' => $pic->id,
+        'coop_id' => $coop->id,
+        'role_in_coop' => 'kepala_kandang',
+    ]);
+    CoopUserAssignment::factory()->create([
+        'user_id' => $abk->id,
+        'coop_id' => $coop->id,
+        'role_in_coop' => 'abk',
+    ]);
+
+    $payload = [
+        'assignments' => [
+            ['user_id' => $pic->id, 'role_in_coop' => 'kepala_kandang'],
+            ['user_id' => $abk->id, 'role_in_coop' => 'abk'],
+        ],
+    ];
+
+    $response = postJson("/api/v1/coops/{$coop->id}/user-assignments", $payload);
+
+    $response->assertOk()
+        ->assertJson([
+            'success' => true,
+            'message' => 'Pekerja berhasil ditugaskan ke kandang',
+            'data' => null,
+        ]);
+
+    expect(CoopUserAssignment::query()->count())->toBe(2)
+        ->and(CoopUserAssignment::withTrashed()->count())->toBe(2);
+});
+
 it('returns 404 if coop not found', function () {
     $user = User::factory()->create();
     actingAs($user);
