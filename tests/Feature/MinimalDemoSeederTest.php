@@ -28,7 +28,7 @@ it('seeds a minimal deterministic demo dataset', function () {
         ->and(CoopUserAssignment::query()->count())->toBe(2)
         ->and(ContractAbk::query()->count())->toBe(1)
         ->and(ContractAcceptance::query()->count())->toBe(1)
-        ->and(TransactionCategory::query()->count())->toBe(2)
+        ->and(TransactionCategory::query()->count())->toBe(9)
         ->and(ReportTemplate::query()->count())->toBe(1)
         ->and(EquipmentType::query()->count())->toBe(2)
         ->and(OvkItem::query()->count())->toBe(2);
@@ -39,6 +39,9 @@ it('seeds a minimal deterministic demo dataset', function () {
         expect($user)->not->toBeNull()
             ->and(Hash::check('password123', $user->password_hash))->toBeTrue();
     }
+
+    expect(TransactionCategory::query()->where('type', 'EXPENSE')->count())->toBe(6)
+        ->and(TransactionCategory::query()->where('type', 'INCOME')->count())->toBe(3);
 
     expect(ProductionPeriod::query()->first())
         ->period_code->toBe('DEMO-001')

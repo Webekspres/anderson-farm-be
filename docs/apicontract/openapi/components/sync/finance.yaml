@@ -21,7 +21,7 @@ TransactionSyncPayload:
     id: { type: string, format: uuid }
     period_id: { type: string, format: uuid }
     transaction_date: { type: string, format: date-time }
-    type: { type: string, enum: [EXPENSE] }
+    type: { type: string, enum: [EXPENSE, INCOME] }
     amount: { type: number, format: float }
     description: { type: string, nullable: true }
     receipt_image_path_local: { type: string, nullable: true }

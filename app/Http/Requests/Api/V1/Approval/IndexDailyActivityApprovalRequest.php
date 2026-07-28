@@ -11,7 +11,7 @@ class IndexDailyActivityApprovalRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return in_array($this->user()?->role, ['admin', 'manager'], true);
+        return in_array($this->user()?->role, ['admin', 'manager', 'finance'], true);
     }
 
     protected function failedAuthorization(): never
@@ -19,7 +19,7 @@ class IndexDailyActivityApprovalRequest extends FormRequest
         throw new HttpResponseException(
             response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak. Hanya Manager atau Admin yang dapat mengakses modul approval.',
+                'message' => 'Akses ditolak. Hanya Manager, Finance, atau Admin yang dapat mengakses modul approval.',
                 'data' => null,
             ], 403)
         );
@@ -35,7 +35,17 @@ class IndexDailyActivityApprovalRequest extends FormRequest
             'coop_id' => ['nullable', 'uuid'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
-            'business_status' => ['nullable', 'string', Rule::in(BusinessStatus::syncableValues())],
+            'business_status' => [
+                'nullable',
+                'string',
+                Rule::in([
+                    BusinessStatus::Draft->value,
+                    BusinessStatus::Submitted->value,
+                    BusinessStatus::Approved->value,
+                    BusinessStatus::Rejected->value,
+                    BusinessStatus::NeedsReview->value,
+                ]),
+            ],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
     }

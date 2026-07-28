@@ -138,7 +138,7 @@ class DailyActivityApprovalService
 
     public function canReviewHeader(User $user, DailyActivityHeader $header): bool
     {
-        if ($user->role === 'admin') {
+        if (in_array($user->role, ['admin', 'finance'], true)) {
             return true;
         }
 
@@ -170,7 +170,7 @@ class DailyActivityApprovalService
      */
     private function applyReviewerScope(Builder $query, User $user): void
     {
-        if ($user->role === 'admin') {
+        if (in_array($user->role, ['admin', 'finance'], true)) {
             return;
         }
 
@@ -192,8 +192,8 @@ class DailyActivityApprovalService
 
     private function ensureReviewerRole(User $user): void
     {
-        if (! in_array($user->role, ['admin', 'manager'], true)) {
-            $this->abort(403, 'Akses ditolak. Hanya Manager atau Admin yang dapat mengakses modul approval.');
+        if (! in_array($user->role, ['admin', 'manager', 'finance'], true)) {
+            $this->abort(403, 'Akses ditolak. Hanya Manager, Finance, atau Admin yang dapat mengakses modul approval.');
         }
     }
 

@@ -10,6 +10,7 @@ use App\Http\Resources\Api\V1\TransactionResource;
 use App\Models\CoopUserAssignment;
 use App\Models\ProductionPeriod;
 use App\Models\Transaction;
+use App\Models\TransactionCategory;
 use App\Models\User;
 use App\Services\Api\FinanceSyncService;
 use Illuminate\Http\JsonResponse;
@@ -49,8 +50,8 @@ class FinanceSyncController extends Controller
     /**
      * POST /api/v1/sync/finances
      *
-     * Push bulk transaksi pengeluaran (kas kecil) dari SQLite ke server.
-     * Hanya role PIC, Manager, dan Admin yang diizinkan.
+     * Push bulk transaksi pengeluaran/pemasukan dari SQLite ke server.
+     * Role ABK dan Investor ditolak di Form Request; PIC butuh assignment kandang.
      */
     public function store(SyncPostFinanceRequest $request): JsonResponse
     {
@@ -90,10 +91,13 @@ class FinanceSyncController extends Controller
 
     /**
      * Memproses satu item transaksi dari payload:
-     * 1. Validasi tipe (hanya EXPENSE)
+     * 1. Validasi tipe EXPENSE/INCOME vs kategori
      * 2. Validasi periode aktif
      * 3. Cek otorisasi assignment kandang (untuk role PIC)
      * 4. Upsert dengan idempotency untuk status APPROVED
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array{id: string, status: string, server_id: int|null, error_message: string|null}
      */
     private function processTransaction(
         array $payload,
@@ -101,14 +105,26 @@ class FinanceSyncController extends Controller
         Carbon $serverTimestamp,
     ): array {
         $transactionId = $payload['id'];
+        $payloadType = strtoupper((string) $payload['type']);
 
-        // ── Step 1: Tolak jika bukan EXPENSE ──
-        if ($payload['type'] !== 'EXPENSE') {
+        // ── Step 1: Kategori harus cocok dengan tipe payload ──
+        $category = TransactionCategory::query()->find($payload['category_id']);
+
+        if (! $category) {
             return [
                 'id' => $transactionId,
                 'status' => 'FAILED',
                 'server_id' => null,
-                'error_message' => 'Hanya transaksi bertipe EXPENSE yang diizinkan untuk di-push.',
+                'error_message' => 'Kategori transaksi tidak ditemukan.',
+            ];
+        }
+
+        if (strtoupper((string) $category->type) !== $payloadType) {
+            return [
+                'id' => $transactionId,
+                'status' => 'FAILED',
+                'server_id' => null,
+                'error_message' => 'Tipe transaksi tidak cocok dengan kategori yang dipilih.',
             ];
         }
 
@@ -125,7 +141,7 @@ class FinanceSyncController extends Controller
         }
 
         // ── Step 3: Security check untuk role PIC ──
-        // Admin dan Manager memiliki akses global, PIC harus memiliki assignment ke coop.
+        // Admin, Manager, dan Finance memiliki akses global; PIC harus assignment ke coop.
         if ($user->role === 'pic') {
             $isAssigned = CoopUserAssignment::where('user_id', $user->id)
                 ->where('coop_id', $period->floor->coop_id)

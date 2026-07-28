@@ -242,27 +242,30 @@ class MinimalDemoSeeder extends Seeder
      */
     private function seedCatalog(array $synced): void
     {
-        TransactionCategory::query()->updateOrCreate(
-            ['name' => 'Gaji Pegawai'],
-            [
-                'server_id' => 5001,
-                'version' => 1,
-                'type' => 'EXPENSE',
-                'is_active' => true,
-                ...$synced,
-            ],
-        );
+        $categories = [
+            ['Gaji Pegawai', 'EXPENSE', 5001],
+            ['Pakan', 'EXPENSE', 5006],
+            ['OVK / Obat', 'EXPENSE', 5007],
+            ['Listrik & Utilitas', 'EXPENSE', 5008],
+            ['Operasional Kandang', 'EXPENSE', 5009],
+            ['Transport', 'EXPENSE', 5010],
+            ['Penjualan Ayam', 'INCOME', 5002],
+            ['Bonus / Insentif', 'INCOME', 5011],
+            ['Pemasukan Lain', 'INCOME', 5012],
+        ];
 
-        TransactionCategory::query()->updateOrCreate(
-            ['name' => 'Penjualan Ayam'],
-            [
-                'server_id' => 5002,
-                'version' => 1,
-                'type' => 'INCOME',
-                'is_active' => true,
-                ...$synced,
-            ],
-        );
+        foreach ($categories as [$name, $type, $serverId]) {
+            TransactionCategory::query()->updateOrCreate(
+                ['name' => $name],
+                [
+                    'server_id' => $serverId,
+                    'version' => 1,
+                    'type' => $type,
+                    'is_active' => true,
+                    ...$synced,
+                ],
+            );
+        }
 
         ReportTemplate::query()->updateOrCreate(
             ['name' => 'WhatsApp Generator'],

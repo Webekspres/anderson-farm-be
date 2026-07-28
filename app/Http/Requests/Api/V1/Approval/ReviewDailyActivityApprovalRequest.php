@@ -10,7 +10,7 @@ class ReviewDailyActivityApprovalRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return in_array($this->user()?->role, ['admin', 'manager'], true);
+        return in_array($this->user()?->role, ['admin', 'manager', 'finance'], true);
     }
 
     protected function failedAuthorization(): never
@@ -18,7 +18,7 @@ class ReviewDailyActivityApprovalRequest extends FormRequest
         throw new HttpResponseException(
             response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak. Hanya Manager atau Admin yang dapat memproses approval.',
+                'message' => 'Akses ditolak. Hanya Manager, Finance, atau Admin yang dapat memproses approval.',
                 'data' => null,
             ], 403)
         );

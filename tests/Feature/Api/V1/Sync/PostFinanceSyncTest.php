@@ -160,27 +160,60 @@ describe('POST /api/v1/sync/finances', function () {
 
     // ── Business Logic ───────────────────────────────────────
 
-    it('returns FAILED status for items with type INCOME', function () {
-        $pic = User::factory()->create(['role' => 'pic']);
-        $period = createActivePeriod($pic->id);
+    it('allows admin to push INCOME — SUCCESS', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $period = createActivePeriod($admin->id);
         $category = TransactionCategory::factory()->create(['type' => 'INCOME']);
 
-        CoopUserAssignment::factory()->create([
-            'user_id' => $pic->id,
-            'coop_id' => $period->floor->coop_id,
+        $transactionId = Str::uuid()->toString();
+        $payload = [
+            'sync_timestamp' => now()->toIso8601String(),
+            'transactions' => [
+                buildTransactionPayload($period->id, $category->id, [
+                    'id' => $transactionId,
+                    'type' => 'INCOME',
+                    'description' => 'Penjualan ayam panen',
+                    'expense_scope' => 'COOP_SHARED',
+                    'coop_id' => $period->floor->coop_id,
+                ]),
+            ],
+        ];
+
+        $response = $this->actingAs($admin)->postJson('/api/v1/sync/finances', $payload);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.sync_results.0.id', $transactionId);
+        $response->assertJsonPath('data.sync_results.0.status', 'SUCCESS');
+
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transactionId,
+            'category_id' => $category->id,
         ]);
+    });
+
+    it('returns FAILED when payload type does not match category type', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $period = createActivePeriod($admin->id);
+        $expenseCategory = TransactionCategory::factory()->create(['type' => 'EXPENSE']);
 
         $payload = [
             'sync_timestamp' => now()->toIso8601String(),
             'transactions' => [
-                buildTransactionPayload($period->id, $category->id, ['type' => 'INCOME']),
+                buildTransactionPayload($period->id, $expenseCategory->id, [
+                    'type' => 'INCOME',
+                    'description' => 'Mismatch type vs category',
+                ]),
             ],
         ];
 
-        $response = $this->actingAs($pic)->postJson('/api/v1/sync/finances', $payload);
+        $response = $this->actingAs($admin)->postJson('/api/v1/sync/finances', $payload);
 
         $response->assertOk();
         $response->assertJsonPath('data.sync_results.0.status', 'FAILED');
+        $response->assertJsonPath(
+            'data.sync_results.0.error_message',
+            'Tipe transaksi tidak cocok dengan kategori yang dipilih.',
+        );
         $this->assertDatabaseCount('transactions', 0);
     });
 
