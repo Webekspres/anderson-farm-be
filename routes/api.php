@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\HarvestExportController;
 use App\Http\Controllers\Api\V1\InvestorDashboardController;
 use App\Http\Controllers\Api\V1\MaintenanceSyncController;
 use App\Http\Controllers\Api\V1\MasterDataSyncController;
+use App\Http\Controllers\Api\V1\MonitoringController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OvkExportController;
 use App\Http\Controllers\Api\V1\OvkItemController;
@@ -167,6 +168,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/import/salary', [SalaryImportController::class, 'store']);
 
         Route::get('/investor/dashboard', InvestorDashboardController::class);
+
+        // Monitoring & KPI
+        Route::get('/monitoring/kpi', [MonitoringController::class, 'kpi']);
+        Route::get('/monitoring/deviations', [MonitoringController::class, 'deviations']);
 
         // Sync endpoints (Offline-First)
         Route::prefix('sync')->group(function () {
