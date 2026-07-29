@@ -1,15 +1,18 @@
 <?php
 
-use App\Models\User;
+use App\Models\PeriodInvestor;
 use App\Models\ProductionPeriod;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+
+use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
 
 describe('POST /api/v1/periods/{period_id}/investors', function () {
-    describe("Authed user", function () {
+    describe('Authed user', function () {
         beforeEach(function () {
             $this->user = User::factory()->create();
             Sanctum::actingAs($this->user, ['*']);
@@ -146,5 +149,40 @@ describe('POST /api/v1/periods/{period_id}/investors', function () {
         $this->withHeaders(['Accept' => 'application/json']);
         $response = postJson("/api/v1/periods/{$period->id}/investors", $payload);
         $response->assertUnauthorized();
+    });
+});
+
+describe('GET /api/v1/periods/{period_id}/investors', function () {
+    beforeEach(function () {
+        $this->user = User::factory()->create();
+        Sanctum::actingAs($this->user, ['*']);
+    });
+
+    it('returns assigned investors for a period', function () {
+        $period = ProductionPeriod::factory()->create([
+            'start_date' => now()->addDays(2),
+            'status' => 'active',
+        ]);
+        $investor = User::factory()->create([
+            'role' => 'investor',
+            'name' => 'Investor Satu',
+        ]);
+
+        PeriodInvestor::factory()->create([
+            'period_id' => $period->id,
+            'user_id' => $investor->id,
+            'profit_share_percentage' => 55,
+            'initial_investment' => 1500000,
+        ]);
+
+        getJson("/api/v1/periods/{$period->id}/investors")
+            ->assertSuccessful()
+            ->assertJson([
+                'success' => true,
+                'message' => 'Daftar investor periode berhasil diambil.',
+            ])
+            ->assertJsonPath('data.0.user_id', $investor->id)
+            ->assertJsonPath('data.0.user_name', 'Investor Satu')
+            ->assertJsonPath('data.0.profit_share_percentage', 55);
     });
 });

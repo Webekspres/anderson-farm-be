@@ -138,6 +138,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/periods', [PeriodController::class, 'store']);
         Route::prefix('periods/{period_id}')->group(function () {
             Route::patch('/', [PeriodController::class, 'update']);
+            Route::get('/investors', [PeriodInvestorController::class, 'index']);
             Route::post('/investors', [PeriodInvestorController::class, 'sync']);
             // Bulk sync & get form assignments ke periode
             Route::get('/form-assignments', [PeriodFormAssignmentController::class, 'index']);

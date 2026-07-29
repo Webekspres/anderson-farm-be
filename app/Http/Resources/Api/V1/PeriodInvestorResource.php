@@ -17,6 +17,7 @@ class PeriodInvestorResource extends JsonResource
             'version' => $this->version,
             'period_id' => $this->period_id,
             'user_id' => $this->user_id,
+            'user_name' => $this->user?->name,
             'profit_share_percentage' => $this->profit_share_percentage,
             'initial_investment' => $this->initial_investment,
             'final_dividend_amount' => $this->final_dividend_amount,

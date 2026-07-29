@@ -58,6 +58,7 @@ class InvestorDashboardController extends Controller
             /** @var ProductionPeriod|null $period */
             $period = $assignment->period;
             $rhpp = $rhpps->get($assignment->period_id);
+            $isPublished = $rhpp?->publish_status === 'PUBLISHED';
 
             $initial = (float) ($assignment->initial_investment ?? 0);
             $dividend = (float) ($assignment->final_dividend_amount ?? 0);
@@ -72,8 +73,8 @@ class InvestorDashboardController extends Controller
                 'final_dividend_amount' => $dividend,
                 'is_paid' => (bool) $assignment->is_paid,
                 'roi_percent' => $roiPercent,
-                'rhpp_net_profit' => $rhpp?->net_profit,
-                'rhpp_publish_status' => $rhpp?->publish_status,
+                'rhpp_net_profit' => $isPublished ? $rhpp?->net_profit : null,
+                'rhpp_publish_status' => $isPublished ? $rhpp?->publish_status : null,
             ];
         })->values();
 
