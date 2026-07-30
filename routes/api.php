@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\V1\FinanceSyncController;
 use App\Http\Controllers\Api\V1\FormConfigController;
 use App\Http\Controllers\Api\V1\HarvestExportController;
 use App\Http\Controllers\Api\V1\InvestorDashboardController;
+use App\Http\Controllers\Api\V1\InvestorPeriodController;
 use App\Http\Controllers\Api\V1\MaintenanceSyncController;
 use App\Http\Controllers\Api\V1\MasterDataSyncController;
 use App\Http\Controllers\Api\V1\MonitoringController;
@@ -155,6 +156,7 @@ Route::prefix('v1')->group(function () {
             // Period action endpoints
             Route::post('/close', [PeriodActionController::class, 'close']);
             Route::post('/rhpp-documents', [RhppDocumentController::class, 'store']);
+            Route::post('/rhpp/generate', [RhppDocumentController::class, 'generate']);
         });
 
         Route::post('/rhpps/{period_id}/publish', [RhppActionController::class, 'publish']);
@@ -169,6 +171,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/import/salary', [SalaryImportController::class, 'store']);
 
         Route::get('/investor/dashboard', InvestorDashboardController::class);
+        Route::get('/investor/periods/{period_id}', [InvestorPeriodController::class, 'show']);
 
         // Monitoring & KPI
         Route::get('/monitoring/kpi', [MonitoringController::class, 'kpi']);

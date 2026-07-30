@@ -132,35 +132,32 @@ class RhppCalculationService
     }
 
     /**
-     * Calculate IP (Index Performance).
-     * IP = (Livability % × Average Weight in kg × 100) / (Age in days × FCR)
+     * Calculate IP (Index Performance) aligned with MonitoringService.
+     * IP = ((100 - deplesi%) * avg_bw_gram) / (FCR * age_days * 10)
      */
     private function calculateIndexPerformance(ProductionPeriod $period, float $fcr, float $totalHarvestedWeight): float
     {
-        // Guard against zero initial stock
-        if ($period->initial_stock === 0 || $period->initial_stock < 0.001) {
+        $initialStock = (float) ($period->initial_stock ?? 0);
+        if ($initialStock < 0.001 || $fcr < 0.001) {
             return 0;
         }
 
-        // Calculate livability percentage (assuming 95% survival rate as baseline)
-        $livability = ($totalHarvestedWeight > 0)
-            ? ((($period->initial_stock * 0.95) / $period->initial_stock) * 100)
-            : 0;
+        $totalMortality = (float) $period->dailyActivityHeaders->sum('mortality_count');
+        $totalCull = (float) $period->dailyActivityHeaders->sum('cull_count');
+        $deplesi = (($totalMortality + $totalCull) / $initialStock) * 100;
 
-        // Calculate average weight
-        $averageWeight = ($period->initial_stock > 0)
-            ? ($totalHarvestedWeight / $period->initial_stock)
-            : 0;
+        $avgBw = $period->dailyActivityHeaders
+            ->whereNotNull('average_weight')
+            ->last()?->average_weight;
 
-        // Calculate age in days
-        $ageInDays = max(1, $period->created_at_server?->diffInDays($period->updated_at_server) ?? 35);
-
-        // IP Formula: Guard against division by zero
-        $denominator = $ageInDays * $fcr;
-        if ($denominator === 0 || $denominator < 0.001) {
+        if ($avgBw === null) {
             return 0;
         }
 
-        return ($livability * $averageWeight * 100) / $denominator;
+        $ageInDays = $period->start_date
+            ? max(1, (int) $period->start_date->diffInDays(now()))
+            : 35;
+
+        return round(((100 - $deplesi) * (float) $avgBw) / ($fcr * $ageInDays * 10), 1);
     }
 }

@@ -27,7 +27,7 @@ class RhppSyncService
             $query->where('updated_at_server', '>', $lastSyncTimestamp);
         }
 
-        if ($user->role === 'admin') {
+        if ($user->role === 'admin' || $user->role === 'finance') {
             return $query->get();
         }
 

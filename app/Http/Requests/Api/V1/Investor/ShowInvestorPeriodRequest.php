@@ -1,17 +1,19 @@
 <?php
 
-namespace App\Http\Requests\Api\V1\Sync;
+declare(strict_types=1);
+
+namespace App\Http\Requests\Api\V1\Investor;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class SyncGetRhppRequest extends FormRequest
+class ShowInvestorPeriodRequest extends FormRequest
 {
     public function authorize(): bool
     {
         $role = $this->user()?->role;
 
-        return in_array($role, ['abk', 'pic', 'manager', 'admin', 'finance'], true);
+        return in_array($role, ['investor', 'admin'], true);
     }
 
     protected function failedAuthorization(): never
@@ -19,16 +21,17 @@ class SyncGetRhppRequest extends FormRequest
         throw new HttpResponseException(
             response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak. Investor tidak dapat menggunakan fitur sinkronisasi offline ini.',
+                'message' => 'Hanya investor (atau admin) yang dapat melihat detail periode investasi.',
                 'data' => null,
             ], 403)
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
-        return [
-            'last_sync_timestamp' => ['nullable', 'date'],
-        ];
+        return [];
     }
 }
