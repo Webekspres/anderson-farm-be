@@ -11,6 +11,8 @@ use App\Models\CoopUserAssignment;
 use App\Models\EquipmentType;
 use App\Models\Farm;
 use App\Models\OvkItem;
+use App\Models\PeriodDocument;
+use App\Models\PeriodInvestor;
 use App\Models\ProductionPeriod;
 use App\Models\ReportTemplate;
 use App\Models\TransactionCategory;
@@ -21,7 +23,9 @@ use Illuminate\Support\Facades\Hash;
 class MinimalDemoSeeder extends Seeder
 {
     /**
-     * Small deterministic dataset for local / FE smoke testing.
+     * Deterministic dataset for Spesifikasi Flow smoke / UAT (not random factories).
+     *
+     * Default via DatabaseSeeder. See database/seeders/README.md for login matrix.
      */
     public function run(): void
     {
@@ -40,7 +44,9 @@ class MinimalDemoSeeder extends Seeder
         $period = $this->seedPeriod($hierarchy['floor1'], $users['pic'], $synced);
 
         $this->seedAssignments($hierarchy['coop'], $users['pic'], $users['abk'], $synced);
-        $this->seedContract($period, $users['admin'], $users['abk'], $synced);
+        $this->seedContract($period, $users['admin'], $users['pic'], $users['abk'], $synced);
+        $this->seedPeriodInvestor($period, $users['investor'], $synced);
+        $this->seedPeriodDocuments($period, $users['manager'], $synced);
         $this->seedCatalog($synced);
     }
 
@@ -204,8 +210,13 @@ class MinimalDemoSeeder extends Seeder
     /**
      * @param  array<string, mixed>  $synced
      */
-    private function seedContract(ProductionPeriod $period, User $uploader, User $abk, array $synced): void
-    {
+    private function seedContract(
+        ProductionPeriod $period,
+        User $uploader,
+        User $pic,
+        User $abk,
+        array $synced,
+    ): void {
         $contract = ContractAbk::query()->updateOrCreate(
             [
                 'period_id' => $period->id,
@@ -221,20 +232,79 @@ class MinimalDemoSeeder extends Seeder
             ],
         );
 
-        ContractAcceptance::query()->updateOrCreate(
+        $acceptances = [
+            [$pic, 4002, 'demo-device-pic'],
+            [$abk, 4003, 'demo-device-abk'],
+        ];
+
+        foreach ($acceptances as [$user, $serverId, $deviceId]) {
+            ContractAcceptance::query()->updateOrCreate(
+                [
+                    'contract_id' => $contract->id,
+                    'user_id' => $user->id,
+                ],
+                [
+                    'server_id' => $serverId,
+                    'accepted_at' => now(),
+                    'device_id' => $deviceId,
+                    'current_loan_accumulated' => 0,
+                    'remaining_loan_limit' => 3000000,
+                    ...$synced,
+                ],
+            );
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $synced
+     */
+    private function seedPeriodInvestor(ProductionPeriod $period, User $investor, array $synced): void
+    {
+        PeriodInvestor::query()->updateOrCreate(
             [
-                'contract_id' => $contract->id,
-                'user_id' => $abk->id,
+                'period_id' => $period->id,
+                'user_id' => $investor->id,
             ],
             [
-                'server_id' => 4002,
-                'accepted_at' => now(),
-                'device_id' => 'demo-device-abk',
-                'current_loan_accumulated' => 0,
-                'remaining_loan_limit' => 3000000,
+                'server_id' => 6001,
+                'version' => 1,
+                'profit_share_percentage' => 100,
+                'initial_investment' => 50_000_000,
+                'final_dividend_amount' => null,
+                'is_paid' => false,
                 ...$synced,
             ],
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $synced
+     */
+    private function seedPeriodDocuments(ProductionPeriod $period, User $uploader, array $synced): void
+    {
+        $documents = [
+            ['CARE_TEMPLATE', 'SOP Perawatan — DEMO-001', 7001, 'https://example.com/docs/care-template-demo.pdf'],
+            ['OVK', 'Program OVK — DEMO-001', 7002, 'https://example.com/docs/ovk-demo.pdf'],
+            ['ARV', 'Standar ARV — DEMO-001', 7003, 'https://example.com/docs/arv-demo.pdf'],
+        ];
+
+        foreach ($documents as [$documentType, $title, $serverId, $fileUrl]) {
+            PeriodDocument::query()->updateOrCreate(
+                [
+                    'period_id' => $period->id,
+                    'document_type' => $documentType,
+                ],
+                [
+                    'server_id' => $serverId,
+                    'version' => 1,
+                    'title' => $title,
+                    'file_path_local' => null,
+                    'file_url' => $fileUrl,
+                    'uploaded_by' => $uploader->id,
+                    ...$synced,
+                ],
+            );
+        }
     }
 
     /**
