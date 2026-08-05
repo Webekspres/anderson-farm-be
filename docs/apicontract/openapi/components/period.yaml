@@ -38,7 +38,10 @@ PeriodBase:
       description: Alasan penutupan periode (opsional)
     status:
       type: string
-      enum: [active, closed]
+      enum: [draft, active, completed]
+      description: |
+        Lifecycle Modul 3: create → draft, activate → active, close → completed.
+        Close juga mengisi end_date (hari ini) jika masih null.
       example: active
       description: Status periode
 

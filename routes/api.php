@@ -155,6 +155,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/documents', [PeriodDocumentController::class, 'store']);
             // Period action endpoints
             Route::post('/close', [PeriodActionController::class, 'close']);
+            Route::post('/activate', [PeriodActionController::class, 'activate']);
             Route::post('/rhpp-documents', [RhppDocumentController::class, 'store']);
             Route::post('/rhpp/generate', [RhppDocumentController::class, 'generate']);
         });

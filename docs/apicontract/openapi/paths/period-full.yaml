@@ -398,7 +398,8 @@ close-period:
     tags: [Periode Ternak]
     summary: Tutup periode ternak
     description: |
-      Menutup periode ternak setelah validasi backend.
+      Menutup periode aktif → completed setelah validasi backend.
+      Mengisi end_date = hari ini jika masih null.
       Memastikan tidak ada log pending sebelum periode dikunci.
     security:
       - sanctum: []
@@ -425,6 +426,42 @@ close-period:
                   type: object
       "400":
         description: Masih ada log pending, periode tidak bisa ditutup
+
+activate-period:
+  post:
+    tags: [Periode Ternak]
+    summary: Aktifkan periode draft
+    description: |
+      Mengubah status periode dari draft → active (Modul 3 step 13).
+      Ditolak jika sudah ada periode active yang overlap di lantai yang sama.
+      Kontrak pending tidak memblokir aktivasi; input harian PIC/ABK tetap di-gate kontrak.
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Periode berhasil diaktifkan
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  type: object
+      "400":
+        description: Status bukan draft atau overlap dengan periode aktif
+      "403":
+        description: Role tidak berwenang
 
 rhpps-publish:
   post:

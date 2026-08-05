@@ -29,7 +29,7 @@ class PeriodController extends Controller
                 'end_date' => $validated['end_date'] ?? null,
                 'initial_stock' => $validated['initial_stock'],
                 'closing_reason' => $validated['closing_reason'] ?? null,
-                'status' => 'active',
+                'status' => 'draft',
                 'sync_status' => 'SYNCED',
                 'created_at_client' => $validated['created_at_client'],
                 'created_at_server' => now(),

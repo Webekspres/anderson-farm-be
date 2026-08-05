@@ -57,7 +57,9 @@ describe('POST /api/v1/periods', function () {
             'floor_id' => $floor->id,
             'pic_id' => $pic->id,
             'initial_stock' => 1000,
+            'status' => 'draft',
         ]);
+        expect($response->json('data.status'))->toBe('draft');
     });
 
     it('successfully creates a period without period_code (auto-generated)', function () {
