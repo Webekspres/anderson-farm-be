@@ -10,7 +10,12 @@ class FullDemoSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Large / random demo dataset (previous default seed volume).
+     * Opt-in only: large / random factory dataset for load-style demos.
+     *
+     * NOT the default for Spesifikasi Flow smoke or UAT.
+     * Prefer: php artisan db:seed  (MinimalDemoSeeder) — see README.md in this folder.
+     *
+     * Run explicitly: php artisan db:seed --class=FullDemoSeeder
      */
     public function run(): void
     {
