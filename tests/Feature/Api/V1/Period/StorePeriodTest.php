@@ -2,19 +2,19 @@
 
 use App\Models\Coop;
 use App\Models\CoopFloor;
-use App\Models\User;
 use App\Models\ProductionPeriod;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
+use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
 
 describe('POST /api/v1/periods', function () {
     beforeEach(function () {
-        $this->user = User::factory()->create();
-        Sanctum::actingAs($this->user, ['*']);
+        Sanctum::actingAs(User::factory()->create(), ['*']);
     });
 
     it('successfully creates a new production period (happy path)', function () {
@@ -50,10 +50,10 @@ describe('POST /api/v1/periods', function () {
                     'created_at_server',
                     'updated_at_client',
                     'updated_at_server',
-                    'deleted_at'
-                ]
+                    'deleted_at',
+                ],
             ]);
-        $this->assertDatabaseHas('production_periods', [
+        assertDatabaseHas('production_periods', [
             'floor_id' => $floor->id,
             'pic_id' => $pic->id,
             'initial_stock' => 1000,
@@ -73,8 +73,45 @@ describe('POST /api/v1/periods', function () {
         ];
         $response = postJson('/api/v1/periods', $payload);
         $response->assertCreated();
-        $this->assertNotNull($response->json('data.period_code'));
-        $this->assertStringStartsWith('PRD-', $response->json('data.period_code'));
+        expect($response->json('data.period_code'))
+            ->not->toBeNull()
+            ->toStartWith('PRD-');
+    });
+
+    it('auto-generates unique period_code when creating again on the same floor after close', function () {
+        $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
+        $pic = User::factory()->create();
+
+        $first = postJson('/api/v1/periods', [
+            'floor_id' => $floor->id,
+            'pic_id' => $pic->id,
+            'start_date' => now()->toDateString(),
+            'initial_stock' => 500,
+            'created_at_client' => now()->toIso8601String(),
+        ]);
+        $first->assertCreated();
+        $firstCode = $first->json('data.period_code');
+        $periodId = $first->json('data.id');
+
+        ProductionPeriod::query()->whereKey($periodId)->update([
+            'status' => 'closed',
+            'closed_at' => now(),
+            'end_date' => now()->toDateString(),
+        ]);
+
+        $second = postJson('/api/v1/periods', [
+            'floor_id' => $floor->id,
+            'pic_id' => $pic->id,
+            'start_date' => now()->toDateString(),
+            'initial_stock' => 600,
+            'created_at_client' => now()->toIso8601String(),
+        ]);
+        $second->assertCreated();
+        $secondCode = $second->json('data.period_code');
+
+        expect($secondCode)->not->toBe($firstCode)
+            ->and($secondCode)->toStartWith('PRD-');
     });
 
     it('fails with 422 if coop already has active period', function () {
