@@ -288,6 +288,47 @@ single-form-configs:
         $ref: "../components/response.yaml#/NotFoundError"
 
 equipment-types:
+  get:
+    tags: [Master - Equipment]
+    summary: Daftar tipe alat
+    description: Mengambil daftar jenis/merk alat fisik dengan dukungan paginasi.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Cari berdasarkan nama.
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+        description: Jumlah per halaman.
+      - in: query
+        name: cursor
+        schema:
+          type: boolean
+        description: Gunakan cursor pagination jika true.
+    responses:
+      "200":
+        description: Daftar tipe alat berhasil diambil.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  type: array
+                  items:
+                    $ref: "../components/master-setup.yaml#/EquipmentTypeResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+
   post:
     tags: [Master - Equipment]
     summary: Tambah Tipe Alat
@@ -317,6 +358,22 @@ equipment-types:
 single-equipment-types:
   parameters:
     - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+  get:
+    tags: [Master - Equipment]
+    summary: Detail tipe alat
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        description: Detail tipe alat berhasil diambil.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/master-setup.yaml#/EquipmentTypeResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
   patch:
     tags: [Master - Equipment]
     summary: Edit Tipe Alat
@@ -359,3 +416,56 @@ single-equipment-types:
         $ref: "../components/response.yaml#/ForbiddenError"
       "404":
         $ref: "../components/response.yaml#/NotFoundError"
+
+equipment-type-form-configs:
+  parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID tipe alat (equipment type).
+  get:
+    tags: [Master - Equipment]
+    summary: Daftar form config tipe alat
+    description: Mengambil pemetaan form config yang terhubung ke tipe alat tertentu.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        description: Konfigurasi form berhasil diambil.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas.yaml#/EquipmentFormConfigListResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
+  post:
+    tags: [Master - Equipment]
+    summary: Sinkronkan form config tipe alat
+    description: Replace seluruh pemetaan form config untuk tipe alat (bulk sync).
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/SyncEquipmentFormConfigsRequest"
+    responses:
+      "200":
+        description: Pemetaan form berhasil disinkronkan.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas.yaml#/EquipmentFormConfigListResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+      "422":
+        $ref: "../components/response.yaml#/ValidationError"

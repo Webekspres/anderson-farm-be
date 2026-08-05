@@ -22,6 +22,8 @@ class UserResource extends JsonResource
             'role' => $this->role,
             'email' => $this->email,
             'phone' => $this->phone_number, // mapping ke field phone_number di DB
+            'device_id' => $this->device_id,
+            'device_bound' => $this->device_id !== null,
             'is_active' => $this->is_active,
         ];
     }

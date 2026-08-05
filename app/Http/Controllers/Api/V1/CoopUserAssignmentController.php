@@ -3,21 +3,41 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Carbon;
+use App\Http\Requests\Api\V1\CoopUserAssignment\SyncCoopUserAssignmentRequest;
+use App\Http\Resources\Api\V1\CoopUserAssignmentResource;
 use App\Models\Coop;
 use App\Models\CoopUserAssignment;
-use App\Http\Requests\Api\V1\CoopUserAssignment\SyncCoopUserAssignmentRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class CoopUserAssignmentController extends Controller
 {
     /**
+     * Daftar assignment pekerja untuk satu kandang.
+     */
+    public function index(Coop $coop): JsonResponse
+    {
+        $assignments = CoopUserAssignment::query()
+            ->where('coop_id', $coop->id)
+            ->orderBy('assigned_at')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar assignment kandang berhasil dimuat',
+            'data' => CoopUserAssignmentResource::collection($assignments),
+        ]);
+    }
+
+    /**
      * Sinkronisasi pekerja ke kandang (bulk assignment)
      */
-    public function sync(SyncCoopUserAssignmentRequest $request, Coop $coop)
+    public function sync(SyncCoopUserAssignmentRequest $request, Coop $coop): JsonResponse
     {
         DB::transaction(function () use ($coop, $request) {
-            CoopUserAssignment::where('coop_id', $coop->id)->delete();
+            CoopUserAssignment::withTrashed()
+                ->where('coop_id', $coop->id)
+                ->forceDelete();
 
             $now = now();
             $assignments = $request->input('assignments', []);

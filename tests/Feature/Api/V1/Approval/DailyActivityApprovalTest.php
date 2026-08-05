@@ -64,6 +64,38 @@ describe('GET /api/v1/approvals/daily-activities', function () {
             ->assertJsonPath('success', false);
     });
 
+    it('returns submitted headers for finance role', function () {
+        ['header' => $header] = createApprovalScenario();
+        $finance = User::factory()->create(['role' => 'finance']);
+
+        $response = $this->actingAs($finance)->getJson('/api/v1/approvals/daily-activities');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(1, 'data.items')
+            ->assertJsonPath('data.items.0.id', $header->id);
+    });
+
+    it('filters by approved business_status', function () {
+        ['manager' => $manager, 'header' => $header] = createApprovalScenario();
+
+        $this->actingAs($manager)->postJson("/api/v1/approvals/daily-activities/{$header->id}", [
+            'action' => 'approve',
+        ])->assertOk();
+
+        $waiting = $this->actingAs($manager)->getJson('/api/v1/approvals/daily-activities');
+        $waiting->assertOk()->assertJsonCount(0, 'data.items');
+
+        $approved = $this->actingAs($manager)->getJson('/api/v1/approvals/daily-activities?'.http_build_query([
+            'business_status' => 'APPROVED',
+        ]));
+
+        $approved->assertOk()
+            ->assertJsonCount(1, 'data.items')
+            ->assertJsonPath('data.items.0.id', $header->id)
+            ->assertJsonPath('data.items.0.business_status', 'APPROVED');
+    });
+
     it('returns empty list for manager outside scope', function () {
         createApprovalScenario();
         $outsiderManager = User::factory()->create(['role' => 'manager']);
@@ -177,6 +209,32 @@ describe('POST /api/v1/approvals/daily-activities/{id}', function () {
         ]);
 
         $response->assertForbidden();
+    });
+
+    it('allows finance to approve submitted header', function () {
+        ['abk' => $abk, 'header' => $header] = createApprovalScenario();
+        $finance = User::factory()->create(['role' => 'finance']);
+
+        $response = $this->actingAs($finance)->postJson("/api/v1/approvals/daily-activities/{$header->id}", [
+            'action' => 'approve',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.business_status', 'APPROVED')
+            ->assertJsonPath('data.approved_by', $finance->id);
+
+        $this->assertDatabaseHas('daily_activity_headers', [
+            'id' => $header->id,
+            'business_status' => 'APPROVED',
+            'approved_by' => $finance->id,
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $abk->id,
+            'reference_id' => $header->id,
+            'reference_type' => 'DAILY_ACTIVITY',
+        ]);
     });
 
     it('returns 401 for guest', function () {

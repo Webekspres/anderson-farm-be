@@ -108,13 +108,13 @@ harvests:
         description: Data panen untuk periode tersebut tidak ditemukan.
         $ref: "../components/response.yaml#/NotFoundError"
 
-rhpp:
+ovk-usages:
   get:
     tags: [Files]
-    summary: Export Excel/PDF RHPP
+    summary: Export Excel pemakaian OVK
     description: |
-      Menghasilkan file Excel (.xlsx) atau PDF (.pdf) yang berisi perhitungan detail RHPP untuk periode ternak tertentu sebelum difinalisasi.
-      Data mencakup rekapitulasi biaya, pendapatan, dan perhitungan RHPP berdasarkan data produksi dan keuangan yang ada di periode tersebut.
+      Menghasilkan file Excel (.xlsx) rekap pemakaian obat, vaksin, dan kimia (OVK)
+      untuk periode produksi tertentu.
     security:
       - sanctum: []
     parameters:
@@ -125,29 +125,53 @@ rhpp:
           type: string
           format: uuid
         description: ID periode ternak yang datanya ingin diekspor.
-      - in: query
-        name: file_type
-        required: true
-        schema:
-          type: string
-          enum: [xlsx, pdf]
-        description: Jenis file yang ingin dihasilkan (Excel atau PDF).
     responses:
       "200":
-        description: File RHPP berhasil dibuat dan dikirim sebagai stream.
+        description: File Excel pemakaian OVK berhasil dibuat dan dikirim sebagai stream.
         content:
           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
             schema:
               type: string
               format: binary
-          application/pdf:
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+      "422":
+        $ref: "../components/response.yaml#/ValidationError"
+
+bop-details:
+  get:
+    tags: [Files]
+    summary: Export Excel detail BOP
+    description: |
+      Menghasilkan file Excel (.xlsx) detail biaya operasional pakan (BOP)
+      untuk periode produksi tertentu.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: period_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID periode ternak yang datanya ingin diekspor.
+    responses:
+      "200":
+        description: File Excel detail BOP berhasil dibuat dan dikirim sebagai stream.
+        content:
+          application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
             schema:
               type: string
               format: binary
-      "400":
-        $ref: "../components/response.yaml#/ValidationError"
       "401":
         $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
       "404":
-        description: Data untuk periode tersebut tidak ditemukan atau perhitungan RHPP belum tersedia.
         $ref: "../components/response.yaml#/NotFoundError"
+      "422":
+        $ref: "../components/response.yaml#/ValidationError"

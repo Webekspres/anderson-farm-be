@@ -10,7 +10,8 @@ class SyncGetRhppRequest extends FormRequest
     public function authorize(): bool
     {
         $role = $this->user()?->role;
-        return in_array($role, ['abk', 'pic', 'manager', 'admin']);
+
+        return in_array($role, ['abk', 'pic', 'manager', 'admin', 'finance'], true);
     }
 
     protected function failedAuthorization(): never
@@ -19,7 +20,7 @@ class SyncGetRhppRequest extends FormRequest
             response()->json([
                 'success' => false,
                 'message' => 'Akses ditolak. Investor tidak dapat menggunakan fitur sinkronisasi offline ini.',
-                'data'    => null,
+                'data' => null,
             ], 403)
         );
     }

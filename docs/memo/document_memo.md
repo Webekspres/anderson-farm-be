@@ -14,8 +14,8 @@ File-file fisik (PDF, JPG, PNG) yang diunggah ke sistem melalui endpoint terpusa
 
 ### 1. Daftar Kontrak ABK (`ContractAbk`)
 
-- **Deskripsi:** File kontrak kerja/SOP yang diunggah Manager untuk periode ternak. ABK/PIC wajib menyetujui (_Contract Acceptance_) sebelum mengisi data harian.
-- **Jenis File:** PDF.
+- **Deskripsi:** File kontrak kerja/SOP yang diunggah PIC/Manager dari aplikasi mobile untuk periode ternak (`POST /uploads` lalu `POST /periods/{id}/contracts`). ABK/PIC wajib menyetujui (_Contract Acceptance_) sebelum mengisi data harian.
+- **Jenis File:** PDF, JPG, PNG.
 
 ### 2. Bukti Pengeluaran/Nota (`Expense Receipt`)
 
@@ -34,12 +34,12 @@ File-file fisik (PDF, JPG, PNG) yang diunggah ke sistem melalui endpoint terpusa
 
 ### 5. Template/Dokumen Kandang (`CoopDocument`/`PeriodDocument`)
 
-- **Deskripsi:** File panduan (ARV, OVK, Cleaning List) di-upload Admin/Manager Web, di-download ABK (view-only) di lapangan.
+- **Deskripsi:** File panduan (ARV, OVK, Cleaning List) di-upload Admin/Manager dari **aplikasi mobile** (Siapkan sistem / detail periode), lalu di-download/view ABK di lapangan (view-only).
 - **Jenis File:** PDF/JPG.
 
 ### 6. Gambar/Thumbnail Edukasi & Referensi Harga
 
-- **Deskripsi:** Pada Modul 10 (Laporan & Investor), artikel edukasi dan harga komoditi (tabel `EducationArticle` dan `PriceReference` di ERD) memiliki kolom `image_url`. Gambar diunggah oleh Admin melalui dashboard web Laravel, bukan dari aplikasi mobile.
+- **Deskripsi:** Pada Modul 10 (Laporan & Investor), artikel edukasi dan harga komoditi (tabel `EducationArticle` dan `PriceReference` di ERD) memiliki kolom `image_url`. Gambar diunggah oleh Admin dari **aplikasi mobile** (Siapkan sistem) lewat `POST /api/v1/uploads`.
 - **Jenis File:** JPG/PNG.
 - **API:** Menumpang di endpoint `POST /api/v1/uploads` dengan parameter `type=article`.
 
@@ -94,4 +94,4 @@ Fitur di mana Finance/Manager dapat mengunggah file Excel yang sudah disiapkan, 
 
 ---
 
-Dengan pemetaan ini, pembagian tugas antara tim Web/Laravel (fitur Import/Export Excel, upload gambar edukasi) dan tim Mobile/React Native (upload photo multipart, generator WA) menjadi sangat jelas dan profesional.
+Dengan pemetaan ini, pembagian tugas jelas: **backend Laravel** menyediakan API upload/storage, validasi, import/export Excel, dan sync; **aplikasi mobile** adalah satu-satunya permukaan user (upload foto/file multipart, accept kontrak, generator WA, Siapkan sistem). Produk Anderson Farm adalah mobile apps saja.

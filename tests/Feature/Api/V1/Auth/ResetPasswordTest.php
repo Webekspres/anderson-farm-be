@@ -234,14 +234,26 @@ describe('POST /api/v1/auth/reset-password — method admin_reset', function ():
 });
 
 describe('POST /api/v1/auth/reset-password — method otp', function (): void {
-    it('menolak metode otp karena belum tersedia', function (): void {
+    it('memvalidasi field otp yang wajib', function (): void {
         $this->postJson('/api/v1/auth/reset-password', [
             'method' => 'otp',
+        ])->assertUnprocessable();
+    });
+
+    it('menolak otp yang salah', function (): void {
+        $user = User::factory()->create([
+            'username' => 'otp_user',
+            'password_hash' => Hash::make('oldpassword123'),
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/v1/auth/reset-password', [
+            'method' => 'otp',
+            'username' => $user->username,
+            'otp' => '000000',
+            'new_password' => 'newpassword456',
+            'new_password_confirmation' => 'newpassword456',
         ])->assertUnprocessable()
-            ->assertJson([
-                'success' => false,
-                'message' => 'Metode OTP belum tersedia.',
-                'data' => null,
-            ]);
+            ->assertJsonPath('message', 'OTP tidak valid atau sudah kedaluwarsa.');
     });
 });

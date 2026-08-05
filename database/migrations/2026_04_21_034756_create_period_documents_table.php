@@ -16,7 +16,7 @@ return new class extends Migration
             // Business Fields
             $table->foreignUuid('period_id')->constrained('production_periods')->cascadeOnDelete();
             $table->string('title');
-            $table->enum('document_type', ['OVK', 'ARV', 'OTHER'])->default('OTHER');
+            $table->enum('document_type', ['OVK', 'ARV', 'OTHER', 'CARE_TEMPLATE'])->default('OTHER');
             $table->string('file_path_local')->nullable();
             $table->string('file_url')->nullable();
             $table->foreignUuid('uploaded_by')->constrained('users')->cascadeOnDelete();

@@ -31,7 +31,7 @@ class FinanceSyncService
         if ($user->role === 'abk') {
             return [
                 // ABK TIDAK boleh melihat transaksi pengeluaran kandang
-                'transactions'      => collect(),
+                'transactions' => collect(),
                 // ABK hanya bisa melihat data gajinya sendiri
                 'employee_salaries' => $this->fetchSalariesForAbk($user->id, $lastSyncTimestamp),
             ];
@@ -39,7 +39,7 @@ class FinanceSyncService
 
         // PIC, Manager, Admin: akses penuh ke scope kandang mereka
         return [
-            'transactions'      => $this->fetchTransactions($periodIds, $lastSyncTimestamp),
+            'transactions' => $this->fetchTransactions($periodIds, $lastSyncTimestamp),
             'employee_salaries' => $this->fetchSalaries($periodIds, $lastSyncTimestamp),
         ];
     }
@@ -74,10 +74,11 @@ class FinanceSyncService
     private function fetchTransactions(SupportCollection $periodIds, ?string $lastSyncTimestamp): Collection
     {
         return Transaction::withTrashed()
+            ->with('category')
             ->whereIn('period_id', $periodIds)
             ->when(
                 $lastSyncTimestamp,
-                fn($q) => $q->where('updated_at_server', '>', $lastSyncTimestamp)
+                fn ($q) => $q->where('updated_at_server', '>', $lastSyncTimestamp)
             )
             ->get();
     }
@@ -92,7 +93,7 @@ class FinanceSyncService
             ->whereIn('period_id', $periodIds)
             ->when(
                 $lastSyncTimestamp,
-                fn($q) => $q->where('updated_at_server', '>', $lastSyncTimestamp)
+                fn ($q) => $q->where('updated_at_server', '>', $lastSyncTimestamp)
             )
             ->get();
     }
@@ -106,7 +107,7 @@ class FinanceSyncService
             ->where('employee_id', $userId)
             ->when(
                 $lastSyncTimestamp,
-                fn($q) => $q->where('updated_at_server', '>', $lastSyncTimestamp)
+                fn ($q) => $q->where('updated_at_server', '>', $lastSyncTimestamp)
             )
             ->get();
     }

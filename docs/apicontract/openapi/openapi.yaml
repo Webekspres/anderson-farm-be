@@ -5,6 +5,10 @@ info:
   description: API sistem manajemen pertanian offline-first untuk Anderson Farm
 
 paths:
+  # === HEALTH CHECK ===
+  /api/check:
+    $ref: "./paths/check.yaml#/health"
+
   # === AUTENTIKASI & KEAMANAN ===
   /api/v1/auth/login:
     $ref: "./paths/auth.yaml#/login"
@@ -31,9 +35,6 @@ paths:
   /api/v1/users/{id}:
     $ref: "./paths/user.yaml#/userSingle"
 
-  /api/v1/profile/change-password:
-    $ref: "./paths/user.yaml#/change-password"
-
   # === MASTER DATA: AREA (COLLECTION) ===
   /api/v1/areas:
     $ref: "./paths/master-data.yaml#/areas"
@@ -54,6 +55,12 @@ paths:
   /api/v1/coops/{id}:
     $ref: "./paths/master-data.yaml#/coopSingle"
 
+  /api/v1/coop-floors:
+    $ref: "./paths/coop-floors.yaml#/coop-floors"
+
+  /api/v1/coop-floors/{id}:
+    $ref: "./paths/coop-floors.yaml#/coopFloorSingle"
+
   /api/v1/form-configs:
     $ref: "./paths/master-setup.yaml#/form-configs"
 
@@ -68,6 +75,9 @@ paths:
 
   /api/v1/equipment-types/{id}:
     $ref: "./paths/master-setup.yaml#/single-equipment-types"
+
+  /api/v1/equipment-types/{id}/form-configs:
+    $ref: "./paths/master-setup.yaml#/equipment-type-form-configs"
 
   /api/v1/transaction-categories:
     $ref: "./paths/master-setup.yaml#/transaction-categories"
@@ -103,6 +113,9 @@ paths:
   /api/v1/coops/{id}/documents:
     $ref: "./paths/documents.yaml#/coop-documents"
 
+  /api/v1/coops/{id}/documents/{document_id}:
+    $ref: "./paths/documents.yaml#/coop-document-single"
+
   /api/v1/coops/{id}/user-assignments:
     $ref: "./paths/setup.yaml#/coop-user-assignments"
 
@@ -112,8 +125,14 @@ paths:
   /api/v1/coops/{id}/equipments:
     $ref: "./paths/setup.yaml#/coop-equipments"
 
+  /api/v1/coops/{id}/equipments/{equipment_id}:
+    $ref: "./paths/setup.yaml#/coop-equipment-single"
+
   /api/v1/periods:
     $ref: "./paths/period-full.yaml#/periods"
+
+  /api/v1/periods/{id}:
+    $ref: "./paths/period-full.yaml#/periodSingle"
 
   /api/v1/periods/{id}/investors:
     $ref: "./paths/period-full.yaml#/period-investors"
@@ -127,7 +146,7 @@ paths:
   /api/v1/periods/{id}/contracts:
     $ref: "./paths/period-full.yaml#/period-contracts"
 
-  /api/v1/contracts:
+  /api/v1/contracts/{id}:
     $ref: "./paths/period-full.yaml#/contracts-single"
 
   /api/v1/periods/{id}/documents:
@@ -139,6 +158,12 @@ paths:
   # === EKSPOR, IMPOR & UPLOAD FILE ===
   /api/v1/uploads:
     $ref: "./paths/upload.yaml#/uploads"
+
+  /api/v1/export/ovk-usages:
+    $ref: "./paths/export.yaml#/ovk-usages"
+
+  /api/v1/export/bop-details:
+    $ref: "./paths/export.yaml#/bop-details"
 
   /api/v1/export/harvests:
     $ref: "./paths/export.yaml#/harvests"
@@ -152,9 +177,6 @@ paths:
   /api/v1/import/salary:
     $ref: "./paths/upload.yaml#/import-salary"
 
-  /api/v1/export/rhpp:
-    $ref: "./paths/export.yaml#/rhpp"
-
   # === LOGIKA BISNIS & PORTAL EKSTERNAL ===
   /api/v1/periods/{id}/close:
     $ref: "./paths/period-full.yaml#/close-period"
@@ -162,18 +184,12 @@ paths:
   /api/v1/rhpps/{period_id}/publish:
     $ref: "./paths/period-full.yaml#/rhpps-publish"
 
-  /api/v1/investor/dashboard:
-    get:
-      tags: [Bisnis]
-      summary: Portal dashboard investor
-      description: Rekap ROI super ringan tanpa SQLite.
-      responses:
-        "200":
-          description: Data dashboard investor berhasil diambil.
-          content:
-            application/json:
-              schema:
-                $ref: "./components/general.yaml#/GeneralResponse"
+  # === APPROVAL ===
+  /api/v1/approvals/daily-activities:
+    $ref: "./paths/approvals.yaml#/daily-activities"
+
+  /api/v1/approvals/daily-activities/{id}:
+    $ref: "./paths/approvals.yaml#/daily-activity-single"
 
   # === SISTEM & NOTIFIKASI ===
   /api/v1/system/check-version:
@@ -182,6 +198,9 @@ paths:
   # Notifikasi & Pesan Masuk
   /api/v1/notifications:
     $ref: "./paths/system.yaml#/notifications"
+
+  /api/v1/notifications/read-all:
+    $ref: "./paths/system.yaml#/notifications-read-all"
 
   /api/v1/notifications/{id}/read:
     $ref: "./paths/system.yaml#/notification-read"
@@ -389,24 +408,32 @@ components:
     ResetPasswordRequest:
       type: object
       required:
-        - username
-        - otp
-        - new_password
+        - method
       properties:
+        method:
+          type: string
+          enum: [old_password, admin_reset, otp]
+          description: Metode reset password.
         username:
           type: string
-          description: Username user
-          example: "budi_abk1"
-        otp:
+          description: Wajib untuk method old_password.
+        current_password:
           type: string
-          description: Kode OTP yang diterima user
-          example: "123456"
+          format: password
+          description: Wajib untuk method old_password.
         new_password:
           type: string
           format: password
           minLength: 8
-          description: Password baru user
-          example: "PasswordBaru123!"
+          description: Wajib untuk method old_password dan admin_reset.
+        new_password_confirmation:
+          type: string
+          format: password
+          description: Wajib untuk method old_password.
+        user_id:
+          type: string
+          format: uuid
+          description: Wajib untuk method admin_reset.
 
     # --- REQUEST SCHEMAS ---
     UserCreateRequest:

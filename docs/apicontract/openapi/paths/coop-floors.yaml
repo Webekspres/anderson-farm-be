@@ -1,0 +1,122 @@
+coop-floors:
+  get:
+    tags: [Master Data]
+    summary: Daftar lantai kandang
+    description: Mengambil daftar lantai kandang dengan dukungan filter dan paginasi.
+    security:
+      - sanctum: []
+    parameters:
+      - in: query
+        name: coop_id
+        schema:
+          type: string
+          format: uuid
+        description: Filter berdasarkan ID kandang.
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Cari berdasarkan nama lantai.
+      - $ref: "../openapi.yaml#/components/parameters/PageParam"
+      - $ref: "../openapi.yaml#/components/parameters/PerPageParam"
+      - $ref: "../openapi.yaml#/components/parameters/CursorParam"
+      - $ref: "../openapi.yaml#/components/parameters/LimitParam"
+    responses:
+      "200":
+        description: Daftar lantai kandang berhasil diambil.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas.yaml#/CoopFloorListResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+
+  post:
+    tags: [Master Data]
+    summary: Buat lantai kandang baru
+    description: Hanya admin yang dapat membuat lantai kandang baru.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/CoopFloorRequest"
+    responses:
+      "201":
+        description: Lantai kandang berhasil dibuat.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas.yaml#/CoopFloorResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "422":
+        $ref: "../components/response.yaml#/ValidationError"
+
+coopFloorSingle:
+  parameters:
+    - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+  get:
+    tags: [Master Data]
+    summary: Detail lantai kandang
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        description: Detail lantai kandang berhasil diambil.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas.yaml#/CoopFloorResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
+  patch:
+    tags: [Master Data]
+    summary: Edit lantai kandang
+    description: Hanya admin yang dapat mengubah data lantai kandang.
+    security:
+      - sanctum: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/CoopFloorUpdateRequest"
+    responses:
+      "200":
+        description: Lantai kandang berhasil diperbarui.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas.yaml#/CoopFloorResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "403":
+        $ref: "../components/response.yaml#/ForbiddenError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+      "422":
+        $ref: "../components/response.yaml#/ValidationError"
+
+  delete:
+    tags: [Master Data]
+    summary: Hapus lantai kandang
+    description: Lantai tidak dapat dihapus jika masih terikat periode produksi aktif.
+    security:
+      - sanctum: []
+    responses:
+      "200":
+        $ref: "../components/response.yaml#/GeneralResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+      "422":
+        description: Lantai masih terikat periode produksi aktif.

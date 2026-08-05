@@ -27,7 +27,7 @@ Seluruh aksi di bawah ini wajib dilakukan saat perangkat memiliki koneksi intern
 | `/api/v1/auth/login`           | `POST` | Login & _Device Binding_ (mengunci akun ke 1 HP).               |   ✅   |
 | `/api/v1/auth/me`              | `GET`  | Cek sesi aktif & tarik hak akses (_role_ & _coop_assignments_). |   ✅   |
 | `/api/v1/auth/logout`          | `POST` | Menghapus (_revoke_) token dari server.                         |   ✅   |
-| `/api/v1/auth/forgot-password` | `POST` | Publik. Minta OTP/Link _reset password_ (fase berikutnya).     |   📋   |
+| `/api/v1/auth/forgot-password` | `POST` | Publik. Minta OTP/Link _reset password_. OTP disimpan di cache (15 menit); delivery email/WA gateway menyusul. |   ✅   |
 | `/api/v1/auth/reset-password`  | `POST` | Publik. `method=old_password`: ganti password sendiri (username + password lama). `method=admin_reset`: Bearer admin + `user_id` reset akun lain. `method=otp`: belum tersedia. |   ✅   |
 | `/api/v1/auth/fcm-token`       | `POST` | Simpan token Firebase untuk menerima _Push Notification_.       |   ✅   |
 
@@ -96,7 +96,7 @@ _Operasi CRUD untuk tabel referensi sistem. Update resource memakai `PATCH`._
 | :------------------------------- | :------: | :------------------------------------------------------------------------------------------------------------------ | :---: |
 | `/api/v1/uploads`                |  `POST`  | **Storage Endpoint.** Unggah _file_ fisik (PDF/JPG) secara _multipart_. Mengembalikan _response_ berupa `file_url`. |   ✅   |
 | `/api/v1/uploads`                | `DELETE` | Menghapus _file_ (_orphaned file_) jika _user_ batal klik simpan di aplikasi.                                       |   ✅   |
-| `/api/v1/export/rhpp`            |  `GET`   | _Generate_ Excel/PDF performa teknis & laba rugi final per periode.                                                 |   📋   |
+| `/api/v1/export/rhpp`            |  `GET`   | _Generate_ Excel/PDF performa teknis & laba rugi final per periode.                                                 |   ✅   |
 | `/api/v1/export/harvests`        |  `GET`   | _Generate_ Excel rekapitulasi panen parsial/bertahap (HarvestEntry).                                                |   ✅   |
 | `/api/v1/export/evaluations`     |  `GET`   | _Generate_ Excel evaluasi performa teknis (BW, FCR, Deplesi).                                                       |   ✅   |
 | `/api/v1/export/ovk-usages`      |  `GET`   | Rekap detail pemakaian obat, vaksin, dan kimia.                                                                     |   ✅   |
@@ -113,7 +113,7 @@ _Operasi CRUD untuk tabel referensi sistem. Update resource memakai `PATCH`._
 | `/api/v1/periods/{id}/close`          | `POST` | **Tutup Periode.** Validasi _backend_ otomatis untuk memastikan tak ada log _pending_ sebelum siklus dikunci. |   ✅   |
 | `/api/v1/periods/{id}/rhpp-documents` | `POST` | Menyimpan JSON URL dari file PDF RHPP Final yang dilampirkan Admin.                                           |   ✅   |
 | `/api/v1/rhpps/{period_id}/publish`   | `POST` | **Ketok Palu RHPP.** Mengubah `publish_status` menjadi `PUBLISHED` dan mengunci laporan untuk Investor/PIC.   |   ✅   |
-| `/api/v1/investor/dashboard`          | `GET`  | **Portal Investor.** Rekap ROI super ringan tanpa SQLite.                                                     |   📋   |
+| `/api/v1/investor/dashboard`          | `GET`  | **Portal Investor.** Rekap ROI super ringan tanpa SQLite.                                                     |   ✅   |
 
 ### 6b. Approval Manager (Online-Only)
 

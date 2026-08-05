@@ -1,13 +1,15 @@
 <?php
 
-use App\Models\User;
 use App\Models\Coop;
 use App\Models\CoopUserAssignment;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use function Pest\Laravel\postJson;
+
+use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseCount;
 use function Pest\Laravel\assertDatabaseHas;
-use function Pest\Laravel\actingAs;
+use function Pest\Laravel\getJson;
+use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
 
@@ -17,7 +19,7 @@ it('successfully bulk assigns users to coop', function () {
     $coop = Coop::factory()->create();
     $users = User::factory()->count(2)->create();
     $payload = [
-        'assignments' => $users->map(fn($u) => [
+        'assignments' => $users->map(fn ($u) => [
             'user_id' => $u->id,
             'role_in_coop' => 'ABK',
         ])->toArray(),
@@ -36,6 +38,51 @@ it('successfully bulk assigns users to coop', function () {
             'coop_id' => $coop->id,
         ]);
     }
+});
+
+it('lists assignments for a coop', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+    $coop = Coop::factory()->create();
+    $pic = User::factory()->create();
+    $abk = User::factory()->create();
+
+    CoopUserAssignment::factory()->create([
+        'user_id' => $pic->id,
+        'coop_id' => $coop->id,
+        'role_in_coop' => 'kepala_kandang',
+    ]);
+    CoopUserAssignment::factory()->create([
+        'user_id' => $abk->id,
+        'coop_id' => $coop->id,
+        'role_in_coop' => 'abk',
+    ]);
+
+    $response = getJson("/api/v1/coops/{$coop->id}/user-assignments");
+
+    $response->assertOk()
+        ->assertJson([
+            'success' => true,
+            'message' => 'Daftar assignment kandang berhasil dimuat',
+        ])
+        ->assertJsonCount(2, 'data');
+
+    $userIds = collect($response->json('data'))->pluck('user_id')->all();
+    expect($userIds)->toContain($pic->id, $abk->id);
+});
+
+it('returns empty list when coop has no assignments', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+    $coop = Coop::factory()->create();
+
+    $response = getJson("/api/v1/coops/{$coop->id}/user-assignments");
+
+    $response->assertOk()
+        ->assertJson([
+            'success' => true,
+            'data' => [],
+        ]);
 });
 
 it('successfully clears assignments when empty array sent', function () {
@@ -61,11 +108,49 @@ it('successfully clears assignments when empty array sent', function () {
     expect(CoopUserAssignment::count())->toBe(0);
 });
 
+it('replaces existing assignments without duplicate key errors', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+    $coop = Coop::factory()->create();
+    $pic = User::factory()->create(['role' => 'pic']);
+    $abk = User::factory()->create(['role' => 'abk']);
+
+    CoopUserAssignment::factory()->create([
+        'user_id' => $pic->id,
+        'coop_id' => $coop->id,
+        'role_in_coop' => 'kepala_kandang',
+    ]);
+    CoopUserAssignment::factory()->create([
+        'user_id' => $abk->id,
+        'coop_id' => $coop->id,
+        'role_in_coop' => 'abk',
+    ]);
+
+    $payload = [
+        'assignments' => [
+            ['user_id' => $pic->id, 'role_in_coop' => 'kepala_kandang'],
+            ['user_id' => $abk->id, 'role_in_coop' => 'abk'],
+        ],
+    ];
+
+    $response = postJson("/api/v1/coops/{$coop->id}/user-assignments", $payload);
+
+    $response->assertOk()
+        ->assertJson([
+            'success' => true,
+            'message' => 'Pekerja berhasil ditugaskan ke kandang',
+            'data' => null,
+        ]);
+
+    expect(CoopUserAssignment::query()->count())->toBe(2)
+        ->and(CoopUserAssignment::withTrashed()->count())->toBe(2);
+});
+
 it('returns 404 if coop not found', function () {
     $user = User::factory()->create();
     actingAs($user);
     $payload = ['assignments' => []];
-    $response = postJson("/api/v1/coops/non-existent-id/user-assignments", $payload);
+    $response = postJson('/api/v1/coops/non-existent-id/user-assignments', $payload);
     $response->assertStatus(404);
 });
 

@@ -1,4 +1,39 @@
 coop-equipments:
+  get:
+    tags: [Setup - Coop Equipment]
+    summary: Daftar alat fisik kandang
+    description: Mengambil seluruh alat fisik yang terdaftar pada kandang.
+    security:
+      - sanctum: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID kandang (coop).
+    responses:
+      "200":
+        description: Daftar alat fisik berhasil diambil.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  type: array
+                  items:
+                    $ref: "../components/setup.yaml#/CoopEquipmentResponse"
+      "401":
+        $ref: "../components/response.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../components/response.yaml#/NotFoundError"
+
   post:
     tags: [Setup - Coop Equipment]
     summary: Registrasi alat fisik ke kandang
@@ -26,15 +61,30 @@ coop-equipments:
         $ref: "../components/response.yaml#/UnauthorizedError"
       "403":
         $ref: "../components/response.yaml#/ForbiddenError"
+
+coop-equipment-single:
   delete:
     tags: [Setup - Coop Equipment]
     summary: Cabut alat fisik dari kandang
     description: |
-      Melakukan soft delete (update deleted_at) pada alat fisik yang dicabut dari kandang. Backend WAJIB menonaktifkan/menghapus data anak di coop_form_assignments yang terikat dengan alat ini.
+      Melakukan soft delete pada alat fisik yang dicabut dari kandang.
     security:
       - sanctum: []
     parameters:
-      - $ref: "../openapi.yaml#/components/parameters/ResourceId"
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID kandang (coop).
+      - in: path
+        name: equipment_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID alat fisik yang akan dihapus.
     responses:
       "200":
         $ref: "../components/response.yaml#/GeneralResponse"

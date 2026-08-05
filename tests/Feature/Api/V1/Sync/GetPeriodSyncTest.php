@@ -59,7 +59,7 @@ it('returns period detail with only the user salary', function () {
         'user_id' => $otherUser->id,
     ]);
 
-    $response = $this->getJson('/api/v1/sync/periods?' . http_build_query([
+    $response = $this->getJson('/api/v1/sync/periods?'.http_build_query([
         'period_id' => $this->period->id,
     ]));
 
@@ -91,7 +91,7 @@ it('does not expose other employees salaries', function () {
         'employee_id' => $otherUser->id,
     ]);
 
-    $response = $this->getJson('/api/v1/sync/periods?' . http_build_query([
+    $response = $this->getJson('/api/v1/sync/periods?'.http_build_query([
         'period_id' => $this->period->id,
     ]));
 
@@ -105,9 +105,21 @@ it('returns 403 when user is not assigned to the coop', function () {
     $unassignedUser = User::factory()->create(['role' => 'abk']);
     Sanctum::actingAs($unassignedUser);
 
-    $response = $this->getJson('/api/v1/sync/periods?' . http_build_query([
+    $response = $this->getJson('/api/v1/sync/periods?'.http_build_query([
         'period_id' => $this->period->id,
     ]));
 
     $response->assertStatus(403);
 });
+
+it('allows admin manager and finance to pull period without coop assignment', function (string $role) {
+    $privileged = User::factory()->create(['role' => $role]);
+    Sanctum::actingAs($privileged);
+
+    $response = $this->getJson('/api/v1/sync/periods?'.http_build_query([
+        'period_id' => $this->period->id,
+    ]));
+
+    $response->assertOk()
+        ->assertJsonPath('data.0.id', $this->period->id);
+})->with(['admin', 'manager', 'finance']);

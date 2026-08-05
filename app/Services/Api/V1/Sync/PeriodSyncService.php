@@ -9,6 +9,7 @@ use App\Models\ContractAcceptance;
 use App\Models\CoopUserAssignment;
 use App\Models\ProductionPeriod;
 use App\Models\User;
+use App\Support\CoopAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -21,11 +22,7 @@ class PeriodSyncService
         // Get coop through floor
         $coop = $basePeriod->floor->coop;
 
-        $hasAccess = CoopUserAssignment::where('user_id', $user->id)
-            ->where('coop_id', $coop->id)
-            ->exists();
-
-        if (!$hasAccess) {
+        if (! CoopAccess::canAccessCoop($user, $coop?->id)) {
             abort(403, 'Akses ditolak untuk periode ini.');
         }
 
@@ -39,7 +36,7 @@ class PeriodSyncService
             ->where('id', $periodId)
             ->with([
                 'investors' => function ($query) use ($user, $isPrivileged, $timestamp) {
-                    if (!$isPrivileged) {
+                    if (! $isPrivileged) {
                         $query->where('user_id', $user->id);
                     }
                     if ($timestamp) {
@@ -84,13 +81,13 @@ class PeriodSyncService
 
     /**
      * Store contract acceptances from mobile app.
-     * 
+     *
      * This is a "push" endpoint where ABK/PIC send their digital signatures.
      * Uses idempotency (updateOrCreate) to handle duplicate submissions.
      *
-     * @param User $user The authenticated user (ABK/PIC)
-     * @param array $acceptances Array of contract acceptance items
-     * @param string $syncTimestamp Client sync timestamp (ISO-8601)
+     * @param  User  $user  The authenticated user (ABK/PIC)
+     * @param  array  $acceptances  Array of contract acceptance items
+     * @param  string  $syncTimestamp  Client sync timestamp (ISO-8601)
      * @return array Sync results: [{ id, status: SUCCESS|FAILED|FORBIDDEN }, ...]
      */
     public function storeContractAcceptances(User $user, array $acceptances, string $syncTimestamp): array
@@ -104,21 +101,23 @@ class PeriodSyncService
                 $acceptedAt = $item['accepted_at'];
 
                 $contract = ContractAbk::query()->find($contractId);
-                if (!$contract) {
+                if (! $contract) {
                     $syncResults[] = [
                         'id' => $acceptanceId,
                         'status' => 'FAILED',
                     ];
+
                     continue;
                 }
 
                 $period = $contract->period;
                 $coop = $period?->floor?->coop;
-                if (!$coop) {
+                if (! $coop) {
                     $syncResults[] = [
                         'id' => $acceptanceId,
                         'status' => 'FAILED',
                     ];
+
                     continue;
                 }
 
@@ -127,11 +126,12 @@ class PeriodSyncService
                     ->where('coop_id', $coop->id)
                     ->exists();
 
-                if (!$hasAssignment) {
+                if (! $hasAssignment) {
                     $syncResults[] = [
                         'id' => $acceptanceId,
                         'status' => 'FORBIDDEN',
                     ];
+
                     continue;
                 }
 

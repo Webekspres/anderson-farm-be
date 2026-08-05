@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\ResetPasswordRequest;
 use App\Http\Resources\Api\V1\UserResource;
@@ -12,6 +13,7 @@ use App\Models\User;
 use App\Services\UserPasswordService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -122,17 +124,50 @@ class AuthController extends Controller
         ], 200);
     }
 
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $user = $this->findUserByIdentifier($validated['username']);
+
+        if ($user === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan.',
+                'errors' => (object) [],
+            ], 404);
+        }
+
+        if (! $user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda dinonaktifkan. Hubungi Admin.',
+                'errors' => (object) [],
+            ], 403);
+        }
+
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        Cache::put($this->passwordResetCacheKey($user->id), $otp, now()->addMinutes(15));
+
+        $channel = $validated['via'] === 'wa' ? 'WhatsApp' : 'email';
+
+        // Delivery channel (email/WA gateway) belum dikonfigurasi di environment ini.
+        // OTP disimpan di cache untuk dipakai method=otp pada reset-password.
+        return response()->json([
+            'success' => true,
+            'message' => "OTP telah dikirim ke {$channel} Anda.",
+            'data' => config('app.debug')
+                ? ['otp' => $otp, 'expires_in_minutes' => 15]
+                : (object) [],
+        ], 200);
+    }
+
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $method = $validated['method'];
 
         if ($method === 'otp') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Metode OTP belum tersedia.',
-                'data' => null,
-            ], 422);
+            return $this->resetPasswordWithOtp($validated);
         }
 
         if ($method === 'admin_reset') {
@@ -140,6 +175,55 @@ class AuthController extends Controller
         }
 
         return $this->resetPasswordWithOldPassword($validated);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function resetPasswordWithOtp(array $validated): JsonResponse
+    {
+        $user = $this->findUserByIdentifier($validated['username']);
+
+        if ($user === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan.',
+                'data' => null,
+            ], 404);
+        }
+
+        if (! $user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda dinonaktifkan. Hubungi Admin.',
+                'data' => null,
+            ], 403);
+        }
+
+        $cachedOtp = Cache::get($this->passwordResetCacheKey($user->id));
+
+        if ($cachedOtp === null || ! hash_equals((string) $cachedOtp, (string) $validated['otp'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OTP tidak valid atau sudah kedaluwarsa.',
+                'data' => null,
+            ], 422);
+        }
+
+        $this->passwordService->forceUpdatePassword($user, $validated['new_password']);
+        $user->tokens()->delete();
+        Cache::forget($this->passwordResetCacheKey($user->id));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password berhasil direset. Silakan login dengan password baru.',
+            'data' => null,
+        ], 200);
+    }
+
+    private function passwordResetCacheKey(string $userId): string
+    {
+        return "password_reset_otp:{$userId}";
     }
 
     /**

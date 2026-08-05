@@ -6,6 +6,36 @@ info:
 security:
   - ApiKey: []
 paths:
+  /api/check:
+    get:
+      tags:
+        - System
+      summary: Health check API
+      description: Endpoint publik untuk memverifikasi bahwa server API berjalan.
+      security: []
+      responses:
+        '200':
+          description: API berjalan dengan baik.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: API Anderson Farm berjalan dengan baik!
+                  data:
+                    type: object
+                    properties:
+                      server_time:
+                        type: string
+                        format: date-time
+                      version:
+                        type: string
+                        example: 1.0.0
   /api/v1/auth/login:
     post:
       tags:
@@ -114,70 +144,71 @@ paths:
                 $ref: '#/components/schemas/GeneralResponse'
         '422':
           description: Validasi gagal (misal token kosong atau format salah)
-  /api/v1/auth/forgot-password:
-    post:
-      tags:
-        - Auth
-      summary: Permintaan reset password (OTP/Link)
-      description: Endpoint publik untuk meminta OTP atau link reset password.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ForgotPasswordRequest'
-            example:
-              username: budi_abk1
-              via: email
-      responses:
-        '200':
-          description: Permintaan reset password berhasil, OTP/link dikirim
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GeneralResponse'
-              example:
-                success: true
-                message: OTP telah dikirim ke email Anda.
-                data: {}
-        '404':
-          description: User tidak ditemukan
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-                message: User tidak ditemukan.
-                errors: {}
-        '422':
-          description: Validasi gagal (input tidak valid)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-                message: Input tidak valid.
-                errors:
-                  username:
-                    - Username wajib diisi.
   /api/v1/auth/reset-password:
     post:
       tags:
         - Auth
-      summary: Submit password baru (dengan OTP)
-      description: Endpoint publik untuk submit password baru menggunakan OTP.
+      summary: Reset password
+      description: |
+        Endpoint untuk reset password dengan beberapa metode:
+        - `old_password`: User mengganti password sendiri (wajib username + current_password + new_password).
+        - `admin_reset`: Admin mereset password user lain (wajib Bearer token admin + user_id + new_password).
+        - `otp`: Belum tersedia (akan mengembalikan 422).
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResetPasswordRequest'
-            example:
-              username: budi_abk1
-              otp: '123456'
-              new_password: PasswordBaru123!
+              oneOf:
+                - type: object
+                  required:
+                    - method
+                    - username
+                    - current_password
+                    - new_password
+                    - new_password_confirmation
+                  properties:
+                    method:
+                      type: string
+                      enum:
+                        - old_password
+                    username:
+                      type: string
+                    current_password:
+                      type: string
+                      format: password
+                    new_password:
+                      type: string
+                      format: password
+                      minLength: 8
+                    new_password_confirmation:
+                      type: string
+                      format: password
+                - type: object
+                  required:
+                    - method
+                    - user_id
+                    - new_password
+                  properties:
+                    method:
+                      type: string
+                      enum:
+                        - admin_reset
+                    user_id:
+                      type: string
+                      format: uuid
+                    new_password:
+                      type: string
+                      format: password
+                      minLength: 8
+                - type: object
+                  required:
+                    - method
+                  properties:
+                    method:
+                      type: string
+                      enum:
+                        - otp
       responses:
         '200':
           description: Password berhasil direset
@@ -185,32 +216,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GeneralResponse'
-              example:
-                success: true
-                message: Password berhasil direset. Silakan login dengan password baru.
-                data: {}
-        '400':
-          description: OTP salah atau sudah kadaluarsa
+        '401':
+          description: Kredensial salah atau unauthenticated (admin_reset)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-                message: OTP salah atau sudah kadaluarsa.
-                errors: {}
+        '403':
+          description: Akun dinonaktifkan atau bukan admin (admin_reset)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
         '422':
-          description: Validasi gagal (input tidak valid)
+          description: Validasi gagal atau metode OTP belum tersedia
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-                message: Input tidak valid.
-                errors:
-                  new_password:
-                    - Password minimal 8 karakter.
   /api/v1/users:
     get:
       tags:
@@ -334,82 +357,12 @@ paths:
                   password:
                     - Password minimal 8 karakter.
   /api/v1/users/{id}:
-    put:
-      tags:
-        - Users
-      summary: Edit profil pekerja (full)
-      description: |
-        Edit seluruh data profil pekerja. Hanya dapat diakses oleh admin dan manager.
-      security:
-        - sanctum: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserCreateRequest'
-            example:
-              username: budi_abk1
-              password: RahasiaPassword123!
-              name: Budi Santoso
-              email: budi@andersonfarm.id
-              phone: '+628123456789'
-              role: abk
-      responses:
-        '200':
-          description: Profil pekerja berhasil diupdate
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-              example:
-                id: user-uuid-1234
-                username: budi_abk1
-                name: Budi Santoso
-                role: abk
-                email: budi@andersonfarm.id
-                phone: '+628123456789'
-                is_active: true
-                created_at: '2024-01-01T12:00:00Z'
-                updated_at: '2024-01-10T12:00:00Z'
-        '400':
-          description: Username/email sudah terdaftar
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-        '401':
-          description: Unauthenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-        '403':
-          description: Forbidden (tidak punya akses)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-        '422':
-          description: Validasi gagal
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
     patch:
       tags:
         - Users
-      summary: Edit parsial profil pekerja
+      summary: Edit profil pekerja
       description: |
-        Edit sebagian data profil pekerja, misal reset/unbind device_id pekerja jika HP hilang. Hanya dapat diakses oleh admin dan manager.
+        Edit data profil pekerja (parsial atau keseluruhan). Hanya dapat diakses oleh admin dan manager.
       security:
         - sanctum: []
       requestBody:
@@ -514,84 +467,6 @@ paths:
                 $ref: '#/components/schemas/ValidationErrorResponse'
               example:
                 success: false
-  /api/v1/profile/change-password:
-    post:
-      tags:
-        - Users
-      summary: Ubah password mandiri
-      description: Ubah password mandiri bagi user yang sedang login.
-      security:
-        - sanctum: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - old_password
-                - new_password
-              properties:
-                old_password:
-                  type: string
-                  format: password
-                  minLength: 8
-                  description: Password lama user
-                  example: RahasiaPassword123!
-                new_password:
-                  type: string
-                  format: password
-                  minLength: 8
-                  description: Password baru user
-                  example: PasswordBaru456!
-            example:
-              old_password: RahasiaPassword123!
-              new_password: PasswordBaru456!
-      responses:
-        '200':
-          description: Password berhasil diubah
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GeneralResponse'
-              example:
-                success: true
-                message: Password berhasil diubah. Silakan login ulang jika diperlukan.
-                data: {}
-        '400':
-          description: Password lama salah
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-                message: Password lama salah.
-                errors:
-                  old_password:
-                    - Password lama tidak sesuai.
-        '401':
-          description: Unauthenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-                message: Token tidak valid.
-                errors: {}
-        '422':
-          description: Validasi gagal (input tidak valid)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-              example:
-                success: false
-                message: Input tidak valid.
-                errors:
-                  new_password:
-                    - Password minimal 8 karakter.
   /api/v1/areas:
     get:
       tags:
@@ -1020,6 +895,129 @@ paths:
           description: Kandang berhasil dihapus
         '404':
           description: Kandang tidak ditemukan
+  /api/v1/coop-floors:
+    get:
+      tags:
+        - Master Data
+      summary: Daftar lantai kandang
+      description: Mengambil daftar lantai kandang dengan dukungan filter dan paginasi.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: coop_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter berdasarkan ID kandang.
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Cari berdasarkan nama lantai.
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Daftar lantai kandang berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoopFloorListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+        - Master Data
+      summary: Buat lantai kandang baru
+      description: Hanya admin yang dapat membuat lantai kandang baru.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoopFloorRequest'
+      responses:
+        '201':
+          description: Lantai kandang berhasil dibuat.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoopFloorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/coop-floors/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags:
+        - Master Data
+      summary: Detail lantai kandang
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: Detail lantai kandang berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoopFloorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags:
+        - Master Data
+      summary: Edit lantai kandang
+      description: Hanya admin yang dapat mengubah data lantai kandang.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoopFloorUpdateRequest'
+      responses:
+        '200':
+          description: Lantai kandang berhasil diperbarui.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoopFloorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags:
+        - Master Data
+      summary: Hapus lantai kandang
+      description: Lantai tidak dapat dihapus jika masih terikat periode produksi aktif.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          $ref: '#/components/responses/GeneralResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          description: Lantai masih terikat periode produksi aktif.
   /api/v1/form-configs:
     post:
       tags:
@@ -1050,7 +1048,7 @@ paths:
   /api/v1/form-configs/{id}:
     parameters:
       - $ref: '#/components/parameters/ResourceId'
-    put:
+    patch:
       tags:
         - Master - Form Config
       summary: Edit Form Config
@@ -1095,6 +1093,47 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
   /api/v1/equipment-types:
+    get:
+      tags:
+        - Master - Equipment
+      summary: Daftar tipe alat
+      description: Mengambil daftar jenis/merk alat fisik dengan dukungan paginasi.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Cari berdasarkan nama.
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+          description: Jumlah per halaman.
+        - in: query
+          name: cursor
+          schema:
+            type: boolean
+          description: Gunakan cursor pagination jika true.
+      responses:
+        '200':
+          description: Daftar tipe alat berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EquipmentTypeResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
     post:
       tags:
         - Master - Equipment
@@ -1124,7 +1163,24 @@ paths:
   /api/v1/equipment-types/{id}:
     parameters:
       - $ref: '#/components/parameters/ResourceId'
-    put:
+    get:
+      tags:
+        - Master - Equipment
+      summary: Detail tipe alat
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: Detail tipe alat berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentTypeResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
       tags:
         - Master - Equipment
       summary: Edit Tipe Alat
@@ -1168,6 +1224,59 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '404':
           $ref: '#/components/responses/NotFoundError'
+  /api/v1/equipment-types/{id}/form-configs:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID tipe alat (equipment type).
+    get:
+      tags:
+        - Master - Equipment
+      summary: Daftar form config tipe alat
+      description: Mengambil pemetaan form config yang terhubung ke tipe alat tertentu.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: Konfigurasi form berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentFormConfigListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      tags:
+        - Master - Equipment
+      summary: Sinkronkan form config tipe alat
+      description: Replace seluruh pemetaan form config untuk tipe alat (bulk sync).
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncEquipmentFormConfigsRequest'
+      responses:
+        '200':
+          description: Pemetaan form berhasil disinkronkan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentFormConfigListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /api/v1/transaction-categories:
     post:
       tags:
@@ -1198,7 +1307,7 @@ paths:
   /api/v1/transaction-categories/{id}:
     parameters:
       - $ref: '#/components/parameters/ResourceId'
-    put:
+    patch:
       tags:
         - Master - Transaction Category
       summary: Edit Kategori Transaksi
@@ -1272,7 +1381,7 @@ paths:
   /api/v1/ovk-items/{id}:
     parameters:
       - $ref: '#/components/parameters/ResourceId'
-    put:
+    patch:
       tags:
         - Master - OVK Item
       summary: Edit OVK Item
@@ -1344,7 +1453,7 @@ paths:
   /api/v1/education-articles/{id}:
     parameters:
       - $ref: '#/components/parameters/ResourceId'
-    put:
+    patch:
       tags:
         - Master - Education Article
       summary: Edit Artikel Edukasi
@@ -1412,7 +1521,7 @@ paths:
   /api/v1/price-references/{id}:
     parameters:
       - $ref: '#/components/parameters/ResourceId'
-    put:
+    patch:
       tags:
         - Master - Price Reference
       summary: Edit Referensi Harga
@@ -1482,7 +1591,7 @@ paths:
   /api/v1/report-templates/{id}:
     parameters:
       - $ref: '#/components/parameters/ResourceId'
-    put:
+    patch:
       tags:
         - Master - Report Template
       summary: Edit Template Laporan
@@ -1527,6 +1636,41 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
   /api/v1/coops/{id}/documents:
+    get:
+      tags:
+        - Setup - Coop Document
+      summary: Daftar dokumen SOP kandang
+      description: Mengambil seluruh dokumen SOP/Panduan yang terdaftar pada kandang.
+      security:
+        - sanctum: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID kandang (coop).
+      responses:
+        '200':
+          description: Daftar dokumen berhasil dimuat.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CoopDocumentResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
     post:
       tags:
         - Setup - Coop Document
@@ -1553,6 +1697,36 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /api/v1/coops/{id}/documents/{document_id}:
+    delete:
+      tags:
+        - Setup - Coop Document
+      summary: Hapus dokumen SOP kandang
+      description: Soft delete dokumen SOP/Panduan dari kandang.
+      security:
+        - sanctum: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID kandang (coop).
+        - in: path
+          name: document_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID dokumen yang akan dihapus.
+      responses:
+        '200':
+          $ref: '#/components/responses/GeneralResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         '404':
           $ref: '#/components/responses/NotFoundError'
   /api/v1/coops/{id}/user-assignments:
@@ -1646,6 +1820,41 @@ paths:
         '403':
           $ref: '#/components/responses/ForbiddenError'
   /api/v1/coops/{id}/equipments:
+    get:
+      tags:
+        - Setup - Coop Equipment
+      summary: Daftar alat fisik kandang
+      description: Mengambil seluruh alat fisik yang terdaftar pada kandang.
+      security:
+        - sanctum: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID kandang (coop).
+      responses:
+        '200':
+          description: Daftar alat fisik berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CoopEquipmentResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
     post:
       tags:
         - Setup - Coop Equipment
@@ -1674,16 +1883,30 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+  /api/v1/coops/{id}/equipments/{equipment_id}:
     delete:
       tags:
         - Setup - Coop Equipment
       summary: Cabut alat fisik dari kandang
       description: |
-        Melakukan soft delete (update deleted_at) pada alat fisik yang dicabut dari kandang. Backend WAJIB menonaktifkan/menghapus data anak di coop_form_assignments yang terikat dengan alat ini.
+        Melakukan soft delete pada alat fisik yang dicabut dari kandang.
       security:
         - sanctum: []
       parameters:
-        - $ref: '#/components/parameters/ResourceId'
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID kandang (coop).
+        - in: path
+          name: equipment_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID alat fisik yang akan dihapus.
       responses:
         '200':
           $ref: '#/components/responses/GeneralResponse'
@@ -1723,6 +1946,34 @@ paths:
                     $ref: '#/components/schemas/PeriodResponse'
         '422':
           description: Validasi gagal
+  /api/v1/periods/{id}:
+    patch:
+      tags:
+        - Periode Ternak
+      summary: Edit periode ternak
+      security:
+        - sanctum: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target_weight:
+                  type: number
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Periode berhasil diupdate
   /api/v1/periods/{id}/investors:
     post:
       tags:
@@ -1924,7 +2175,7 @@ paths:
       responses:
         '201':
           description: Kontrak berhasil dibuat
-  /api/v1/contracts:
+  /api/v1/contracts/{id}:
     get:
       tags:
         - Periode Ternak
@@ -2115,6 +2366,74 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '404':
           $ref: '#/components/responses/NotFoundError'
+  /api/v1/export/ovk-usages:
+    get:
+      tags:
+        - Files
+      summary: Export Excel pemakaian OVK
+      description: |
+        Menghasilkan file Excel (.xlsx) rekap pemakaian obat, vaksin, dan kimia (OVK)
+        untuk periode produksi tertentu.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: period_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID periode ternak yang datanya ingin diekspor.
+      responses:
+        '200':
+          description: File Excel pemakaian OVK berhasil dibuat dan dikirim sebagai stream.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/export/bop-details:
+    get:
+      tags:
+        - Files
+      summary: Export Excel detail BOP
+      description: |
+        Menghasilkan file Excel (.xlsx) detail biaya operasional pakan (BOP)
+        untuk periode produksi tertentu.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: period_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID periode ternak yang datanya ingin diekspor.
+      responses:
+        '200':
+          description: File Excel detail BOP berhasil dibuat dan dikirim sebagai stream.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /api/v1/export/harvests:
     get:
       tags:
@@ -2257,52 +2576,6 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '422':
           description: Gagal validasi isi file Excel (misal format angka salah atau user tidak ditemukan).
-  /api/v1/export/rhpp:
-    get:
-      tags:
-        - Files
-      summary: Export Excel/PDF RHPP
-      description: |
-        Menghasilkan file Excel (.xlsx) atau PDF (.pdf) yang berisi perhitungan detail RHPP untuk periode ternak tertentu sebelum difinalisasi.
-        Data mencakup rekapitulasi biaya, pendapatan, dan perhitungan RHPP berdasarkan data produksi dan keuangan yang ada di periode tersebut.
-      security:
-        - sanctum: []
-      parameters:
-        - in: query
-          name: period_id
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: ID periode ternak yang datanya ingin diekspor.
-        - in: query
-          name: file_type
-          required: true
-          schema:
-            type: string
-            enum:
-              - xlsx
-              - pdf
-          description: Jenis file yang ingin dihasilkan (Excel atau PDF).
-      responses:
-        '200':
-          description: File RHPP berhasil dibuat dan dikirim sebagai stream.
-          content:
-            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
-              schema:
-                type: string
-                format: binary
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          description: Data untuk periode tersebut tidak ditemukan atau perhitungan RHPP belum tersedia.
-          $ref: '#/components/responses/NotFoundError'
   /api/v1/periods/{id}/close:
     post:
       tags:
@@ -2360,19 +2633,118 @@ paths:
           description: RHPP belum final atau tidak valid
         '403':
           description: Akses ditolak (hanya admin)
-  /api/v1/investor/dashboard:
+  /api/v1/approvals/daily-activities:
     get:
       tags:
-        - Bisnis
-      summary: Portal dashboard investor
-      description: Rekap ROI super ringan tanpa SQLite.
+        - Approval
+      summary: Daftar laporan harian menunggu approval
+      description: Hanya Manager atau Admin yang dapat mengakses daftar laporan harian yang menunggu persetujuan.
+      security:
+        - sanctum: []
+      parameters:
+        - in: query
+          name: period_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter berdasarkan periode produksi.
+        - in: query
+          name: coop_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter berdasarkan kandang.
+        - in: query
+          name: date_from
+          schema:
+            type: string
+            format: date
+          description: Filter tanggal awal.
+        - in: query
+          name: date_to
+          schema:
+            type: string
+            format: date
+          description: Filter tanggal akhir.
+        - in: query
+          name: business_status
+          schema:
+            type: string
+          description: Filter status bisnis. Default `submitted`.
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: Jumlah data per halaman.
       responses:
         '200':
-          description: Data dashboard investor berhasil diambil.
+          description: Daftar laporan menunggu approval berhasil diambil.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GeneralResponse'
+                $ref: '#/components/schemas/DailyActivityApprovalListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /api/v1/approvals/daily-activities/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: UUID laporan harian (daily activity header).
+    get:
+      tags:
+        - Approval
+      summary: Detail laporan harian untuk approval
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: Detail laporan harian berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyActivityApprovalResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      tags:
+        - Approval
+      summary: Proses approval laporan harian
+      description: Manager atau Admin menyetujui atau menolak laporan harian.
+      security:
+        - sanctum: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DailyActivityApprovalReviewRequest'
+      responses:
+        '200':
+          description: Laporan harian berhasil diproses.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyActivityApprovalResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /api/v1/system/check-version:
     get:
       tags:
@@ -2425,6 +2797,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/v1/notifications/read-all:
+    patch:
+      tags:
+        - System - Notifications
+      summary: Tandai semua notifikasi dibaca
+      description: Mass update untuk menandai seluruh notifikasi unread milik user sesi aktif sebagai sudah dibaca.
+      security:
+        - sanctum: []
+      responses:
+        '200':
+          description: Semua notifikasi berhasil ditandai sebagai dibaca.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
   /api/v1/notifications/{id}/read:
@@ -3156,24 +3545,35 @@ components:
     ResetPasswordRequest:
       type: object
       required:
-        - username
-        - otp
-        - new_password
+        - method
       properties:
+        method:
+          type: string
+          enum:
+            - old_password
+            - admin_reset
+            - otp
+          description: Metode reset password.
         username:
           type: string
-          description: Username user
-          example: budi_abk1
-        otp:
+          description: Wajib untuk method old_password.
+        current_password:
           type: string
-          description: Kode OTP yang diterima user
-          example: '123456'
+          format: password
+          description: Wajib untuk method old_password.
         new_password:
           type: string
           format: password
           minLength: 8
-          description: Password baru user
-          example: PasswordBaru123!
+          description: Wajib untuk method old_password dan admin_reset.
+        new_password_confirmation:
+          type: string
+          format: password
+          description: Wajib untuk method old_password.
+        user_id:
+          type: string
+          format: uuid
+          description: Wajib untuk method admin_reset.
     UserCreateRequest:
       type: object
       required:
@@ -3653,6 +4053,130 @@ components:
         is_active:
           type: boolean
           example: true
+    CoopFloor:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+          description: Server ID numerik.
+        uuid:
+          type: string
+          format: uuid
+        coop_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        capacity:
+          type: integer
+        sync_status:
+          type: string
+        created_at_client:
+          type: string
+          format: date-time
+          nullable: true
+        created_at_server:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at_client:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at_server:
+          type: string
+          format: date-time
+          nullable: true
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        coop:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              nullable: true
+            uuid:
+              type: string
+              format: uuid
+            name:
+              type: string
+            coop_type:
+              type: string
+    CoopFloorListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/CoopFloor'
+            total:
+              type: integer
+            per_page:
+              type: integer
+            current_page:
+              type: integer
+            last_page:
+              type: integer
+            next_cursor:
+              type: string
+              nullable: true
+            prev_cursor:
+              type: string
+              nullable: true
+            has_next:
+              type: boolean
+            has_prev:
+              type: boolean
+    CoopFloorRequest:
+      type: object
+      required:
+        - coop_id
+        - name
+        - capacity
+      properties:
+        coop_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Lantai 1
+        capacity:
+          type: integer
+          minimum: 1
+          example: 10000
+    CoopFloorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/CoopFloor'
+    CoopFloorUpdateRequest:
+      type: object
+      properties:
+        coop_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        capacity:
+          type: integer
+          minimum: 1
     OfflineMetadataRequest:
       type: object
       required:
@@ -3759,6 +4283,42 @@ components:
           allOf:
             - $ref: '#/components/schemas/EquipmentTypeRequest'
             - $ref: '#/components/schemas/OfflineMetadataResponse'
+    EquipmentFormAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        category:
+          type: string
+        key_name:
+          type: string
+        ui_metadata:
+          type: object
+          additionalProperties: true
+    EquipmentFormConfigListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EquipmentFormAssignment'
+    SyncEquipmentFormConfigsRequest:
+      type: object
+      required:
+        - form_config_ids
+      properties:
+        form_config_ids:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
     TransactionCategoryBase:
       type: object
       required:
@@ -4249,6 +4809,122 @@ components:
               type: string
               format: uuid
               example: period-uuid-123
+    DailyActivityHeader:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        server_id:
+          type: integer
+          nullable: true
+        version:
+          type: integer
+        form_schema_version:
+          type: string
+          nullable: true
+        period_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date-time
+          nullable: true
+        age_days:
+          type: integer
+          nullable: true
+        mortality_count:
+          type: integer
+          nullable: true
+        cull_count:
+          type: integer
+          nullable: true
+        feed_consumption_kg:
+          type: number
+        average_weight:
+          type: number
+          nullable: true
+        business_status:
+          type: string
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+        rejection_reason:
+          type: string
+          nullable: true
+        sync_status:
+          type: string
+        created_at_client:
+          type: string
+          format: date-time
+          nullable: true
+        created_at_server:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at_client:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at_server:
+          type: string
+          format: date-time
+          nullable: true
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+    DailyActivityApprovalListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/DailyActivityHeader'
+            total:
+              type: integer
+            per_page:
+              type: integer
+            current_page:
+              type: integer
+            last_page:
+              type: integer
+    DailyActivityApprovalResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/DailyActivityHeader'
+    DailyActivityApprovalReviewRequest:
+      type: object
+      required:
+        - action
+      properties:
+        action:
+          type: string
+          enum:
+            - approve
+            - reject
+        rejection_reason:
+          type: string
+          maxLength: 1000
+          description: Wajib diisi jika action adalah reject.
     CheckVersionResponse:
       type: object
       properties:
@@ -4393,18 +5069,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
   responses:
-    ValidationError:
-      description: Validasi gagal (input tidak valid)
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ValidationErrorResponse'
-          example:
-            success: false
-            message: Input tidak valid.
-            errors:
-              name:
-                - Field ini wajib diisi.
     UnauthorizedError:
       description: Unauthenticated
       content:
@@ -4425,6 +5089,18 @@ components:
             success: false
             message: Anda tidak memiliki hak akses.
             errors: {}
+    ValidationError:
+      description: Validasi gagal (input tidak valid)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+          example:
+            success: false
+            message: Input tidak valid.
+            errors:
+              name:
+                - Field ini wajib diisi.
     NotFoundError:
       description: Resource tidak ditemukan
       content:

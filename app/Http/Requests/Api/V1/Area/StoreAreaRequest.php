@@ -1,5 +1,4 @@
 <?php
-// app/Http/Requests/Api/V1/Area/StoreAreaRequest.php
 
 namespace App\Http\Requests\Api\V1\Area;
 
@@ -12,13 +11,22 @@ class StoreAreaRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('manager_id') && $this->user() !== null) {
+            $this->merge([
+                'manager_id' => $this->user()->id,
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', 'in:KANDANG,KEBUN,LAHAN'], // Enum, sesuaikan jika ada tambahan
+            'type' => ['required', 'string', 'in:KANDANG,KEBUN,LAHAN'],
             'size_m2' => ['nullable', 'numeric', 'min:0'],
-            'manager_id' => ['nullable', 'uuid', 'exists:users,id'],
+            'manager_id' => ['required', 'uuid', 'exists:users,id'],
         ];
     }
 }

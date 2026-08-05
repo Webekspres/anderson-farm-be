@@ -161,18 +161,55 @@ forgot-password:
 reset-password:
   post:
     tags: [Auth]
-    summary: Submit password baru (dengan OTP)
-    description: Endpoint publik untuk submit password baru menggunakan OTP.
+    summary: Reset password
+    description: |
+      Endpoint untuk reset password dengan beberapa metode:
+      - `old_password`: User mengganti password sendiri (wajib username + current_password + new_password).
+      - `admin_reset`: Admin mereset password user lain (wajib Bearer token admin + user_id + new_password).
+      - `otp`: Belum tersedia (akan mengembalikan 422).
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: "../openapi.yaml#/components/schemas/ResetPasswordRequest"
-          example:
-            username: "budi_abk1"
-            otp: "123456"
-            new_password: "PasswordBaru123!"
+            oneOf:
+              - type: object
+                required: [method, username, current_password, new_password, new_password_confirmation]
+                properties:
+                  method:
+                    type: string
+                    enum: [old_password]
+                  username:
+                    type: string
+                  current_password:
+                    type: string
+                    format: password
+                  new_password:
+                    type: string
+                    format: password
+                    minLength: 8
+                  new_password_confirmation:
+                    type: string
+                    format: password
+              - type: object
+                required: [method, user_id, new_password]
+                properties:
+                  method:
+                    type: string
+                    enum: [admin_reset]
+                  user_id:
+                    type: string
+                    format: uuid
+                  new_password:
+                    type: string
+                    format: password
+                    minLength: 8
+              - type: object
+                required: [method]
+                properties:
+                  method:
+                    type: string
+                    enum: [otp]
     responses:
       "200":
         description: Password berhasil direset
@@ -180,29 +217,21 @@ reset-password:
           application/json:
             schema:
               $ref: "../components/general.yaml#/GeneralResponse"
-            example:
-              success: true
-              message: "Password berhasil direset. Silakan login dengan password baru."
-              data: {}
-      "400":
-        description: OTP salah atau sudah kadaluarsa
+      "401":
+        description: Kredensial salah atau unauthenticated (admin_reset)
         content:
           application/json:
             schema:
               $ref: "../components/general.yaml#/ValidationErrorResponse"
-            example:
-              success: false
-              message: "OTP salah atau sudah kadaluarsa."
-              errors: {}
+      "403":
+        description: Akun dinonaktifkan atau bukan admin (admin_reset)
+        content:
+          application/json:
+            schema:
+              $ref: "../components/general.yaml#/ValidationErrorResponse"
       "422":
-        description: Validasi gagal (input tidak valid)
+        description: Validasi gagal atau metode OTP belum tersedia
         content:
           application/json:
             schema:
               $ref: "../components/general.yaml#/ValidationErrorResponse"
-            example:
-              success: false
-              message: "Input tidak valid."
-              errors:
-                new_password:
-                  - "Password minimal 8 karakter."

@@ -53,9 +53,26 @@
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
         ],
+        "serve:mobile": [
+            "Composer\\Config::disableProcessTimeout",
+            "bash scripts/serve-mobile.sh"
+        ],
+        "serve:mobile:queue": [
+            "Composer\\Config::disableProcessTimeout",
+            "bash scripts/serve-mobile.sh --with-queue"
+        ],
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "seed:minimal": [
+            "@php artisan db:seed --class=Database\\Seeders\\MinimalDemoSeeder --no-interaction"
+        ],
+        "seed:full": [
+            "@php artisan db:seed --class=Database\\Seeders\\FullDemoSeeder --no-interaction"
+        ],
+        "seed:fresh": [
+            "@php artisan migrate:fresh --seed --no-interaction"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

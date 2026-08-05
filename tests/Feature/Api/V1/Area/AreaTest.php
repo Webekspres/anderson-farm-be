@@ -1,26 +1,26 @@
 <?php
+
 // tests/Feature/Api/V1/Area/AreaTest.php
 
 declare(strict_types=1);
 
-use App\Models\User;
 use App\Models\Area;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+
 use function Pest\Laravel\actingAs;
-use function Pest\Laravel\postJson;
+use function Pest\Laravel\assertSoftDeleted;
+use function Pest\Laravel\deleteJson;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\patchJson;
-use function Pest\Laravel\deleteJson;
-use function Pest\Laravel\assertSoftDeleted;
+use function Pest\Laravel\postJson;
 
 const ENDPOINT = '/api/v1/areas';
 uses(RefreshDatabase::class);
 
-
 beforeEach(function () {
     // Setup sebelum setiap test jika diperlukan
 });
-
 
 it('lists areas with default page pagination', function () {
     $user = User::factory()->create();
@@ -31,7 +31,7 @@ it('lists areas with default page pagination', function () {
         ->assertJsonStructure([
             'success',
             'message',
-            'data' => ['items', 'total', 'per_page', 'current_page', 'last_page']
+            'data' => ['items', 'total', 'per_page', 'current_page', 'last_page'],
         ]);
 });
 
@@ -39,11 +39,11 @@ it('lists areas with cursor pagination', function () {
     $user = User::factory()->create();
     actingAs($user);
     Area::factory()->count(20)->create();
-    $first = getJson(ENDPOINT . '?limit=5');
+    $first = getJson(ENDPOINT.'?limit=5');
     $first->assertOk()->assertJsonStructure(['data' => ['items', 'next_cursor', 'prev_cursor', 'has_next', 'has_prev']]);
     $nextCursor = $first->json('data.next_cursor');
     if ($nextCursor) {
-        $next = getJson(ENDPOINT . '?limit=5&cursor=' . $nextCursor);
+        $next = getJson(ENDPOINT.'?limit=5&cursor='.$nextCursor);
         $next->assertOk();
     }
 });
@@ -63,6 +63,45 @@ it('successfully creates an area', function () {
         ->assertJsonPath('data.name', 'Area Baru');
 });
 
+it('defaults manager_id to the authenticated user when omitted', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $response = postJson(ENDPOINT, [
+        'name' => 'Area Tanpa Manager',
+        'type' => 'KANDANG',
+    ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.name', 'Area Tanpa Manager')
+        ->assertJsonPath('data.manager_id', $user->id);
+
+    $this->assertDatabaseHas('areas', [
+        'name' => 'Area Tanpa Manager',
+        'manager_id' => $user->id,
+    ]);
+});
+
+it('allows the same user to manage multiple areas', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    postJson(ENDPOINT, [
+        'name' => 'Area Satu',
+        'type' => 'KANDANG',
+    ])->assertCreated();
+
+    postJson(ENDPOINT, [
+        'name' => 'Area Dua',
+        'type' => 'KEBUN',
+    ])->assertCreated()
+        ->assertJsonPath('data.name', 'Area Dua')
+        ->assertJsonPath('data.manager_id', $user->id);
+
+    expect(Area::query()->where('manager_id', $user->id)->count())->toBe(2);
+});
+
 it('fails to create area with invalid type', function () {
     $user = User::factory()->create();
     actingAs($user);
@@ -80,7 +119,7 @@ it('shows a single area by uuid', function () {
     actingAs($user);
     $area = Area::factory()->create(['name' => 'Area Tampil']);
 
-    $response = getJson(ENDPOINT . '/' . $area->id);
+    $response = getJson(ENDPOINT.'/'.$area->id);
 
     $response->assertOk()
         ->assertJsonPath('success', true)
@@ -92,14 +131,14 @@ it('returns 404 when showing a non-existent area', function () {
     $user = User::factory()->create();
     actingAs($user);
 
-    getJson(ENDPOINT . '/' . fake()->uuid())->assertNotFound();
+    getJson(ENDPOINT.'/'.fake()->uuid())->assertNotFound();
 });
 
 it('returns 422 when area id is not a valid uuid', function () {
     $user = User::factory()->create();
     actingAs($user);
 
-    getJson(ENDPOINT . '/bukan-uuid')->assertStatus(422)
+    getJson(ENDPOINT.'/bukan-uuid')->assertStatus(422)
         ->assertJsonValidationErrors(['area']);
 });
 
@@ -107,7 +146,7 @@ it('updates only the name of an area', function () {
     $user = User::factory()->create();
     actingAs($user);
     $area = Area::factory()->create();
-    $response = patchJson(ENDPOINT . '/' . $area->id, [
+    $response = patchJson(ENDPOINT.'/'.$area->id, [
         'name' => 'Nama Baru',
     ]);
     $response->assertOk()
@@ -118,7 +157,7 @@ it('soft deletes an area', function () {
     $user = User::factory()->create();
     actingAs($user);
     $area = Area::factory()->create();
-    $response = deleteJson(ENDPOINT . '/' . $area->id);
+    $response = deleteJson(ENDPOINT.'/'.$area->id);
     $response->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data', null);
@@ -130,11 +169,11 @@ it('returns 401 if not authenticated', function () {
     // GET index
     getJson(ENDPOINT)->assertUnauthorized();
     // GET show
-    getJson(ENDPOINT . '/' . $area->id)->assertUnauthorized();
+    getJson(ENDPOINT.'/'.$area->id)->assertUnauthorized();
     // POST
     postJson(ENDPOINT, [])->assertUnauthorized();
     // PATCH
-    patchJson(ENDPOINT . '/' . $area->id, [])->assertUnauthorized();
+    patchJson(ENDPOINT.'/'.$area->id, [])->assertUnauthorized();
     // DELETE
-    deleteJson(ENDPOINT . '/' . $area->id)->assertUnauthorized();
+    deleteJson(ENDPOINT.'/'.$area->id)->assertUnauthorized();
 });

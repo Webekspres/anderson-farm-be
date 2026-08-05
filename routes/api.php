@@ -24,8 +24,11 @@ use App\Http\Controllers\Api\V1\FcmTokenController;
 use App\Http\Controllers\Api\V1\FinanceSyncController;
 use App\Http\Controllers\Api\V1\FormConfigController;
 use App\Http\Controllers\Api\V1\HarvestExportController;
+use App\Http\Controllers\Api\V1\InvestorDashboardController;
+use App\Http\Controllers\Api\V1\InvestorPeriodController;
 use App\Http\Controllers\Api\V1\MaintenanceSyncController;
 use App\Http\Controllers\Api\V1\MasterDataSyncController;
+use App\Http\Controllers\Api\V1\MonitoringController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OvkExportController;
 use App\Http\Controllers\Api\V1\OvkItemController;
@@ -40,6 +43,7 @@ use App\Http\Controllers\Api\V1\PriceReferenceController;
 use App\Http\Controllers\Api\V1\ReportTemplateController;
 use App\Http\Controllers\Api\V1\RhppActionController;
 use App\Http\Controllers\Api\V1\RhppDocumentController;
+use App\Http\Controllers\Api\V1\RhppExportController;
 use App\Http\Controllers\Api\V1\RhppSyncController;
 use App\Http\Controllers\Api\V1\SalaryExportController;
 use App\Http\Controllers\Api\V1\SalaryImportController;
@@ -56,6 +60,8 @@ Route::get('/check', [CheckController::class, 'index']);
 Route::prefix('v1')->group(function () {
 
     Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])
+        ->middleware('throttle:5,1');
     Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])
         ->middleware('throttle:10,1');
 
@@ -125,6 +131,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('/coops/{coop}/equipments/{equipment}', [CoopEquipmentController::class, 'destroy']);
 
         // Bulk assignment pekerja ke kandang
+        Route::get('/coops/{coop}/user-assignments', [CoopUserAssignmentController::class, 'index']);
         Route::post('/coops/{coop}/user-assignments', [CoopUserAssignmentController::class, 'sync']);
         Route::post('/coops/{coop}/form-assignments', SyncCoopFormAssignmentController::class);
 
@@ -132,6 +139,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/periods', [PeriodController::class, 'store']);
         Route::prefix('periods/{period_id}')->group(function () {
             Route::patch('/', [PeriodController::class, 'update']);
+            Route::get('/investors', [PeriodInvestorController::class, 'index']);
             Route::post('/investors', [PeriodInvestorController::class, 'sync']);
             // Bulk sync & get form assignments ke periode
             Route::get('/form-assignments', [PeriodFormAssignmentController::class, 'index']);
@@ -148,6 +156,7 @@ Route::prefix('v1')->group(function () {
             // Period action endpoints
             Route::post('/close', [PeriodActionController::class, 'close']);
             Route::post('/rhpp-documents', [RhppDocumentController::class, 'store']);
+            Route::post('/rhpp/generate', [RhppDocumentController::class, 'generate']);
         });
 
         Route::post('/rhpps/{period_id}/publish', [RhppActionController::class, 'publish']);
@@ -158,7 +167,15 @@ Route::prefix('v1')->group(function () {
         Route::get('/export/harvests', [HarvestExportController::class, 'show']);
         Route::get('/export/evaluations', [EvaluationExportController::class, 'show']);
         Route::get('/export/template-salary', [SalaryExportController::class, 'show']);
+        Route::get('/export/rhpp', [RhppExportController::class, 'show']);
         Route::post('/import/salary', [SalaryImportController::class, 'store']);
+
+        Route::get('/investor/dashboard', InvestorDashboardController::class);
+        Route::get('/investor/periods/{period_id}', [InvestorPeriodController::class, 'show']);
+
+        // Monitoring & KPI
+        Route::get('/monitoring/kpi', [MonitoringController::class, 'kpi']);
+        Route::get('/monitoring/deviations', [MonitoringController::class, 'deviations']);
 
         // Sync endpoints (Offline-First)
         Route::prefix('sync')->group(function () {

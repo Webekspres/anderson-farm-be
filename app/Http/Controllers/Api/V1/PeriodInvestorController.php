@@ -12,11 +12,36 @@ use Illuminate\Support\Facades\DB;
 
 class PeriodInvestorController extends Controller
 {
+    public function index($period_id): JsonResponse
+    {
+        $period = ProductionPeriod::find($period_id);
+
+        if (! $period) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Periode tidak ditemukan.',
+                'data' => null,
+            ], 404);
+        }
+
+        $items = PeriodInvestor::query()
+            ->with('user:id,name')
+            ->where('period_id', $period_id)
+            ->orderByDesc('created_at_client')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar investor periode berhasil diambil.',
+            'data' => PeriodInvestorResource::collection($items),
+        ]);
+    }
+
     public function sync(SyncPeriodInvestorRequest $request, $period_id): JsonResponse
     {
         $validated = $request->validated();
         $period = ProductionPeriod::find($period_id);
-        if (!$period) {
+        if (! $period) {
             return response()->json([
                 'success' => false,
                 'message' => 'Periode tidak ditemukan.',
@@ -42,6 +67,7 @@ class PeriodInvestorController extends Controller
                     'updated_at_client' => $now,
                 ]);
             }
+
             return $created;
         });
 
