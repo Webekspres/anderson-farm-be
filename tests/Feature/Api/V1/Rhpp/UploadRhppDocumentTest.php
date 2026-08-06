@@ -21,14 +21,14 @@ uses(RefreshDatabase::class);
  */
 function createPeriodWithStatus(string $status, ?User $pic = null): ProductionPeriod
 {
-    $coop  = Coop::factory()->create();
+    $coop = Coop::factory()->create();
     $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
-    $pic   ??= User::factory()->create();
+    $pic ??= User::factory()->create();
 
     return ProductionPeriod::factory()->create([
         'floor_id' => $floor->id,
-        'pic_id'   => $pic->id,
-        'status'   => $status,
+        'pic_id' => $pic->id,
+        'status' => $status,
     ]);
 }
 
@@ -46,9 +46,9 @@ function fakePdf(string $name = 'rhpp-final.pdf'): UploadedFile
 function rhppPayload(array $overrides = []): array
 {
     return array_merge([
-        'total_income'  => 15000000,
+        'total_income' => 15000000,
         'total_expense' => 10000000,
-        'net_profit'    => 5000000,
+        'net_profit' => 5000000,
     ], $overrides);
 }
 
@@ -59,13 +59,14 @@ function rhppPayload(array $overrides = []): array
 describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
 
     beforeEach(function () {
+        config(['filesystems.uploads' => 'public']);
         Storage::fake('public');
     });
 
     // ── Test 1: Auth Fail — role pic mendapat 403 ──
 
     it('Test 1 — Role pic mendapat 403 Forbidden', function () {
-        $pic    = User::factory()->create(['role' => 'pic']);
+        $pic = User::factory()->create(['role' => 'pic']);
         $period = createPeriodWithStatus('completed', $pic);
 
         $response = $this->actingAs($pic)->postJson(
@@ -78,7 +79,7 @@ describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
     });
 
     it('Test 1b — Role abk mendapat 403 Forbidden', function () {
-        $abk    = User::factory()->create(['role' => 'abk']);
+        $abk = User::factory()->create(['role' => 'abk']);
         $period = createPeriodWithStatus('completed');
 
         $response = $this->actingAs($abk)->postJson(
@@ -91,7 +92,7 @@ describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
 
     it('Test 1c — Role investor mendapat 403 Forbidden', function () {
         $investor = User::factory()->create(['role' => 'investor']);
-        $period   = createPeriodWithStatus('completed');
+        $period = createPeriodWithStatus('completed');
 
         $response = $this->actingAs($investor)->postJson(
             "/api/v1/periods/{$period->id}/rhpp-documents",
@@ -105,7 +106,7 @@ describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
 
     it('Test 2 — Manager mendapat 400 jika periode masih active', function () {
         $manager = User::factory()->create(['role' => 'manager']);
-        $period  = createPeriodWithStatus('active');
+        $period = createPeriodWithStatus('active');
 
         $response = $this->actingAs($manager)->postJson(
             "/api/v1/periods/{$period->id}/rhpp-documents",
@@ -124,15 +125,15 @@ describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
 
     it('Test 3 — Manager berhasil upload dokumen RHPP ke periode completed', function () {
         $manager = User::factory()->create(['role' => 'manager']);
-        $period  = createPeriodWithStatus('completed');
-        $pdf     = fakePdf('rhpp-final.pdf');
+        $period = createPeriodWithStatus('completed');
+        $pdf = fakePdf('rhpp-final.pdf');
 
         $response = $this->actingAs($manager)->postJson(
             "/api/v1/periods/{$period->id}/rhpp-documents",
             array_merge(rhppPayload([
-                'total_income'  => 20000000,
+                'total_income' => 20000000,
                 'total_expense' => 12000000,
-                'net_profit'    => 8000000,
+                'net_profit' => 8000000,
             ]), ['document' => $pdf])
         );
 
@@ -146,17 +147,17 @@ describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
 
         // Assert Rhpp terbuat di DB dengan angka yang benar
         $this->assertDatabaseHas('rhpps', [
-            'period_id'      => $period->id,
-            'total_income'   => 20000000,
-            'total_expense'  => 12000000,
-            'net_profit'     => 8000000,
+            'period_id' => $period->id,
+            'total_income' => 20000000,
+            'total_expense' => 12000000,
+            'net_profit' => 8000000,
             'publish_status' => 'DRAFT',
         ]);
 
         // Assert RhppDocument terbuat
         $rhppId = $response->json('data.rhpp_id');
         $this->assertDatabaseHas('rhpp_documents', [
-            'Rhpp_id'   => $rhppId,
+            'Rhpp_id' => $rhppId,
             'file_type' => 'pdf',
         ]);
 
@@ -165,14 +166,15 @@ describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
         expect($document->name)->toContain($period->period_code);
 
         // Assert file benar-benar tersimpan di fake storage
-        Storage::disk('public')->assertExists("rhpp-documents/{$period->id}/" . $pdf->hashName());
+        expect($document->file_path_local)->toStartWith("rhpp/{$period->id}/");
+        Storage::disk('public')->assertExists($document->file_path_local);
     });
 
     // ── Test 4: Upsert — upload ulang tidak membuat Rhpp duplikat ──
 
     it('Test 4 — Upload kedua memperbarui angka Rhpp tanpa membuat duplikat', function () {
         $manager = User::factory()->create(['role' => 'manager']);
-        $period  = createPeriodWithStatus('completed');
+        $period = createPeriodWithStatus('completed');
 
         // Upload pertama
         $this->actingAs($manager)->postJson(
@@ -194,7 +196,7 @@ describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
 
         // Angka Rhpp harus yang terbaru
         $this->assertDatabaseHas('rhpps', [
-            'period_id'  => $period->id,
+            'period_id' => $period->id,
             'net_profit' => 9000000,
         ]);
     });
@@ -203,7 +205,7 @@ describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
 
     it('Validasi: mengembalikan 422 jika field numerik tidak ada', function () {
         $manager = User::factory()->create(['role' => 'manager']);
-        $period  = createPeriodWithStatus('completed');
+        $period = createPeriodWithStatus('completed');
 
         $response = $this->actingAs($manager)->postJson(
             "/api/v1/periods/{$period->id}/rhpp-documents",
@@ -217,7 +219,7 @@ describe('POST /api/v1/periods/{id}/rhpp-documents', function () {
 
     it('Validasi: mengembalikan 422 jika dokumen bukan PDF', function () {
         $manager = User::factory()->create(['role' => 'manager']);
-        $period  = createPeriodWithStatus('completed');
+        $period = createPeriodWithStatus('completed');
 
         $fakeImage = UploadedFile::fake()->image('photo.jpg');
 

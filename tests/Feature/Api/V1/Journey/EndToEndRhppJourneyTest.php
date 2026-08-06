@@ -24,6 +24,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('public');
+    config(['filesystems.uploads' => 'public']);
 
     // ── Infrastructure ──
     $this->farm = Farm::factory()->create();
