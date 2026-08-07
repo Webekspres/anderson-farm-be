@@ -1,22 +1,20 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\User;
 
 beforeEach(function () {
+    config(['filesystems.uploads' => 'public']);
     Storage::fake('public');
 });
 
 describe('Upload API', function () {
-    // Helper: Auth user
     function authUser()
     {
         return User::factory()->create();
     }
 
-    // POST: Happy Path
     it('successfully uploads an image', function () {
         $user = authUser();
         $file = UploadedFile::fake()->image('test.jpg');
@@ -28,13 +26,26 @@ describe('Upload API', function () {
         $response->assertJsonStructure([
             'success',
             'message',
-            'data' => ['image_url', 'image_path_local']
+            'data' => ['image_url', 'image_path_local'],
         ]);
         $path = $response->json('data.image_path_local');
+        expect($path)->toStartWith('photos/'.now()->format('Y/m').'/');
         Storage::disk('public')->assertExists($path);
     });
 
-    // POST: Edge Case - folder tidak valid
+    it('stores contracts under contracts/YYYY/MM prefix', function () {
+        $user = authUser();
+        $file = UploadedFile::fake()->create('kontrak.pdf', 100, 'application/pdf');
+        $response = $this->actingAs($user)->postJson('/api/v1/uploads', [
+            'file' => $file,
+            'folder' => 'contracts',
+        ]);
+        $response->assertCreated();
+        $path = $response->json('data.image_path_local');
+        expect($path)->toStartWith('contracts/'.now()->format('Y/m').'/');
+        Storage::disk('public')->assertExists($path);
+    });
+
     it('returns 422 if folder is not allowed', function () {
         $user = authUser();
         $file = UploadedFile::fake()->image('test.jpg');
@@ -46,7 +57,6 @@ describe('Upload API', function () {
         $response->assertJsonValidationErrors('folder');
     });
 
-    // POST: Edge Case - file terlalu besar
     it('returns 422 if file is too large', function () {
         $user = authUser();
         $file = UploadedFile::fake()->create('big.pdf', 6000, 'application/pdf');
@@ -58,7 +68,6 @@ describe('Upload API', function () {
         $response->assertJsonValidationErrors('file');
     });
 
-    // POST: Edge Case - ekstensi tidak diizinkan
     it('returns 422 if file extension is not allowed', function () {
         $user = authUser();
         $file = UploadedFile::fake()->create('virus.exe', 100, 'application/octet-stream');
@@ -70,11 +79,10 @@ describe('Upload API', function () {
         $response->assertJsonValidationErrors('file');
     });
 
-    // DELETE: Happy Path
     it('successfully deletes a file', function () {
         $user = authUser();
         $file = UploadedFile::fake()->image('delete.jpg');
-        $path = $file->storeAs('photos', 'delete.jpg', 'public');
+        $path = $file->storeAs('photos/'.now()->format('Y/m'), 'delete.jpg', 'public');
         Storage::disk('public')->assertExists($path);
         $response = $this->actingAs($user)->deleteJson('/api/v1/uploads', [
             'file_path' => $path,
@@ -84,7 +92,6 @@ describe('Upload API', function () {
         Storage::disk('public')->assertMissing($path);
     });
 
-    // DELETE: Edge Case - file tidak ditemukan
     it('returns 404 if file not found', function () {
         $user = authUser();
         $response = $this->actingAs($user)->deleteJson('/api/v1/uploads', [
@@ -94,7 +101,6 @@ describe('Upload API', function () {
         $response->assertJson(['success' => false]);
     });
 
-    // AUTH: Tanpa token
     it('returns 401 if not authenticated (POST)', function () {
         $file = UploadedFile::fake()->image('test.jpg');
         $response = $this->postJson('/api/v1/uploads', [

@@ -3,6 +3,7 @@
 namespace App\Services\Api;
 
 use App\Enums\BusinessStatus;
+use App\Models\ContractAbk;
 use App\Models\CoopUserAssignment;
 use App\Models\DailyActivityHeader;
 use App\Models\DailyChecklistLog;
@@ -31,6 +32,14 @@ class DailyActivitySyncService
             return [
                 'id' => $headerId,
                 'status' => 'PERIOD_CLOSED',
+                'server_id' => null,
+            ];
+        }
+
+        if ($this->hasPendingContractAcceptance($periodId, $authUser)) {
+            return [
+                'id' => $headerId,
+                'status' => 'CONTRACT_PENDING',
                 'server_id' => null,
             ];
         }
@@ -286,6 +295,35 @@ class DailyActivitySyncService
             ], $headerPayload['checklist_logs']);
             DailyChecklistLog::insert($checklistLogs);
         }
+    }
+
+    /**
+     * PIC/ABK tidak boleh sync input harian sebelum menerima kontrak periode (DEV NOTE Modul 3).
+     * Admin/Manager tidak di-gate.
+     */
+    private function hasPendingContractAcceptance(string $periodId, User $authUser): bool
+    {
+        $role = strtolower((string) $authUser->role);
+        if (! in_array($role, ['pic', 'abk'], true)) {
+            return false;
+        }
+
+        $contracts = ContractAbk::query()
+            ->where('period_id', $periodId)
+            ->whereNull('deleted_at')
+            ->with(['acceptances' => fn ($query) => $query->whereNull('deleted_at')])
+            ->get();
+
+        if ($contracts->isEmpty()) {
+            return false;
+        }
+
+        return $contracts->contains(function (ContractAbk $contract) use ($authUser): bool {
+            return $contract->acceptances
+                ->where('user_id', $authUser->id)
+                ->whereNotNull('accepted_at')
+                ->isEmpty();
+        });
     }
 
     private function toMysqlDateTime(\DateTimeInterface|string $value): string

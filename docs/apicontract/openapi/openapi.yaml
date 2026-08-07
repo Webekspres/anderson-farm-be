@@ -178,6 +178,9 @@ paths:
     $ref: "./paths/upload.yaml#/import-salary"
 
   # === LOGIKA BISNIS & PORTAL EKSTERNAL ===
+  /api/v1/periods/{id}/activate:
+    $ref: "./paths/period-full.yaml#/activate-period"
+
   /api/v1/periods/{id}/close:
     $ref: "./paths/period-full.yaml#/close-period"
 

@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\ProductionPeriodResource;
 use App\Models\ProductionPeriod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PeriodController extends Controller
 {
@@ -17,10 +18,8 @@ class PeriodController extends Controller
         $validated = $request->validated();
 
         return DB::transaction(function () use ($validated) {
-            // Generate period_code jika null
-            $periodCode = $validated['period_code'] ?? (
-                'PRD-' . now()->format('Ym') . '-' . strtoupper(substr($validated['floor_id'], 0, 4))
-            );
+            // Unique code: YYYYMM + short floor hint + random (avoids collision for same-month creates).
+            $periodCode = $validated['period_code'] ?? $this->generatePeriodCode($validated['floor_id']);
 
             $period = ProductionPeriod::create([
                 'floor_id' => $validated['floor_id'],
@@ -30,7 +29,7 @@ class PeriodController extends Controller
                 'end_date' => $validated['end_date'] ?? null,
                 'initial_stock' => $validated['initial_stock'],
                 'closing_reason' => $validated['closing_reason'] ?? null,
-                'status' => 'active',
+                'status' => 'draft',
                 'sync_status' => 'SYNCED',
                 'created_at_client' => $validated['created_at_client'],
                 'created_at_server' => now(),
@@ -63,7 +62,7 @@ class PeriodController extends Controller
             if ($isBusy) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kandang tujuan sedang digunakan oleh periode aktif lain.'
+                    'message' => 'Kandang tujuan sedang digunakan oleh periode aktif lain.',
                 ], 422);
             }
         }
@@ -74,7 +73,18 @@ class PeriodController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Periode ternak berhasil diperbarui.',
-            'data'    => new ProductionPeriodResource($period)
+            'data' => new ProductionPeriodResource($period),
         ], 200);
+    }
+
+    private function generatePeriodCode(string $floorId): string
+    {
+        $prefix = 'PRD-'.now()->format('Ym').'-'.strtoupper(substr($floorId, 0, 4));
+
+        do {
+            $periodCode = $prefix.'-'.strtoupper(Str::random(4));
+        } while (ProductionPeriod::withTrashed()->where('period_code', $periodCode)->exists());
+
+        return $periodCode;
     }
 }

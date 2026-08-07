@@ -19,6 +19,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('public');
+    config(['filesystems.uploads' => 'public']);
 
     $this->farm = Farm::factory()->create();
     $this->coopA = Coop::factory()->create(['farm_id' => $this->farm->id]);

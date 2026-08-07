@@ -3,31 +3,33 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\Upload\UploadFileRequest;
 use App\Http\Requests\Api\V1\Upload\DeleteFileRequest;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use App\Http\Requests\Api\V1\Upload\UploadFileRequest;
+use App\Services\Api\ObjectStorageService;
 use Illuminate\Http\JsonResponse;
 
 class UploadController extends Controller
 {
+    public function __construct(
+        private readonly ObjectStorageService $objectStorage,
+    ) {}
+
     /**
      * Handle file upload.
      */
     public function store(UploadFileRequest $request): JsonResponse
     {
-        $file = $request->file('file');
-        $folder = $request->input('folder');
-        $filename = Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs($folder, $filename, 'public');
+        $stored = $this->objectStorage->storeUploadedFile(
+            $request->file('file'),
+            $request->string('folder')->toString(),
+        );
 
         return response()->json([
             'success' => true,
             'message' => 'File berhasil diunggah',
             'data' => [
-                'image_url' => asset(Storage::url($path)),
-                'image_path_local' => $path,
+                'image_url' => $stored['url'],
+                'image_path_local' => $stored['path'],
             ],
         ], 201);
     }
@@ -37,8 +39,9 @@ class UploadController extends Controller
      */
     public function destroy(DeleteFileRequest $request): JsonResponse
     {
-        $filePath = $request->input('file_path');
-        if (!Storage::disk('public')->exists($filePath)) {
+        $filePath = $request->string('file_path')->toString();
+
+        if (! $this->objectStorage->exists($filePath)) {
             return response()->json([
                 'success' => false,
                 'message' => 'File tidak ditemukan',
@@ -46,7 +49,7 @@ class UploadController extends Controller
             ], 404);
         }
 
-        Storage::disk('public')->delete($filePath);
+        $this->objectStorage->delete($filePath);
 
         return response()->json([
             'success' => true,

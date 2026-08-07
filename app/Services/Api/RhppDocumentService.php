@@ -15,6 +15,7 @@ class RhppDocumentService
 {
     public function __construct(
         private readonly RhppCalculationService $rhppCalculationService,
+        private readonly ObjectStorageService $objectStorage,
     ) {}
 
     /**
@@ -135,21 +136,16 @@ class RhppDocumentService
                 'updated_at_server' => $now,
             ]);
 
-            // ── Step 2: Simpan file PDF ke storage ──
-            $storedPath = $file->store(
-                "rhpp-documents/{$period->id}",
-                'public'
-            );
-
-            $fileUrl = asset('storage/'.$storedPath);
+            // ── Step 2: Simpan file PDF ke object storage ──
+            $stored = $this->objectStorage->storeForPeriod($file, $period->id, 'rhpp');
 
             // ── Step 3: Buat record RhppDocument ──
             $document = RhppDocument::create([
                 'id' => Str::uuid()->toString(),
                 'Rhpp_id' => $rhpp->id,
                 'name' => 'RHPP Final - '.$period->period_code,
-                'file_path_local' => $storedPath,
-                'file_url' => $fileUrl,
+                'file_path_local' => $stored['path'],
+                'file_url' => $stored['url'],
                 'file_type' => 'pdf',
                 'sync_status' => 'SYNCED',
                 'created_at_client' => $now,

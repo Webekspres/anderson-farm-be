@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Upload Disk
+    |--------------------------------------------------------------------------
+    |
+    | Disk used by ObjectStorageService for app file uploads (contracts,
+    | documents, photos, RHPP, etc.). Production should use "r2".
+    | Feature tests override this to "public" + Storage::fake.
+    |
+    */
+
+    'uploads' => env('FILESYSTEM_UPLOAD_DISK', 'r2'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -57,6 +70,26 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
+            'report' => false,
+        ],
+
+        /*
+         * Cloudflare R2 (S3-compatible). Bucket name via R2_BUCKET (default
+         * anderson-farm). Object keys use category prefixes — not the bucket
+         * name. Set R2_URL to the public base (r2.dev or custom domain) so
+         * file_url can be opened without signed URLs.
+         */
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_DEFAULT_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET', 'anderson-farm'),
+            'url' => env('R2_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', true),
+            'visibility' => 'public',
+            'throw' => true,
             'report' => false,
         ],
 

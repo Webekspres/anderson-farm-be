@@ -22,7 +22,7 @@ uses(RefreshDatabase::class);
  */
 function createPeriodWithAssignment(User $user): ProductionPeriod
 {
-    $coop  = Coop::factory()->create();
+    $coop = Coop::factory()->create();
     $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
 
     CoopUserAssignment::factory()->create([
@@ -32,8 +32,8 @@ function createPeriodWithAssignment(User $user): ProductionPeriod
 
     return ProductionPeriod::factory()->create([
         'floor_id' => $floor->id,
-        'pic_id'   => $user->id,
-        'status'   => 'active',
+        'pic_id' => $user->id,
+        'status' => 'active',
     ]);
 }
 
@@ -57,7 +57,7 @@ describe('POST /api/v1/periods/{id}/close', function () {
     // ── Test 1: Role ABK attempt (403 Forbidden) ──
 
     it('Test 1 — Role abk mendapat 403 Forbidden', function () {
-        $abk    = User::factory()->create(['role' => 'abk']);
+        $abk = User::factory()->create(['role' => 'abk']);
         $period = createPeriodWithAssignment($abk);
 
         $response = $this->actingAs($abk)
@@ -68,18 +68,18 @@ describe('POST /api/v1/periods/{id}/close', function () {
 
         // Period TIDAK boleh berubah status
         $this->assertDatabaseHas('production_periods', [
-            'id'     => $period->id,
+            'id' => $period->id,
             'status' => 'active',
         ]);
     });
 
     it('Test 1b — Role investor mendapat 403 Forbidden', function () {
         $investor = User::factory()->create(['role' => 'investor']);
-        $coop     = Coop::factory()->create();
-        $floor    = CoopFloor::factory()->create(['coop_id' => $coop->id]);
-        $period   = ProductionPeriod::factory()->create([
+        $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
+        $period = ProductionPeriod::factory()->create([
             'floor_id' => $floor->id,
-            'status'   => 'active',
+            'status' => 'active',
         ]);
 
         $response = $this->actingAs($investor)
@@ -91,13 +91,13 @@ describe('POST /api/v1/periods/{id}/close', function () {
     // ── Test 2: PIC closes with pending DailyActivityHeader (422) ──
 
     it('Test 2 — PIC tidak bisa tutup periode yang punya aktivitas harian berstatus SUBMITTED', function () {
-        $pic    = User::factory()->create(['role' => 'pic']);
+        $pic = User::factory()->create(['role' => 'pic']);
         $period = createPeriodWithAssignment($pic);
 
         // Buat DailyActivityHeader dengan status SUBMITTED — menggantung!
         DailyActivityHeader::factory()->create([
-            'period_id'       => $period->id,
-            'user_id'         => $pic->id,
+            'period_id' => $period->id,
+            'user_id' => $pic->id,
             'business_status' => 'SUBMITTED',
         ]);
 
@@ -109,21 +109,21 @@ describe('POST /api/v1/periods/{id}/close', function () {
 
         // Period TIDAK boleh berubah
         $this->assertDatabaseHas('production_periods', [
-            'id'     => $period->id,
+            'id' => $period->id,
             'status' => 'active',
         ]);
     });
 
     it('Test 2b — PIC tidak bisa tutup periode yang punya transaksi berstatus DRAFT', function () {
-        $pic      = User::factory()->create(['role' => 'pic']);
-        $period   = createPeriodWithAssignment($pic);
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createPeriodWithAssignment($pic);
         $category = TransactionCategory::factory()->create();
 
         // Buat Transaksi dengan status DRAFT — menggantung!
         Transaction::factory()->create([
-            'period_id'       => $period->id,
-            'user_id'         => $pic->id,
-            'category_id'     => $category->id,
+            'period_id' => $period->id,
+            'user_id' => $pic->id,
+            'category_id' => $category->id,
             'business_status' => 'DRAFT',
         ]);
 
@@ -134,7 +134,7 @@ describe('POST /api/v1/periods/{id}/close', function () {
         $response->assertJsonPath('success', false);
 
         $this->assertDatabaseHas('production_periods', [
-            'id'     => $period->id,
+            'id' => $period->id,
             'status' => 'active',
         ]);
     });
@@ -142,22 +142,22 @@ describe('POST /api/v1/periods/{id}/close', function () {
     // ── Test 3: PIC closes valid period with all APPROVED data (200 OK) ──
 
     it('Test 3 — PIC berhasil menutup periode dengan semua data sudah APPROVED', function () {
-        $pic      = User::factory()->create(['role' => 'pic']);
-        $period   = createPeriodWithAssignment($pic);
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createPeriodWithAssignment($pic);
         $category = TransactionCategory::factory()->create();
 
         // Semua aktivitas sudah APPROVED — clean!
         DailyActivityHeader::factory()->create([
-            'period_id'       => $period->id,
-            'user_id'         => $pic->id,
+            'period_id' => $period->id,
+            'user_id' => $pic->id,
             'business_status' => 'APPROVED',
         ]);
 
         // Semua transaksi sudah APPROVED — clean!
         Transaction::factory()->create([
-            'period_id'       => $period->id,
-            'user_id'         => $pic->id,
-            'category_id'     => $category->id,
+            'period_id' => $period->id,
+            'user_id' => $pic->id,
+            'category_id' => $category->id,
             'business_status' => 'APPROVED',
         ]);
 
@@ -180,20 +180,60 @@ describe('POST /api/v1/periods/{id}/close', function () {
 
         // Verifikasi DB changes
         $this->assertDatabaseHas('production_periods', [
-            'id'             => $period->id,
-            'status'         => 'completed',
+            'id' => $period->id,
+            'status' => 'completed',
             'closing_reason' => $closingReason,
         ]);
 
         // Pastikan closed_at terisi
         $updatedPeriod = ProductionPeriod::find($period->id);
         expect($updatedPeriod->closed_at)->not->toBeNull();
+        expect($updatedPeriod->end_date)->not->toBeNull();
+    });
+
+    it('mengisi end_date otomatis saat close jika masih null', function () {
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createPeriodWithAssignment($pic);
+        $period->update(['end_date' => null]);
+
+        $response = $this->actingAs($pic)
+            ->postJson("/api/v1/periods/{$period->id}/close", closePayload());
+
+        $response->assertOk();
+        $updatedPeriod = ProductionPeriod::find($period->id);
+        expect($updatedPeriod->end_date?->toDateString())->toBe(now()->toDateString());
+    });
+
+    it('mempertahankan end_date yang sudah diisi saat close', function () {
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createPeriodWithAssignment($pic);
+        $plannedEnd = now()->addDays(3)->toDateString();
+        $period->update(['end_date' => $plannedEnd]);
+
+        $response = $this->actingAs($pic)
+            ->postJson("/api/v1/periods/{$period->id}/close", closePayload());
+
+        $response->assertOk();
+        $updatedPeriod = ProductionPeriod::find($period->id);
+        expect($updatedPeriod->end_date?->toDateString())->toBe($plannedEnd);
+    });
+
+    it('menolak close periode draft', function () {
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createPeriodWithAssignment($pic);
+        $period->update(['status' => 'draft']);
+
+        $response = $this->actingAs($pic)
+            ->postJson("/api/v1/periods/{$period->id}/close", closePayload());
+
+        $response->assertStatus(400)
+            ->assertJsonPath('success', false);
     });
 
     // ── Additional edge cases ──
 
     it('Mengembalikan 400 jika periode sudah completed (double-close)', function () {
-        $pic    = User::factory()->create(['role' => 'pic']);
+        $pic = User::factory()->create(['role' => 'pic']);
         $period = createPeriodWithAssignment($pic);
 
         // Set periode langsung ke completed
@@ -207,14 +247,14 @@ describe('POST /api/v1/periods/{id}/close', function () {
     });
 
     it('PIC tanpa assignment ke coop mendapat 403', function () {
-        $pic   = User::factory()->create(['role' => 'pic']);
-        $coop  = Coop::factory()->create();
+        $pic = User::factory()->create(['role' => 'pic']);
+        $coop = Coop::factory()->create();
         $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
 
         // Period milik coop yang TIDAK diassign ke $pic
         $period = ProductionPeriod::factory()->create([
             'floor_id' => $floor->id,
-            'status'   => 'active',
+            'status' => 'active',
         ]);
 
         $response = $this->actingAs($pic)
@@ -225,11 +265,11 @@ describe('POST /api/v1/periods/{id}/close', function () {
 
     it('Manager berhasil menutup periode tanpa perlu assignment (global access)', function () {
         $manager = User::factory()->create(['role' => 'manager']);
-        $coop    = Coop::factory()->create();
-        $floor   = CoopFloor::factory()->create(['coop_id' => $coop->id]);
-        $period  = ProductionPeriod::factory()->create([
+        $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
+        $period = ProductionPeriod::factory()->create([
             'floor_id' => $floor->id,
-            'status'   => 'active',
+            'status' => 'active',
         ]);
 
         // Manager tidak perlu assignment
@@ -245,7 +285,7 @@ describe('POST /api/v1/periods/{id}/close', function () {
         $pic = User::factory()->create(['role' => 'pic']);
 
         $response = $this->actingAs($pic)
-            ->postJson('/api/v1/periods/' . Str::uuid() . '/close', closePayload());
+            ->postJson('/api/v1/periods/'.Str::uuid().'/close', closePayload());
 
         $response->assertNotFound();
     });
@@ -253,11 +293,11 @@ describe('POST /api/v1/periods/{id}/close', function () {
     it('Mengembalikan 422 jika closing_reason kurang dari 5 karakter', function () {
         $pic = User::factory()->create(['role' => 'pic']);
 
-        $coop  = Coop::factory()->create();
+        $coop = Coop::factory()->create();
         $floor = CoopFloor::factory()->create(['coop_id' => $coop->id]);
         $period = ProductionPeriod::factory()->create([
             'floor_id' => $floor->id,
-            'status'   => 'active',
+            'status' => 'active',
         ]);
 
         $response = $this->actingAs($pic)
@@ -271,7 +311,7 @@ describe('POST /api/v1/periods/{id}/close', function () {
     });
 
     it('returns 401 when not authenticated', function () {
-        $response = $this->postJson('/api/v1/periods/' . Str::uuid() . '/close', closePayload());
+        $response = $this->postJson('/api/v1/periods/'.Str::uuid().'/close', closePayload());
         $response->assertUnauthorized();
     });
 });
