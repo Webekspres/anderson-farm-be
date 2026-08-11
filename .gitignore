@@ -26,3 +26,6 @@ Homestead.yaml
 Thumbs.db
 
 /storage/app/firebase-credentials.json
+
+# Graphify knowledge graph output (local only)
+/graphify-out/
