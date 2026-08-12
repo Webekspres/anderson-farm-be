@@ -2,9 +2,10 @@
 
 namespace App\Http\Requests\Api\V1\Period;
 
+use App\Models\CoopFloor;
+use App\Models\ProductionPeriod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Models\ProductionPeriod;
 
 class StorePeriodRequest extends FormRequest
 {
@@ -23,7 +24,7 @@ class StorePeriodRequest extends FormRequest
                 // Aturan Bisnis: Pastikan kandang ini tidak sedang dipakai oleh periode yang masih aktif
                 Rule::unique('production_periods')->where(function ($query) {
                     return $query->where('status', 'active');
-                })
+                }),
             ],
             'pic_id' => ['required', 'string', 'exists:users,id'],
             'start_date' => ['required', 'date'],
@@ -36,17 +37,32 @@ class StorePeriodRequest extends FormRequest
         ];
     }
 
-    public function withValidator($validator)
+    public function withValidator($validator): void
     {
-        $validator->after(function ($validator) {
+        $validator->after(function ($validator): void {
             $floorId = $this->input('floor_id');
-            if ($floorId) {
-                $hasActive = ProductionPeriod::where('floor_id', $floorId)
-                    ->where('status', 'active')
-                    ->exists();
-                if ($hasActive) {
-                    $validator->errors()->add('floor_id', 'Kandang ini masih memiliki periode yang aktif. Tutup periode sebelumnya terlebih dahulu.');
-                }
+            if (! $floorId) {
+                return;
+            }
+
+            $hasActive = ProductionPeriod::where('floor_id', $floorId)
+                ->where('status', 'active')
+                ->exists();
+            if ($hasActive) {
+                $validator->errors()->add('floor_id', 'Kandang ini masih memiliki periode yang aktif. Tutup periode sebelumnya terlebih dahulu.');
+            }
+
+            $initialStock = $this->input('initial_stock');
+            if ($initialStock === null) {
+                return;
+            }
+
+            $capacity = CoopFloor::query()->whereKey($floorId)->value('capacity');
+            if ($capacity && (int) $initialStock > (int) $capacity) {
+                $validator->errors()->add(
+                    'initial_stock',
+                    "Stok awal (DOC) tidak boleh melebihi kapasitas lantai ({$capacity})."
+                );
             }
         });
     }

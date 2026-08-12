@@ -151,6 +151,25 @@ describe('POST /api/v1/periods', function () {
         $response->assertStatus(422)
             ->assertJsonValidationErrors('initial_stock');
     });
+
+    it('fails with 422 if initial_stock exceeds floor capacity', function () {
+        $coop = Coop::factory()->create();
+        $floor = CoopFloor::factory()->create([
+            'coop_id' => $coop->id,
+            'capacity' => 1000,
+        ]);
+        $pic = User::factory()->create();
+        $payload = [
+            'floor_id' => $floor->id,
+            'pic_id' => $pic->id,
+            'start_date' => now()->toDateString(),
+            'initial_stock' => 1001,
+            'created_at_client' => now()->toIso8601String(),
+        ];
+        $response = postJson('/api/v1/periods', $payload);
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('initial_stock');
+    });
 });
 it('returns 401 if not authenticated', function () {
     // Jangan panggil Sanctum::actingAs()
