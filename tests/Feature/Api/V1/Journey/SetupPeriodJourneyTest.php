@@ -16,7 +16,8 @@ use Laravel\Sanctum\Sanctum;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    Storage::fake('public');
+    // Simpan url disk agar upload mengembalikan URL absolut (valid untuk rule `url` di StoreContractAbkRequest).
+    Storage::fake('public', ['url' => config('filesystems.disks.public.url')]);
     config(['filesystems.uploads' => 'public']);
 
     $this->farm = Farm::factory()->create();
@@ -38,7 +39,7 @@ beforeEach(function () {
 });
 
 it('successfully completes period setup journey with an investor', function () {
-    // SyncPeriodInvestorRequest melarang sync investor jika start_date <= hari ini (dianggap periode sudah berjalan).
+    // Periode draft (hasil create) selalu mengizinkan alokasi investor; start_date masa depan menandakan belum berjalan.
     $startDate = now()->addDay()->toDateString();
 
     Sanctum::actingAs($this->manager, ['*']);

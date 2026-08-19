@@ -111,6 +111,29 @@ describe('POST /api/v1/periods/{period_id}/investors', function () {
                 ->assertJsonValidationErrors('investors');
         });
 
+        it('successfully syncs investors for a draft period (setup phase)', function () {
+            $period = ProductionPeriod::factory()->create([
+                'start_date' => now(),
+                'status' => 'draft',
+            ]);
+            $investor = User::factory()->create(['role' => 'investor']);
+            $payload = [
+                'investors' => [
+                    [
+                        'user_id' => $investor->id,
+                        'profit_share_percentage' => 100,
+                    ],
+                ],
+            ];
+            $response = postJson("/api/v1/periods/{$period->id}/investors", $payload);
+            $response->assertOk()
+                ->assertJson([
+                    'success' => true,
+                    'message' => 'Investor periode berhasil disinkronisasi.',
+                ]);
+            $this->assertDatabaseCount('period_investors', 1);
+        });
+
         it('fails with 422 if period already started', function () {
             $period = ProductionPeriod::factory()->create([
                 'start_date' => now()->subDay(),
