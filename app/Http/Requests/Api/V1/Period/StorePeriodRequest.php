@@ -21,9 +21,9 @@ class StorePeriodRequest extends FormRequest
                 'required',
                 'string',
                 'exists:coop_floors,id',
-                // Aturan Bisnis: Pastikan kandang ini tidak sedang dipakai oleh periode yang masih aktif
+                // Aturan Bisnis: Satu lantai hanya boleh punya SATU periode belum selesai (draft/active).
                 Rule::unique('production_periods')->where(function ($query) {
-                    return $query->where('status', 'active');
+                    return $query->whereNotIn('status', ['completed', 'closed']);
                 }),
             ],
             'pic_id' => ['required', 'string', 'exists:users,id'],
@@ -45,11 +45,11 @@ class StorePeriodRequest extends FormRequest
                 return;
             }
 
-            $hasActive = ProductionPeriod::where('floor_id', $floorId)
-                ->where('status', 'active')
+            $hasOpenPeriod = ProductionPeriod::where('floor_id', $floorId)
+                ->whereNotIn('status', ['completed', 'closed'])
                 ->exists();
-            if ($hasActive) {
-                $validator->errors()->add('floor_id', 'Kandang ini masih memiliki periode yang aktif. Tutup periode sebelumnya terlebih dahulu.');
+            if ($hasOpenPeriod) {
+                $validator->errors()->add('floor_id', 'Lantai ini masih memiliki periode yang belum selesai (draft/active). Tutup atau aktifkan periode sebelumnya terlebih dahulu.');
             }
 
             $initialStock = $this->input('initial_stock');
