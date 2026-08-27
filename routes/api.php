@@ -181,6 +181,7 @@ Route::prefix('v1')->group(function () {
         // Monitoring & KPI
         Route::get('/monitoring/kpi', [MonitoringController::class, 'kpi']);
         Route::get('/monitoring/deviations', [MonitoringController::class, 'deviations']);
+        Route::post('/monitoring/deviations/acknowledge', [MonitoringController::class, 'acknowledge']);
 
         // Sync endpoints (Offline-First)
         Route::prefix('sync')->group(function () {

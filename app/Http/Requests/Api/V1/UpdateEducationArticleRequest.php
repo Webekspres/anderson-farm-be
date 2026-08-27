@@ -16,6 +16,9 @@ class UpdateEducationArticleRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string'],
             'excerpt' => ['sometimes', 'nullable', 'string'],
+            'content_html' => ['sometimes', 'nullable', 'string'],
+            'category' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'author_name' => ['sometimes', 'nullable', 'string', 'max:128'],
             'link_url' => ['sometimes', 'nullable', 'url'],
             'image_url' => ['sometimes', 'nullable', 'url'],
             'image_path_local' => ['sometimes', 'nullable', 'string'],

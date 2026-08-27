@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\AcknowledgeDeviationRequest;
 use App\Http\Requests\Api\V1\MonitoringKpiRequest;
+use App\Http\Resources\Api\V1\MonitoringDeviationAckResource;
 use App\Services\MonitoringService;
 use Illuminate\Http\JsonResponse;
 
@@ -34,12 +36,35 @@ class MonitoringController extends Controller
      */
     public function deviations(MonitoringKpiRequest $request): JsonResponse
     {
-        $data = $this->monitoring->computeDeviations($request->validated('period_id'));
+        $periodId = $request->validated('period_id');
+        $deviations = $this->monitoring->computeDeviations($periodId);
+        $userId = (string) $request->user()->id;
+        $data = $this->monitoring->attachAcknowledgements($deviations, $periodId, $userId);
 
         return response()->json([
             'success' => true,
             'message' => 'Deviasi berhasil dihitung.',
             'data' => $data,
+        ]);
+    }
+
+    /**
+     * POST /api/v1/monitoring/deviations/acknowledge
+     */
+    public function acknowledge(AcknowledgeDeviationRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $ack = $this->monitoring->acknowledgeDeviation(
+            $validated['period_id'],
+            (string) $request->user()->id,
+            $validated['metric'],
+            $validated['date'] ?? null,
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Deviasi ditandai sudah ditinjau.',
+            'data' => new MonitoringDeviationAckResource($ack),
         ]);
     }
 }

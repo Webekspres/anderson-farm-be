@@ -16,6 +16,9 @@ class StoreEducationArticleRequest extends FormRequest
         return [
             'name' => ['required', 'string'],
             'excerpt' => ['nullable', 'string'],
+            'content_html' => ['nullable', 'string'],
+            'category' => ['nullable', 'string', 'max:64'],
+            'author_name' => ['nullable', 'string', 'max:128'],
             'link_url' => ['nullable', 'url'],
             'image_url' => ['nullable', 'url'],
             'image_path_local' => ['nullable', 'string'],
