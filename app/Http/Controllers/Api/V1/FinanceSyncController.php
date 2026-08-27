@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\BusinessStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Sync\SyncGetFinancesRequest;
 use App\Http\Requests\Api\V1\Sync\SyncPostFinanceRequest;
@@ -189,7 +190,8 @@ class FinanceSyncController extends Controller
                 'receipt_path_local' => $payload['receipt_image_path_local'] ?? null,
                 'expense_scope' => $payload['expense_scope'] ?? 'FLOOR_SPECIFIC',
                 'coop_id' => isset($payload['expense_scope']) && $payload['expense_scope'] === 'COOP_SHARED' ? ($payload['coop_id'] ?? null) : null,
-                'business_status' => $existingTransaction?->business_status ?? 'DRAFT',
+                // Transaksi baru dari perangkat langsung masuk antrian approval keuangan.
+                'business_status' => $existingTransaction?->business_status ?? BusinessStatus::Submitted->value,
                 'sync_status' => 'SYNCED',
                 'created_at_client' => $payload['created_at_client'],
                 'created_at_server' => $existingTransaction?->created_at_server ?? $serverTimestamp,

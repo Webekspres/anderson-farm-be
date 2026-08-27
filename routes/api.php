@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\ActivityLogSyncController;
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BopExportController;
+use App\Http\Controllers\Api\V1\CashBalanceController;
 use App\Http\Controllers\Api\V1\ChecklistTaskController;
 use App\Http\Controllers\Api\V1\ContractAbkController;
 use App\Http\Controllers\Api\V1\CoopController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Api\V1\EquipmentTypeFormConfigController;
 use App\Http\Controllers\Api\V1\EvaluationExportController;
 use App\Http\Controllers\Api\V1\FarmController;
 use App\Http\Controllers\Api\V1\FcmTokenController;
+use App\Http\Controllers\Api\V1\FinanceApprovalController;
 use App\Http\Controllers\Api\V1\FinanceSyncController;
 use App\Http\Controllers\Api\V1\FormConfigController;
 use App\Http\Controllers\Api\V1\HarvestExportController;
@@ -171,6 +173,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/export/rhpp', [RhppExportController::class, 'show']);
         Route::post('/import/salary', [SalaryImportController::class, 'store']);
 
+        Route::get('/finances/cash-balance', CashBalanceController::class);
+
         Route::get('/investor/dashboard', InvestorDashboardController::class);
         Route::get('/investor/periods/{period_id}', [InvestorPeriodController::class, 'show']);
 
@@ -202,6 +206,10 @@ Route::prefix('v1')->group(function () {
             Route::get('/daily-activities', [DailyActivityApprovalController::class, 'index']);
             Route::get('/daily-activities/{daily_activity}', [DailyActivityApprovalController::class, 'show']);
             Route::post('/daily-activities/{daily_activity}', [DailyActivityApprovalController::class, 'store']);
+
+            Route::get('/finances', [FinanceApprovalController::class, 'index']);
+            Route::get('/finances/{transaction}', [FinanceApprovalController::class, 'show']);
+            Route::post('/finances/{transaction}', [FinanceApprovalController::class, 'store']);
         });
 
         Route::get('/contracts/{contract}', [ContractAbkController::class, 'show']);
