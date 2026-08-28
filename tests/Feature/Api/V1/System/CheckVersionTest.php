@@ -9,7 +9,7 @@ describe('GET /api/v1/system/check-version', function (): void {
             'app_version.min' => '1.2.0',
             'app_version.update_urls' => [
                 'android' => 'https://play.google.com/store/apps/details?id=com.andersonfarm.app',
-                'ios' => 'https://apps.apple.com/app/anderson-farm/id000000000',
+                'ios' => '',
             ],
         ]);
     });
