@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\DailyActivityHeader;
 use App\Models\HarvestEntry;
+use App\Models\MonitoringDeviationAcknowledgement;
 use App\Models\ProductionPeriod;
 use Carbon\Carbon;
 
@@ -161,5 +162,56 @@ class MonitoringService
         }
 
         return $deviations;
+    }
+
+    /**
+     * Attach acknowledgement flags for the given user.
+     *
+     * @param  array<int, array<string, mixed>>  $deviations
+     * @return array<int, array<string, mixed>>
+     */
+    public function attachAcknowledgements(array $deviations, string $periodId, string $userId): array
+    {
+        if ($deviations === []) {
+            return [];
+        }
+
+        $acks = MonitoringDeviationAcknowledgement::query()
+            ->where('period_id', $periodId)
+            ->where('user_id', $userId)
+            ->get();
+
+        $ackKeys = $acks->map(function (MonitoringDeviationAcknowledgement $ack) {
+            $date = $ack->deviation_date?->toDateString() ?? '';
+
+            return $ack->metric.'|'.$date;
+        })->flip();
+
+        return array_map(function (array $row) use ($ackKeys) {
+            $date = isset($row['date']) ? (string) $row['date'] : '';
+            $key = $row['metric'].'|'.$date;
+            $row['acknowledged'] = $ackKeys->has($key);
+
+            return $row;
+        }, $deviations);
+    }
+
+    public function acknowledgeDeviation(
+        string $periodId,
+        string $userId,
+        string $metric,
+        ?string $date = null,
+    ): MonitoringDeviationAcknowledgement {
+        return MonitoringDeviationAcknowledgement::query()->updateOrCreate(
+            [
+                'period_id' => $periodId,
+                'user_id' => $userId,
+                'metric' => $metric,
+                'deviation_date' => $date,
+            ],
+            [
+                'acknowledged_at' => now(),
+            ],
+        );
     }
 }

@@ -1,28 +1,29 @@
 <?php
 
-use App\Models\Coop;
-use App\Models\User;
+use App\Models\CoopFloor;
 use App\Models\ProductionPeriod;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
-use function Pest\Laravel\postJson;
-
 uses(RefreshDatabase::class);
 
-describe('POST /api/v1/periods', function () {
+describe('PATCH /api/v1/periods/{period_id}', function () {
     beforeEach(function () {
         $this->user = User::factory()->create();
         Sanctum::actingAs($this->user, ['*']);
     });
 
     it('berhasil memperbarui stok awal melalui PATCH', function () {
-        Sanctum::actingAs($this->user);
-        $period = ProductionPeriod::factory()->create(['initial_stock' => 10000]);
+        $floor = CoopFloor::factory()->create(['capacity' => 20000]);
+        $period = ProductionPeriod::factory()->create([
+            'floor_id' => $floor->id,
+            'initial_stock' => 10000,
+        ]);
 
         $payload = [
             'initial_stock' => 15000,
-            'updated_at_client' => now()->toIso8601String()
+            'updated_at_client' => now()->toIso8601String(),
         ];
 
         $response = $this->patchJson("/api/v1/periods/{$period->id}", $payload);
@@ -32,19 +33,33 @@ describe('POST /api/v1/periods', function () {
 
         $this->assertDatabaseHas('production_periods', [
             'id' => $period->id,
-            'initial_stock' => 15000
+            'initial_stock' => 15000,
         ]);
     });
 
-    it('gagal update jika period_code sudah digunakan oleh periode lain', function () {
-        Sanctum::actingAs($this->user);
+    it('gagal update jika initial_stock melebihi kapasitas lantai', function () {
+        $floor = CoopFloor::factory()->create(['capacity' => 1000]);
+        $period = ProductionPeriod::factory()->create([
+            'floor_id' => $floor->id,
+            'initial_stock' => 800,
+        ]);
 
+        $response = $this->patchJson("/api/v1/periods/{$period->id}", [
+            'initial_stock' => 1001,
+            'updated_at_client' => now()->toIso8601String(),
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['initial_stock']);
+    });
+
+    it('gagal update jika period_code sudah digunakan oleh periode lain', function () {
         $periodA = ProductionPeriod::factory()->create(['period_code' => 'KODE-A']);
         $periodB = ProductionPeriod::factory()->create(['period_code' => 'KODE-B']);
 
         $payload = [
             'period_code' => 'KODE-A', // Mencoba pakai kode milik A
-            'updated_at_client' => now()
+            'updated_at_client' => now(),
         ];
 
         $response = $this->patchJson("/api/v1/periods/{$periodB->id}", $payload);

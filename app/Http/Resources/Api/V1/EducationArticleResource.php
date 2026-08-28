@@ -14,6 +14,9 @@ class EducationArticleResource extends JsonResource
             'name' => $this->name,
             'title' => $this->name, // alias untuk kompatibilitas
             'excerpt' => $this->excerpt,
+            'content_html' => $this->content_html,
+            'category' => $this->category,
+            'author_name' => $this->author_name,
             'link_url' => $this->link_url,
             'image_url' => $this->image_url,
             'image_path_local' => $this->image_path_local,

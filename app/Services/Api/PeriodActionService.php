@@ -63,16 +63,17 @@ class PeriodActionService
             $this->abort(400, 'Hanya periode berstatus draft yang dapat diaktifkan.');
         }
 
-        $coopId = $period->floor?->coop_id;
-        if ($coopId) {
-            $hasActiveOverlap = ProductionPeriod::query()
-                ->where('status', 'active')
+        $floorId = $period->floor_id;
+        if ($floorId) {
+            // Satu lantai hanya boleh punya SATU periode belum selesai.
+            $hasOpenOverlap = ProductionPeriod::query()
+                ->where('floor_id', $floorId)
                 ->where('id', '!=', $period->id)
-                ->whereHas('floor', fn ($query) => $query->where('coop_id', $coopId))
+                ->whereNotIn('status', ['completed', 'closed'])
                 ->exists();
 
-            if ($hasActiveOverlap) {
-                $this->abort(422, 'Kandang ini sudah memiliki periode aktif. Tutup periode aktif terlebih dahulu.');
+            if ($hasOpenOverlap) {
+                $this->abort(422, 'Lantai ini masih memiliki periode lain yang belum selesai. Tutup atau selesaikan periode lain terlebih dahulu.');
             }
         }
 

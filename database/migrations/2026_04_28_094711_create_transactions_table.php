@@ -31,7 +31,7 @@ return new class extends Migration
 
             $table->enum('expense_scope', ['FLOOR_SPECIFIC', 'COOP_SHARED'])->default('FLOOR_SPECIFIC');
 
-            $table->enum('business_status', ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED'])->default('DRAFT');
+            $table->enum('business_status', ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'NEEDS_REVIEW'])->default('DRAFT');
             $table->uuid('approved_by')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->uuid('linked_transaction_id')->nullable();

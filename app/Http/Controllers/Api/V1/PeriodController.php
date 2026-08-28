@@ -52,17 +52,17 @@ class PeriodController extends Controller
         $period = ProductionPeriod::findOrFail($id);
         $validated = $request->validated();
 
-        // Logika Tambahan: Cek ketersediaan kandang jika floor_id diubah
+        // Logika Tambahan: Cek ketersediaan lantai jika floor_id diubah
         if (isset($validated['floor_id']) && $validated['floor_id'] !== $period->floor_id) {
-            $isBusy = ProductionPeriod::where('floor_id', $validated['floor_id'])
-                ->where('status', 'active')
+            $hasOpenPeriod = ProductionPeriod::where('floor_id', $validated['floor_id'])
+                ->whereNotIn('status', ['completed', 'closed'])
                 ->where('id', '!=', $id)
                 ->exists();
 
-            if ($isBusy) {
+            if ($hasOpenPeriod) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kandang tujuan sedang digunakan oleh periode aktif lain.',
+                    'message' => 'Lantai tujuan masih memiliki periode yang belum selesai.',
                 ], 422);
             }
         }
