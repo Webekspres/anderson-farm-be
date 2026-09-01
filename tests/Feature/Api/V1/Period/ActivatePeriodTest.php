@@ -63,11 +63,27 @@ describe('POST /api/v1/periods/{id}/activate', function () {
             ->assertJsonPath('success', false);
     });
 
-    it('rejects activate when another active period exists on the same coop', function () {
+    it('rejects activate when another open period exists on the same floor', function () {
         $pic = User::factory()->create(['role' => 'pic']);
         $period = createDraftPeriodWithAssignment($pic);
-        $coopId = $period->floor->coop_id;
-        $otherFloor = CoopFloor::factory()->create(['coop_id' => $coopId]);
+
+        // Overlap rule is per-floor (same as StorePeriodRequest), not per-coop.
+        ProductionPeriod::factory()->create([
+            'floor_id' => $period->floor_id,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($pic)
+            ->postJson("/api/v1/periods/{$period->id}/activate", activatePayload());
+
+        $response->assertStatus(422)
+            ->assertJsonPath('success', false);
+    });
+
+    it('allows activate when another active period exists on a different floor of the same coop', function () {
+        $pic = User::factory()->create(['role' => 'pic']);
+        $period = createDraftPeriodWithAssignment($pic);
+        $otherFloor = CoopFloor::factory()->create(['coop_id' => $period->floor->coop_id]);
 
         ProductionPeriod::factory()->create([
             'floor_id' => $otherFloor->id,
@@ -77,8 +93,9 @@ describe('POST /api/v1/periods/{id}/activate', function () {
         $response = $this->actingAs($pic)
             ->postJson("/api/v1/periods/{$period->id}/activate", activatePayload());
 
-        $response->assertStatus(422)
-            ->assertJsonPath('success', false);
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.status', 'active');
     });
 
     it('forbids abk from activating a period', function () {
