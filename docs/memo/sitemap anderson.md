@@ -1,5 +1,7 @@
 # Sitemap Anderson Farm — Mobile App
 
+> **⚠️ DOKUMEN HISTORIS** — Dibuat saat fase perencanaan awal. TODO inline di dokumen ini **sudah diimplementasi** di kode saat ini. Untuk status aktual, gunakan [handover FE](../../../anderson-farm-fe/docs/handover/) dan [handover BE](../handover/).
+
 > **Platform:** 100% Mobile-Only (Expo Router / React Native)
 > **Backend:** Laravel API (`anderson-farm-be`)
 > **Spesifikasi:** Flow v0.6.1 + Proposal Pengembangan Aplikasi
