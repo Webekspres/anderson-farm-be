@@ -106,7 +106,6 @@ Login smoke via Postman: [docs/postman/](../postman/)
 - Bucket: `anderson-farm`
 - Upload endpoint: `POST /api/v1/uploads` (authenticated)
 - **Wajib** enable public access atau custom domain pada bucket agar `file_url` bisa dibuka di app
-- Kredensial: lihat [inventaris-akses.md](./inventaris-akses.md)
 
 ---
 
@@ -144,8 +143,6 @@ Setiap release APK/AAB baru:
 - File `.env` production
 - Kredensial R2, DB, FCM
 - `storage/logs/` berisi data sensitif
-
-Lokasi secret: [inventaris-akses.md](./inventaris-akses.md)
 
 ---
 

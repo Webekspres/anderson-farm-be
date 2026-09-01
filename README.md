@@ -36,7 +36,6 @@ Aplikasi mobile (Expo/React Native) ada di repo terpisah: [`anderson-farm-fe`](.
 | [Masalah & Backlog](./docs/handover/masalah-dan-backlog.md) | Blocker, backlog, caveat |
 | [Panduan Memulai](./docs/handover/panduan-memulai.md) | Setup lokal, Docker, seeders |
 | [Panduan Deploy](./docs/handover/panduan-deploy.md) | cPanel, queue, R2, production |
-| [Inventaris Akses](./docs/handover/inventaris-akses.md) | Template kredensial & akun platform |
 
 ---
 

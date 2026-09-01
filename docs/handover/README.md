@@ -22,7 +22,7 @@ Aplikasi mobile ada di repo terpisah: [`anderson-farm-fe`](../../../anderson-far
 | **Developer mobile** (integrasi API) | [Kontrak OpenAPI](../apicontract/openapi/) → [Status Implementasi](./status-implementasi.md) |
 | **QA / tester** | [Handover FE](../../../anderson-farm-fe/docs/handover/) → [Runbook Smoke](../../../anderson-farm-fe/docs/handover/smoke-device-runbook.md) |
 | **PM / manajemen** | [Ringkasan Serah Terima](../../../anderson-farm-fe/docs/handover/ringkasan-serah-terima.md) |
-| **DevOps** | [Panduan Deploy](./panduan-deploy.md) → [Inventaris Akses](./inventaris-akses.md) |
+| **DevOps** | [Panduan Deploy](./panduan-deploy.md) |
 
 ---
 
@@ -35,7 +35,6 @@ Aplikasi mobile ada di repo terpisah: [`anderson-farm-fe`](../../../anderson-far
 | [Masalah & Backlog](./masalah-dan-backlog.md) | Blocker, backlog BE, caveat arsitektur |
 | [Panduan Memulai](./panduan-memulai.md) | Setup lokal, Docker, seeders, serve-mobile |
 | [Panduan Deploy](./panduan-deploy.md) | cPanel, queue, R2, env production |
-| [Inventaris Akses](./inventaris-akses.md) | Template akun platform & lokasi kredensial |
 
 ---
 
